@@ -4,7 +4,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
-from app import ssm
+from app import livekit_token, ssm
 from app.config import on_aws, origin_secret
 
 
@@ -21,6 +21,7 @@ app = FastAPI(
     openapi_url=None if on_aws() else "/api/openapi.json",
     lifespan=lifespan,
 )
+app.include_router(livekit_token.router)
 
 
 @app.middleware("http")

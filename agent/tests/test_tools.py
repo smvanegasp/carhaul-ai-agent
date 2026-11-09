@@ -260,11 +260,13 @@ async def test_request_human(state, services):
     assert r["transferred"] is False
 
 
-async def test_end_call_runs_hook(state, services):
+async def test_end_call_marks_ended_but_leaves_hang_up_to_the_agent(state, services):
+    # The hang-up runs only after the goodbye is spoken (agent.py), never inside the tool.
     ended = []
     services.end_call = lambda: ended.append(True)
-    await tools.end_call(state, services)
-    assert state.ended and ended == [True]
+    r = await tools.end_call(state, services)
+    assert state.ended and ended == []
+    assert "goodbye" in r["next"]
 
 
 async def test_quote_requires_the_callers_yes(state, services):

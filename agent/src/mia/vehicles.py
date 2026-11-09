@@ -244,10 +244,16 @@ def normalize_vehicle_type(spoken: str | None) -> str | None:
 class VehicleResolver:
     """Resolves vehicles against the catalog. One per worker; the client caches lookups."""
 
-    def __init__(self, client: CarHaulerClient, *, concurrency: int = 8):
+    def __init__(
+        self,
+        client: CarHaulerClient,
+        *,
+        concurrency: int = 8,
+        model_index: list[dict[str, Any]] | None = None,
+    ):
         self._client = client
         self._concurrency = concurrency
-        self._model_index: list[dict[str, Any]] | None = None
+        self._model_index = model_index  # pass a warm one to skip the first-call lookups
         self._index_lock = asyncio.Lock()
 
     async def _models(self, make_id: int) -> list[dict[str, Any]]:

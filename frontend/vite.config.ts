@@ -10,6 +10,8 @@ export default defineConfig({
   server: {
     host: true,
     port: 5173,
+    // Sharing the local app with `ngrok http 5190` (stage 3); Vite rejects unknown hosts.
+    allowedHosts: [".ngrok-free.app", ".ngrok-free.dev", ".ngrok.app"],
     // Docker on Windows doesn't forward file-change events into containers.
     watch: process.env.VITE_USE_POLLING ? { usePolling: true, interval: 300 } : undefined,
     proxy: {

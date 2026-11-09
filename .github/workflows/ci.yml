@@ -78,6 +78,7 @@ jobs:
       # The "lambda" stage pulls from public ECR, which rate-limits shared CI runners;
       # it is built at deploy time instead.
       - run: docker build --target app ./backend
+      - run: docker build ./agent
 
   # The repo is public: fail the build if a key, token or password ever lands in a commit.
   secrets:

@@ -1,5 +1,7 @@
-# Local development. `docker compose up` then open http://localhost:5190.
-# The agent worker joins in stage 3 (it connects out to LiveKit Cloud; no port needed).
+# Local development. `docker compose up` then open http://localhost:5190 and press "Call Mia".
+# The agent worker connects out to LiveKit Cloud (no port needed). Don't also run
+# `python -m mia.main dev` on the host: both would register as "mia" and share the calls.
+# Share with the teammate: `ngrok http 5190` (see README).
 name: carhaul
 
 services:
@@ -35,5 +37,18 @@ services:
     depends_on:
       - api
 
+  agent:
+    build: ./agent
+    env_file:
+      - path: ./.env
+        required: false
+    environment:
+      MIA_IDLE_PROCESSES: "1"
+      MIA_TURN_DETECTOR: ${MIA_TURN_DETECTOR:-}
+    volumes:
+      # The CarHauler catalog snapshot survives restarts (catalog calls cost API allowance).
+      - agent_cache:/home/mia/.cache/mia
+
 volumes:
   web_node_modules:
+  agent_cache:
