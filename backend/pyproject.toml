@@ -1,0 +1,28 @@
+[project]
+name = "carhaul-api"
+version = "0.1.0"
+description = "API for the Mia voice agent: LiveKit tokens, call records, stats, feedback."
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "boto3>=1.40",
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.30",
+]
+
+[dependency-groups]
+dev = [
+    "httpx>=0.28",
+    "pytest>=8",
+    "ruff>=0.14",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
