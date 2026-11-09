@@ -5,8 +5,8 @@ an open car-shipping quote from the [CarHauler247](https://carhauler247.com/) AP
 talk, a live panel shows the transcript, every tool call (with its JSON) and how long each part
 of the pipeline took. A public dashboard shows how calls go overall.
 
-> Status: early. The city → ZIP geocoding is built and tested; the agent, calling and dashboard
-> are coming in stages (see [docs/BACKLOG.md](docs/BACKLOG.md)).
+> Status: the agent works in text (tools, guardrails, tests). Voice calling, the live panel and
+> the dashboard are coming in stages (see [docs/BACKLOG.md](docs/BACKLOG.md)).
 
 ## Stack
 
@@ -20,6 +20,18 @@ of the pipeline took. A public dashboard shows how calls go overall.
 | API | FastAPI on AWS Lambda (container image), DynamoDB |
 | Web | React, Vite, Tailwind |
 | Infra | Docker, Terraform, ECS Fargate (agent worker), CloudFront, GitHub Actions with OIDC |
+
+## Guardrails
+
+The LLM decides what to ask; code decides what's true.
+
+- **Prices are computed by code** and read word for word; the model never does arithmetic.
+- **Grounding:** a tool call may only save a city, year, make or model the caller actually said
+  (typo and nickname tolerant). In testing, `gpt-oss-20b` answered "Yeah, sure" by saving
+  "Los Angeles" as the origin every time; those calls are now dropped before they run.
+- **No quote without a yes:** the quote runs only right after the caller confirms the read-back.
+- **One question at a time:** repeated sentences and extra questions are trimmed before speech.
+- **API failures** are retried (3 attempts, exponential backoff), then escalated to a person.
 
 ## How it's tested
 

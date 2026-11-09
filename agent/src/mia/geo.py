@@ -206,7 +206,9 @@ def _client() -> googlemaps.Client:
             "MISSING_API_KEY",
             "GOOGLE_MAPS_API_KEY is missing in repo-root .env",
         )
-    return googlemaps.Client(key=key)
+    # A caller is waiting: fail within ~8 s instead of the library's 60 s retry window.
+    # googlemaps retries transient errors itself (with backoff) inside retry_timeout.
+    return googlemaps.Client(key=key, timeout=4, retry_timeout=8)
 
 
 def _postal_near(gmaps: googlemaps.Client, lat: float, lng: float) -> str | None:
@@ -223,12 +225,17 @@ def city_to_zip(
     city: str,
     state: str | None = None,
     country: str = "US",
+    _requery: bool = True,
 ) -> dict[str, Any]:
     """Resolve a city to a representative ZIP.
 
     ``city`` is required. ``state`` is optional (code, full name, or minor typo).
     On success returns city/state/zip fields for spoken confirmation.
     On failure raises ``CityToZipError``.
+
+    Without a state, a misspelled name can land on a small namesake: "Bostin" resolved to
+    Boston, Indiana (2026-11-08). When Google corrected the spelling, the corrected name is
+    looked up once more, which finds the place a caller most likely means (Boston, MA).
     """
     city, state = _split_city_state(city or "", state)
     if not city:
@@ -275,6 +282,12 @@ def city_to_zip(
     zip_code = _component(comps, "postal_code") or _postal_near(gmaps, lat, lng)
     if not zip_code:
         raise CityToZipError("NO_POSTAL_CODE", f"No ZIP for {best.get('formatted_address')!r}")
+
+    if _requery and not state_code and _norm(resolved_city) != _norm(city):
+        try:
+            return city_to_zip(resolved_city, None, country, _requery=False)
+        except CityToZipError:
+            pass  # keep the first answer
 
     out_state = resolved_state or state_code
     return {

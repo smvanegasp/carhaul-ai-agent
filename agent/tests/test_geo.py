@@ -127,3 +127,8 @@ class TestLiveGeocoding:
         with pytest.raises(CityToZipError) as exc:
             city_to_zip("Boston", "FL")
         assert exc.value.code == "CITY_NOT_FOUND"
+
+    def test_city_typo_without_state_finds_the_big_city(self):
+        # "Bostin" alone first resolved to Boston, Indiana.
+        r = city_to_zip("Bostin")
+        assert (r["city"], r["state"]) == ("Boston", "MA")

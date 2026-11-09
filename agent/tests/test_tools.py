@@ -1,0 +1,277 @@
+"""Tool behavior without an LLM: state changes, error codes and the `next` guidance."""
+
+from __future__ import annotations
+
+import httpx
+import pytest
+from fake_geo import fake_city_to_zip
+
+from mia import tools
+from mia.state import QuoteSession, Stage
+from mia.tools import Services
+
+
+@pytest.fixture
+def services(client, resolver):
+    return Services(carhauler=client, resolver=resolver, geocode=fake_city_to_zip)
+
+
+@pytest.fixture
+def state():
+    return QuoteSession()
+
+
+async def _route(state, services, said=None):
+    return await tools.save_origin_destination(
+        state,
+        services,
+        origin_city="Boston",
+        origin_state="MA",
+        destination_city="San Francisco",
+        destination_state="CA",
+        said=said,
+    )
+
+
+# --- route -------------------------------------------------------------------------------
+
+
+async def test_saves_route(state, services):
+    r = await _route(state, services)
+    assert r["ok"]
+    assert state.origin.zip == "02110"
+    assert state.destination.spoken == "San Francisco, California"
+    assert state.stage == Stage.ROUTE
+    assert r["on_file"]["missing"] == ["vehicle"]
+    assert "year, make and model" in r["next"]
+
+
+async def test_saves_one_side_and_asks_for_the_other(state, services):
+    r = await tools.save_origin_destination(state, services, origin_city="Boston")
+    assert r["ok"]
+    assert state.destination is None
+    assert "destination" in r["next"]
+
+
+async def test_unknown_city_keeps_the_other_side(state, services):
+    r = await tools.save_origin_destination(
+        state, services, origin_city="Boston", destination_city="Atlantis"
+    )
+    assert not r["ok"]
+    assert r["error_code"] == "CITY_NOT_FOUND"
+    assert r["failed"] == "destination"
+    assert state.origin.city == "Boston"
+    assert "Atlantis" in r["next"]
+
+
+async def test_state_mismatch(state, services):
+    r = await tools.save_origin_destination(
+        state, services, origin_city="Boston", origin_state="FL"
+    )
+    assert r["error_code"] == "STATE_MISMATCH"
+    assert "Boston" in r["next"] and "FL" in r["next"]
+
+
+async def test_same_origin_and_destination(state, services):
+    r = await tools.save_origin_destination(
+        state, services, origin_city="Boston", destination_city="Bostin"
+    )
+    assert r["error_code"] == "SAME_ORIGIN_AND_DESTINATION"
+
+
+async def test_geocoder_outage_escalates(state, services):
+    r = await tools.save_origin_destination(state, services, origin_city="geofail")
+    assert r["error_code"] == "GEOCODING_UNAVAILABLE"
+    assert "request_human" in r["next"]
+
+
+# --- grounding guardrail -------------------------------------------------------------------
+
+
+async def test_refuses_cities_the_caller_never_said(state, services):
+    r = await tools.save_origin_destination(
+        state, services, origin_city="Los Angeles", origin_state="California", said="Yeah, sure"
+    )
+    assert r["error_code"] == "NOT_SAID_BY_CALLER"
+    assert state.origin is None
+
+
+async def test_drops_unsaid_state_but_keeps_city(state, services):
+    r = await tools.save_origin_destination(
+        state,
+        services,
+        origin_city="Boston",
+        destination_city="San Francisco",
+        destination_state="California",
+        said="I need to send 2 cars from Boston to SF",
+    )
+    assert r["ok"]
+    assert state.destination.zip == "94103"
+
+
+async def test_saves_the_said_side_and_reports_the_invented_one(state, services):
+    r = await tools.save_origin_destination(
+        state,
+        services,
+        origin_city="Boston",
+        destination_city="New York",
+        said="from Boston",
+    )
+    assert r["ok"]
+    assert state.destination is None
+    assert r["ignored_not_said"] == ["destination New York"]
+
+
+async def test_refuses_an_invented_vehicle(state, services):
+    r = await tools.save_vehicle(
+        state, services, year=2020, make="Toyota", model="Camry", said="Yeah sure. Boston to SF"
+    )
+    assert r["error_code"] == "NOT_SAID_BY_CALLER"
+    assert state.vehicles == []
+
+
+async def test_drops_an_invented_year(state, services):
+    r = await tools.save_vehicle(
+        state, services, year=2020, make="Toyota", model="4Runner", said="It's a Toyota 4Runner"
+    )
+    assert r["error_code"] == "MISSING_YEAR"
+    assert "Toyota 4Runner" in r["next"]
+
+
+# --- vehicles ------------------------------------------------------------------------------
+
+
+async def test_saves_vehicle_with_quote_id(state, services):
+    r = await tools.save_vehicle(state, services, year=2025, make="Honda", model="Civic")
+    assert r["ok"]
+    assert r["saved"] == {"quote_id": "Q1", "vehicle": "2025 Honda Civic"}
+    assert state.vehicles[0].trim_id == 34547
+    assert state.stage == Stage.VEHICLES
+
+
+async def test_typo_correction_is_reported(state, services):
+    r = await tools.save_vehicle(state, services, year=2019, make="Toyota", model="Corola")
+    assert r["saved"]["heard_as"] == {"Corola": "Corolla"}
+
+
+async def test_expected_vehicle_count_drives_next_question(state, services):
+    await _route(state, services)
+    r = await tools.save_vehicle(
+        state, services, year=2025, make="Honda", model="Civic", total_vehicles=2
+    )
+    assert r["on_file"]["missing"] == ["vehicle 2 of 2"]
+    assert "vehicle 2" in r["next"] and "Don't confirm yet" in r["next"]
+    r = await tools.save_vehicle(state, services, year=2020, make="Toyota", model="4Runner")
+    assert r["on_file"]["missing"] == []
+    assert "Read it back" in r["next"]
+
+
+async def test_missing_model_asks_for_it_with_type_fallback(state, services):
+    r = await tools.save_vehicle(state, services, year=2020, make="Toyota")
+    assert r["error_code"] == "MISSING_MODEL"
+    assert "model of the 2020 Toyota" in r["next"]
+    assert "vehicle_type" in r["next"]
+
+
+async def test_vehicle_type_fallback_is_an_estimate(state, services):
+    r = await tools.save_vehicle(state, services, make="Toyota", vehicle_type="SUV")
+    assert r["ok"]
+    assert r["saved"] == {"quote_id": "Q1", "vehicle": "Toyota SUV", "estimate": True}
+    assert "estimate" in r["next"]
+
+
+async def test_ambiguous_model_lists_options(state, services):
+    r = await tools.save_vehicle(state, services, year=2020, make="Chevrolet", model="Silverado")
+    assert r["error_code"] == "AMBIGUOUS_MODEL"
+    assert "Silverado 1500, Silverado 2500HD" in r["next"]
+
+
+async def test_null_drivable_means_drivable(state, services):
+    await tools.save_vehicle(state, services, year=2025, make="Honda", model="Civic", drivable=None)
+    assert state.vehicles[0].operational is True
+
+
+async def test_catalog_outage_escalates(state, services, fake_api):
+    fake_api.fail_next(httpx.Response(402, json={}))
+    r = await tools.save_vehicle(state, services, year=2025, make="Honda", model="Civic")
+    assert r["error_code"] == "PAYMENT_REQUIRED"
+    assert "request_human" in r["next"]
+
+
+# --- quote ---------------------------------------------------------------------------------
+
+
+async def test_quote_needs_everything(state, services):
+    r = await tools.get_quote(state, services)
+    assert r["error_code"] == "MISSING_INFO"
+    assert r["missing"] == ["origin", "destination", "vehicle"]
+
+
+async def test_quote_reference_conversation_2(state, services):
+    await _route(state, services)
+    await tools.save_vehicle(state, services, year=2025, make="Honda", model="Civic")
+    await tools.save_vehicle(state, services, year=2020, make="Toyota", model="4Runner")
+    r = await tools.get_quote(state, services)
+    assert r["ok"]
+    assert r["say"] == (
+        "Your estimated cost is $2,311. It would be $1,291 for the Honda and $1,020 for the "
+        "Toyota. You can discuss potential discounts for multiple vehicles with a licensed "
+        "representative."
+    )
+    assert r["transit"] == "6 to 9 days door to door"
+    assert state.stage == Stage.QUOTED
+    assert state.quote["total"] == 2311
+
+
+async def test_requoting_after_a_change_trashes_the_old_quote(state, services):
+    await _route(state, services)
+    await tools.save_vehicle(state, services, year=2025, make="Honda", model="Civic")
+    await tools.get_quote(state, services)
+    await tools.save_vehicle(state, services, year=2020, make="Toyota", model="4Runner")
+    assert state.quote is None
+    assert state.trash[-1].kind == "quote"
+    assert state.trash[-1].data["total"] == 1291
+
+
+async def test_quote_service_error_escalates(state, services, fake_api):
+    await _route(state, services)
+    await tools.save_vehicle(state, services, year=2025, make="Honda", model="Civic")
+    fake_api.fail_next(httpx.Response(503), httpx.Response(503), httpx.Response(503))
+    r = await tools.get_quote(state, services)
+    assert r["error_code"] == "UNAVAILABLE"
+    assert "request_human" in r["next"]
+
+
+async def test_filler_is_spoken_before_quoting(state, services):
+    said = []
+    services.say_filler = said.append
+    await _route(state, services)
+    await tools.save_vehicle(state, services, year=2025, make="Honda", model="Civic")
+    await tools.get_quote(state, services)
+    assert said == ["Give me one second while I calculate your quote."]
+
+
+# --- people --------------------------------------------------------------------------------
+
+
+async def test_request_human(state, services):
+    r = await tools.request_human(state, services, reason="asked for a human")
+    assert state.human_requested and state.stage == Stage.TRANSFER
+    assert r["transferred"] is False
+
+
+async def test_end_call_runs_hook(state, services):
+    ended = []
+    services.end_call = lambda: ended.append(True)
+    await tools.end_call(state, services)
+    assert state.ended and ended == [True]
+
+
+async def test_quote_requires_the_callers_yes(state, services):
+    await _route(state, services)
+    await tools.save_vehicle(state, services, year=2025, make="Honda", model="Civic")
+    r = await tools.get_quote(state, services, last_said="It's a 2019 Toyota Corolla")
+    assert r["error_code"] == "NOT_CONFIRMED"
+    assert state.quote is None
+    r = await tools.get_quote(state, services, last_said="Yep")
+    assert r["ok"]
