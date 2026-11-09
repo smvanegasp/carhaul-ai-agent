@@ -1,5 +1,5 @@
 version = 1
-revision = 3
+revision = 5
 requires-python = "==3.12.*"
 
 [[package]]
@@ -800,7 +800,7 @@ notebooks = [
 requires-dist = [
     { name = "googlemaps", specifier = ">=4.10.0" },
     { name = "httpx", specifier = ">=0.28.1" },
-    { name = "livekit-agents", extras = ["groq"], specifier = ">=1.2" },
+    { name = "livekit-agents", extras = ["groq"], specifier = ">=1.8.11" },
     { name = "python-dotenv", specifier = ">=1.0.0" },
     { name = "tenacity", specifier = ">=9.2.1" },
 ]
