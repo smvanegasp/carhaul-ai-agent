@@ -1,3 +1,5 @@
+import secrets
+
 import pytest
 from fastapi.testclient import TestClient
 from livekit import api
@@ -5,7 +7,8 @@ from livekit import api
 from app import ratelimit
 from app.main import app
 
-KEY, SECRET = "devkey", "a-test-secret-that-is-long-enough-for-hs256"
+# Made up per run (a literal would look like a leaked key to gitleaks).
+KEY, SECRET = "devkey", secrets.token_hex(32)
 
 
 @pytest.fixture

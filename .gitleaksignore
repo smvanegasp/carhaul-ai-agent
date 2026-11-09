@@ -1,0 +1,3 @@
+# A made-up test secret in backend/tests/test_token.py (stage 3), replaced by a random value
+# in the next commit. Ignore only that exact finding in that commit.
+b0a74e041b4b3c0e5f00d5fe7b9705a83b0327b8:backend/tests/test_token.py:generic-api-key:8
