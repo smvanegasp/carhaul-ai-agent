@@ -210,8 +210,7 @@ From Sergio's first real calls on the live site:
       `end_call`; a goodbye line without `end_call` also hangs up once it's spoken
       (`guardrails.is_goodbye`; seen on Sergio's call: "...Otherwise, have a great day!" and
       no hang-up). Checked with a scripted call
-- [ ] Sergio: deploy (`scripts/deploy.sh`) and try it; more feedback from his calls comes in
-      a new chat
+- [x] Sergio: deployed and merged (#12)
 
 ## Voice picker (branch `voice-picker`, on top of the UI refresh, 2026-11-09)
 
@@ -225,7 +224,7 @@ From Sergio's first real calls on the live site:
 - [x] `CARTESIA_API_KEY` in `.env`, `/carhaul/agent/` (set_aws_secrets) and the ECS task
 - [x] Scripted call with `--voice cartesia-courtney` through `/api/token`: $724 quote, Mia hung
       up herself, voice first audio p50 155 ms in the call
-- [ ] Sergio: `set_aws_secrets.py` again (adds the Cartesia key), then `scripts/deploy.sh`
+- [x] Sergio: secrets (Cartesia key in SSM) and `scripts/deploy.sh`; merged (#13)
 
 Time to first audio, one-off synthesis of "Your estimated cost is one thousand, one hundred
 ninety-one dollars. Would you like me to connect you with Sergio?", 3 runs each, 2026-11-09

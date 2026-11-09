@@ -32,16 +32,16 @@ files rather than reinventing.
 
 ## Status (2026-11-09)
 
-Stages 0-5 merged (PRs #1-#11), stage 4 included: **Mia is live on AWS** at
-https://dj7jlcxkdszj1.cloudfront.net (profile `carhaul`, account 816940506502). The worker is
-**on demand** (`/api/wake` starts it, ~64 s; it exits after 10 idle minutes), so hosting is
-about $1/month. Sergio's real browser call worked after the call-page crash fix (#11).
-Branch `ui-refresh-typing-sound` (PR open): keyboard-typing sound before the quote, one
-conversation view instead of chat + timeline, one scroll, dark navy theme with dark mode.
-Next: Sergio's feedback from his calls (in a new chat), then stage 8 (non-happy paths) or 6
-(dashboard). Deploys are manual (`scripts/deploy.sh` in Git Bash, Sergio types `yes`); the
-GitHub deploy workflow is off until the `DEPLOY_ENABLED` variable is set. No custom domain yet
-(later `carhaul.sergiovanegas.com`).
+Stages 0-5 merged and **live on AWS** at https://dj7jlcxkdszj1.cloudfront.net (profile
+`carhaul`, account 816940506502), plus the UI refresh (#12) and the voice picker (#13), both
+deployed. The worker is **on demand** (`/api/wake` starts it, ~1 min; it exits after 10 idle
+minutes), so hosting is about $1/month. Sergio's real browser calls work.
+
+Next: Sergio's feedback from calls, then stage 8 (non-happy paths; BACKLOG "Ideas / later" has
+the self-correction and silence cases seen in his calls) or stage 6 (dashboard). Deploys are
+manual (`scripts/deploy.sh` in Git Bash, Sergio types `yes`); the GitHub deploy workflow is off
+until the `DEPLOY_ENABLED` variable is set. No custom domain yet (later
+`carhaul.sergiovanegas.com`).
 
 ## 2. How we work
 
