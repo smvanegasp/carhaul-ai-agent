@@ -14,7 +14,7 @@ LLM function tools.
 from __future__ import annotations
 
 import asyncio
-from collections.abc import Awaitable, Callable
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -51,9 +51,10 @@ class Services:
     carhauler: CarHaulerClient
     resolver: VehicleResolver
     geocode: Callable[..., dict[str, Any]] = city_to_zip  # sync; run in a thread
-    # Voice only: say a filler line while the quote is computed; end the call after goodbye.
-    say_filler: Callable[[str], Awaitable[None] | None] | None = None
-    end_call: Callable[[], Awaitable[None] | None] | None = None
+    # Voice only: say a filler line while the quote is computed; hang up (agent.py calls it
+    # once the goodbye has been spoken).
+    say_filler: Callable[[str], Any] | None = None
+    end_call: Callable[[], Any] | None = None
     extra: dict[str, Any] = field(default_factory=dict)
 
 
@@ -420,9 +421,8 @@ async def request_human(state: QuoteSession, services: Services, *, reason: str 
 
 
 async def end_call(state: QuoteSession, services: Services) -> Result:
+    """Marks the call as ended. The hang-up itself (``services.end_call``) happens in
+    agent.py after the goodbye has been spoken, so the caller hears it."""
     state.ended = True
-    if services.end_call:
-        maybe = services.end_call()
-        if asyncio.iscoroutine(maybe):
-            await maybe
+    state.end_reason = state.end_reason or "mia"
     return _ok(state, "Say a short, friendly goodbye.")

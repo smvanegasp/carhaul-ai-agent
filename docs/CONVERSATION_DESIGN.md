@@ -138,6 +138,19 @@ Sources: <https://carhauler247.com/vehicle-size-weight-pricing>,
 "Your estimated cost is $X. Do you want me to connect you with Sergio? He built this solution and
 would be happy to talk about it."
 
+## On a voice call (stage 3)
+
+- Mia speaks the greeting first, as soon as she joins (no LLM wait).
+- While the quote is computed she says: "Give me one second while I calculate your quote."
+- When the caller is done, Mia calls `end_call`, says a short goodbye and then hangs up (the
+  call ends in the browser too).
+- The caller can interrupt Mia at any time; a cough or "mm-hm" shorter than half a second
+  doesn't stop her, and if a noise does, she resumes after 2 s of silence.
+- At 6 minutes Mia stops whatever she's saying: "We've reached the time limit for this call,
+  so I'll have to stop here. Thanks for calling F&F, goodbye!" and hangs up.
+- If the quote API keeps failing (seen: CarHauler 402 when the allowance ran out), Mia
+  apologizes and offers Sergio; she never makes up a price.
+
 ## Testing design
 
 **Personas**: 3 attributes, 8 combinations (`NG_C_NV` … `G_P_V`):

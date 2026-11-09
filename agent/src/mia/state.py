@@ -85,6 +85,8 @@ class QuoteSession:
     human_requested: bool = False
     human_request_reason: str | None = None
     ended: bool = False
+    # Who ended it: "mia" (end_call), "time_limit" or "caller" (hung up first).
+    end_reason: str | None = None
     # Tool calls the output guardrail dropped (invented details, unconfirmed quote).
     dropped_calls: list[dict[str, Any]] = field(default_factory=list)
     caller_turns: int = 0  # how many times the caller has spoken
@@ -179,4 +181,6 @@ class QuoteSession:
             "quote": self.quote,
             "human_requested": self.human_requested,
             "dropped_calls": self.dropped_calls,
+            "caller_turns": self.caller_turns,
+            "end_reason": self.end_reason,
         }

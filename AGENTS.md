@@ -30,12 +30,14 @@ files rather than reinventing.
 - **Teammate** (non-technical): manual tester. From stage 4 she calls the deployed agent, acts
   out persona cards from `docs/TESTING_GUIDE.md` and leaves feedback per call.
 
-## Status (2026-11-08)
+## Status (2026-11-09)
 
-Stages 0-2 merged (PRs #1, #3, #4). Mia works end to end **in text** with the real APIs
-(`cd agent && uv run python -m mia.chat`). **Next: stage 3**, voice calls in the browser on
-LiveKit Cloud; checklist in docs/BACKLOG.md. All keys are in `.env` and verified except the
-ElevenLabs voice (see BACKLOG "Accounts and keys").
+Stages 0-2 merged (PRs #1, #3-#5). **Stage 3** (branch `stage-3-web-calling`): voice calls from
+the browser work locally (`docker compose up`, then "Call Mia" on http://localhost:5190),
+verified end to end with scripted voice calls (`python -m mia.smoke`). **Blocked:** the
+CarHauler free allowance (1,000 calls) ran out on 2026-11-09 (402), so quotes fail until Sergio
+adds a payment method or gets more calls; Mia offers Sergio instead meanwhile. Then: finish the
+turn-detector measurement (BACKLOG) and stage 4 (AWS).
 
 ## 2. How we work
 
@@ -80,14 +82,18 @@ Fargate, not Lambda. Everything else follows the fit pattern.
 | `guardrails.py` | Drops invented/unconfirmed tool calls before they run; fallback lines; `tidy_speech` |
 | `geo.py`, `carhauler.py`, `vehicles.py`, `pricing.py` | City → ZIP, CarHauler API, year/make/model → trim, quotes and the spoken summary |
 | `chat.py` | `uv run python -m mia.chat`: talk to Mia by typing (real APIs) |
+| `main.py` | The voice worker (`AgentServer`, agent name `mia`): STT/TTS/VAD/turn detector, filler and hang-up hooks, 6-min limit, call record + latency logged at the end |
+| `catalog.py` | CarHauler catalog snapshot on disk (a week), so worker restarts don't spend API calls |
+| `latency.py` | Per-turn latency from `ChatMessage.metrics` (end of turn, LLM TTFT, TTS TTFB, e2e) |
+| `smoke.py` | `uv run python -m mia.smoke [--api http://localhost:5190]`: a scripted caller phones the running worker through LiveKit |
 
 ### Repo map
 
 | Path | What |
 | --- | --- |
 | `agent/` | uv project `mia-agent`, package `src/mia/` (see below). `evals/scenarios/*.yaml`: reference conversations |
-| `backend/` | uv project `carhaul-api`: FastAPI for Lambda (`app/`). Later: LiveKit token, calls, stats, feedback |
-| `frontend/` | React 19 + Vite + Tailwind v4. Later: call page with live panel, dashboard |
+| `backend/` | uv project `carhaul-api`: FastAPI for Lambda (`app/`). `POST /api/token` (`livekit_token.py`, rate limited by `ratelimit.py`). Later: calls, stats, feedback |
+| `frontend/` | React 19 + Vite + Tailwind v4 + LiveKit components. `src/call/CallPage.tsx`: call button, state, timer, mute, transcript. Later: live panel, dashboard |
 | `notebooks/` | Exploration only; kernel is `agent/.venv` (`uv sync --group notebooks`) |
 | `docs/` | BACKLOG, CONVERSATION_DESIGN, TESTING_GUIDE (stage 4) |
 | `infra/`, `scripts/` | Stage 4: Terraform and deploy/secrets scripts (copied from fit) |
@@ -98,8 +104,21 @@ Fargate, not Lambda. Everything else follows the fit pattern.
 cd agent    && uv sync && uv run pytest -q && uv run ruff check . && uv run ruff format --check .
 cd backend  && uv sync && uv run pytest -q && uv run ruff check . && uv run ruff format --check .
 cd frontend && npm ci && npm test && npm run build
-docker compose up        # api on :8020, web on :5190
+docker compose up        # api on :8020, web on :5190, agent worker (connects out to LiveKit)
 ```
+
+- Voice without Docker: `cd agent && uv run python -m mia.main dev` (worker) plus the api and
+  web. Run **either** the compose `agent` or a host worker: both register as `mia` and would
+  split the calls. `uv run python -m mia.main console` talks to Mia with your own mic.
+- `uv run python -m mia.smoke` (in `agent/`) phones the running worker with a scripted caller
+  and prints the transcript and timings; `--api http://localhost:5190` goes through
+  `/api/token` like the browser. Each run is ~1 min of paid APIs **and CarHauler calls**.
+- Share with the teammate: `ngrok http 5190` (ngrok is installed and logged in on Sergio's
+  machine); the https URL gives the browser mic access. The token endpoint's per-IP limit
+  sees the viewer's IP through ngrok's `X-Forwarded-For`.
+- **CarHauler allowance:** every catalog lookup and quote counts (free tier: 1,000 calls). The
+  worker reuses the catalog snapshot on disk (`~/.cache/mia/catalog.json`, compose volume
+  `agent_cache`); don't delete it casually. Live tests and smoke calls spend calls too.
 
 - `uv run pytest -m live` (in `agent/`) runs tests that call **paid APIs** (Google Maps,
   CarHauler; Groq later). They are deselected by default and never run in CI except where a
@@ -135,6 +154,17 @@ docker compose up        # api on :8020, web on :5190
   caller never said, duplicate saves and quotes without a "yes" are dropped before they run;
   spoken text is tidied (no repeats, one question at a time); the vehicle count and the yes
   are detected from the caller's words.
+- 2026-11-09 (stage 3): Voice stack: Deepgram nova-3, ElevenLabs `eleven_flash_v2_5` (the
+  plugin reads `ELEVEN_API_KEY`, so the key is passed explicitly), Silero VAD,
+  `livekit.agents.inference.TurnDetector` (the `turn-detector` plugin is deprecated in 1.8),
+  interruptions on with LiveKit defaults. Explicit dispatch: `/api/token` puts
+  `RoomAgentDispatch("mia")` in the token; one room per call, max 2 participants. Hang-up runs
+  in a done-callback on the `end_call` tool's speech handle (the 1.8 `EndCallTool` pattern),
+  so the goodbye plays first. The token endpoint's rate limit uses fit's interface with
+  in-memory counters until DynamoDB arrives in stage 4.
+- 2026-11-09: **CarHauler free tier ran out** (1,000 calls, catalog lookups included). The
+  worker had re-fetched the catalog (69 calls) on every process start; now it's cached on disk
+  for a week (`catalog.py`).
 - 2026-11-08: **Model: `openai/gpt-oss-20b`** (env `MIA_LLM_MODEL` to switch). 5 runs x 3
   scenarios with the guardrails: 20b 15/15, p50 412 ms per turn; 120b 14/15, 584 ms; Qwen
   3.8 27B 15/15 with zero invented calls but 958 ms. Llama is no longer offered on Sergio's

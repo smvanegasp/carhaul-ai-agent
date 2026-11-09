@@ -150,6 +150,16 @@ class CarHaulerClient:
     async def aclose(self) -> None:
         await self._http.aclose()
 
+    def export_cache(self) -> dict[tuple[str, tuple[tuple[str, Any], ...]], tuple[float, Any]]:
+        """The catalog cache, to seed another client (the voice worker warms it once per
+        process; each call gets its own client because an httpx client belongs to one loop)."""
+        return dict(self._cache)
+
+    def seed_cache(
+        self, entries: dict[tuple[str, tuple[tuple[str, Any], ...]], tuple[float, Any]]
+    ) -> None:
+        self._cache.update(entries)
+
     # --- transport -------------------------------------------------------------------------
 
     async def _get_once(self, path: str, params: dict[str, Any]) -> Any:

@@ -269,5 +269,11 @@ class Mia(Agent):
 
     @function_tool
     async def end_call(self, context: RunContext[QuoteSession]) -> str:
-        """End the call after saying goodbye."""
-        return _json(await tools.end_call(context.userdata, self.services))
+        """End the call when the caller is done. You'll say goodbye right after."""
+        result = await tools.end_call(context.userdata, self.services)
+        hang_up = self.services.end_call
+        if hang_up:
+            # The goodbye is generated from this tool's result and played on the same speech
+            # handle (like livekit.agents.beta.tools.EndCallTool), so hang up once it's done.
+            context.speech_handle.add_done_callback(lambda _: hang_up())
+        return _json(result)
