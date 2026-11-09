@@ -1,0 +1,39 @@
+[project]
+name = "mia-agent"
+version = "0.1.0"
+description = "Mia, the F&F car-shipping voice agent (LiveKit worker)."
+readme = "README.md"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "googlemaps>=4.10.0",
+    "python-dotenv>=1.0.0",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8",
+    "ruff>=0.14",
+]
+# Jupyter kernel for notebooks/ (exploration only; not in the Docker image).
+notebooks = ["ipykernel>=6.29"]
+
+[build-system]
+requires = ["uv_build>=0.9,<0.13"]
+build-backend = "uv_build"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+# Live tests call paid APIs (Google Maps now; CarHauler and Groq later). They are skipped by
+# default and in CI; run them on purpose with `uv run pytest -m live`.
+addopts = "-m 'not live'"
+markers = ["live: calls a real external API (costs money / quota)"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+
+[tool.uv.build-backend]
+module-name = "mia"

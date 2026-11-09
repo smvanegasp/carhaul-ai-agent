@@ -1,0 +1,402 @@
+[
+  {
+    "city": "New York",
+    "state": "NY",
+    "zip": "10007",
+    "formatted_address": "New York, NY, USA",
+    "resolved_city": "New York",
+    "resolved_state": "NY"
+  },
+  {
+    "city": "Los Angeles",
+    "state": "CA",
+    "zip": "90012",
+    "formatted_address": "Los Angeles, CA, USA",
+    "resolved_city": "Los Angeles",
+    "resolved_state": "CA"
+  },
+  {
+    "city": "Chicago",
+    "state": "IL",
+    "zip": "60602",
+    "formatted_address": "Chicago, IL, USA",
+    "resolved_city": "Chicago",
+    "resolved_state": "IL"
+  },
+  {
+    "city": "Houston",
+    "state": "TX",
+    "zip": "77002",
+    "formatted_address": "Houston, TX, USA",
+    "resolved_city": "Houston",
+    "resolved_state": "TX"
+  },
+  {
+    "city": "Phoenix",
+    "state": "AZ",
+    "zip": "85004",
+    "formatted_address": "Phoenix, AZ, USA",
+    "resolved_city": "Phoenix",
+    "resolved_state": "AZ"
+  },
+  {
+    "city": "Philadelphia",
+    "state": "PA",
+    "zip": "19107",
+    "formatted_address": "Philadelphia, PA, USA",
+    "resolved_city": "Philadelphia",
+    "resolved_state": "PA"
+  },
+  {
+    "city": "San Antonio",
+    "state": "TX",
+    "zip": "78205",
+    "formatted_address": "San Antonio, TX, USA",
+    "resolved_city": "San Antonio",
+    "resolved_state": "TX"
+  },
+  {
+    "city": "San Diego",
+    "state": "CA",
+    "zip": "92101",
+    "formatted_address": "San Diego, CA, USA",
+    "resolved_city": "San Diego",
+    "resolved_state": "CA"
+  },
+  {
+    "city": "Dallas",
+    "state": "TX",
+    "zip": "75201",
+    "formatted_address": "Dallas, TX, USA",
+    "resolved_city": "Dallas",
+    "resolved_state": "TX"
+  },
+  {
+    "city": "San Jose",
+    "state": "CA",
+    "zip": "95112",
+    "formatted_address": "San Jose, CA, USA",
+    "resolved_city": "San Jose",
+    "resolved_state": "CA"
+  },
+  {
+    "city": "Austin",
+    "state": "TX",
+    "zip": "78701",
+    "formatted_address": "Austin, TX, USA",
+    "resolved_city": "Austin",
+    "resolved_state": "TX"
+  },
+  {
+    "city": "Jacksonville",
+    "state": "FL",
+    "zip": "32202",
+    "formatted_address": "Jacksonville, FL, USA",
+    "resolved_city": "Jacksonville",
+    "resolved_state": "FL"
+  },
+  {
+    "city": "Fort Worth",
+    "state": "TX",
+    "zip": "76102",
+    "formatted_address": "Fort Worth, TX, USA",
+    "resolved_city": "Fort Worth",
+    "resolved_state": "TX"
+  },
+  {
+    "city": "Columbus",
+    "state": "OH",
+    "zip": "43215",
+    "formatted_address": "Columbus, OH, USA",
+    "resolved_city": "Columbus",
+    "resolved_state": "OH"
+  },
+  {
+    "city": "Charlotte",
+    "state": "NC",
+    "zip": "28202",
+    "formatted_address": "Charlotte, NC, USA",
+    "resolved_city": "Charlotte",
+    "resolved_state": "NC"
+  },
+  {
+    "city": "Indianapolis",
+    "state": "IN",
+    "zip": "46204",
+    "formatted_address": "Indianapolis, IN, USA",
+    "resolved_city": "Indianapolis",
+    "resolved_state": "IN"
+  },
+  {
+    "city": "San Francisco",
+    "state": "CA",
+    "zip": "94103",
+    "formatted_address": "San Francisco, CA, USA",
+    "resolved_city": "San Francisco",
+    "resolved_state": "CA"
+  },
+  {
+    "city": "Seattle",
+    "state": "WA",
+    "zip": "98164",
+    "formatted_address": "Seattle, WA, USA",
+    "resolved_city": "Seattle",
+    "resolved_state": "WA"
+  },
+  {
+    "city": "Denver",
+    "state": "CO",
+    "zip": "80202",
+    "formatted_address": "Denver, CO, USA",
+    "resolved_city": "Denver",
+    "resolved_state": "CO"
+  },
+  {
+    "city": "Oklahoma City",
+    "state": "OK",
+    "zip": "73102",
+    "formatted_address": "Oklahoma City, OK, USA",
+    "resolved_city": "Oklahoma City",
+    "resolved_state": "OK"
+  },
+  {
+    "city": "Nashville",
+    "state": "TN",
+    "zip": "37243",
+    "formatted_address": "Nashville, TN, USA",
+    "resolved_city": "Nashville",
+    "resolved_state": "TN"
+  },
+  {
+    "city": "El Paso",
+    "state": "TX",
+    "zip": "79901",
+    "formatted_address": "El Paso, TX, USA",
+    "resolved_city": "El Paso",
+    "resolved_state": "TX"
+  },
+  {
+    "city": "Washington",
+    "state": "DC",
+    "zip": "20036",
+    "formatted_address": "Washington, DC, USA",
+    "resolved_city": "Washington",
+    "resolved_state": "DC"
+  },
+  {
+    "city": "Boston",
+    "state": "MA",
+    "zip": "02110",
+    "formatted_address": "Boston, MA, USA",
+    "resolved_city": "Boston",
+    "resolved_state": "MA"
+  },
+  {
+    "city": "Las Vegas",
+    "state": "NV",
+    "zip": "89101",
+    "formatted_address": "Las Vegas, NV, USA",
+    "resolved_city": "Las Vegas",
+    "resolved_state": "NV"
+  },
+  {
+    "city": "Portland",
+    "state": "OR",
+    "zip": "97204",
+    "formatted_address": "Portland, OR, USA",
+    "resolved_city": "Portland",
+    "resolved_state": "OR"
+  },
+  {
+    "city": "Portland",
+    "state": "ME",
+    "zip": "04101",
+    "formatted_address": "Portland, ME, USA",
+    "resolved_city": "Portland",
+    "resolved_state": "ME"
+  },
+  {
+    "city": "Detroit",
+    "state": "MI",
+    "zip": "48226",
+    "formatted_address": "Detroit, MI, USA",
+    "resolved_city": "Detroit",
+    "resolved_state": "MI"
+  },
+  {
+    "city": "Memphis",
+    "state": "TN",
+    "zip": "38103",
+    "formatted_address": "Memphis, TN, USA",
+    "resolved_city": "Memphis",
+    "resolved_state": "TN"
+  },
+  {
+    "city": "Louisville",
+    "state": "KY",
+    "zip": "40202",
+    "formatted_address": "Louisville, KY, USA",
+    "resolved_city": "Louisville",
+    "resolved_state": "KY"
+  },
+  {
+    "city": "Baltimore",
+    "state": "MD",
+    "zip": "21202",
+    "formatted_address": "Baltimore, MD, USA",
+    "resolved_city": "Baltimore",
+    "resolved_state": "MD"
+  },
+  {
+    "city": "Milwaukee",
+    "state": "WI",
+    "zip": "53202",
+    "formatted_address": "Milwaukee, WI, USA",
+    "resolved_city": "Milwaukee",
+    "resolved_state": "WI"
+  },
+  {
+    "city": "Albuquerque",
+    "state": "NM",
+    "zip": "87102",
+    "formatted_address": "Albuquerque, NM, USA",
+    "resolved_city": "Albuquerque",
+    "resolved_state": "NM"
+  },
+  {
+    "city": "Tucson",
+    "state": "AZ",
+    "zip": "85705",
+    "formatted_address": "Tucson, AZ, USA",
+    "resolved_city": "Tucson",
+    "resolved_state": "AZ"
+  },
+  {
+    "city": "Fresno",
+    "state": "CA",
+    "zip": "93721",
+    "formatted_address": "Fresno, CA, USA",
+    "resolved_city": "Fresno",
+    "resolved_state": "CA"
+  },
+  {
+    "city": "Sacramento",
+    "state": "CA",
+    "zip": "95814",
+    "formatted_address": "Sacramento, CA, USA",
+    "resolved_city": "Sacramento",
+    "resolved_state": "CA"
+  },
+  {
+    "city": "Atlanta",
+    "state": "GA",
+    "zip": "30312",
+    "formatted_address": "Atlanta, GA, USA",
+    "resolved_city": "Atlanta",
+    "resolved_state": "GA"
+  },
+  {
+    "city": "Miami",
+    "state": "FL",
+    "zip": "33131",
+    "formatted_address": "Miami, FL, USA",
+    "resolved_city": "Miami",
+    "resolved_state": "FL"
+  },
+  {
+    "city": "Raleigh",
+    "state": "NC",
+    "zip": "27601",
+    "formatted_address": "Raleigh, NC, USA",
+    "resolved_city": "Raleigh",
+    "resolved_state": "NC"
+  },
+  {
+    "city": "Omaha",
+    "state": "NE",
+    "zip": "68102",
+    "formatted_address": "Omaha, NE, USA",
+    "resolved_city": "Omaha",
+    "resolved_state": "NE"
+  },
+  {
+    "city": "Minneapolis",
+    "state": "MN",
+    "zip": "55415",
+    "formatted_address": "Minneapolis, MN, USA",
+    "resolved_city": "Minneapolis",
+    "resolved_state": "MN"
+  },
+  {
+    "city": "Tampa",
+    "state": "FL",
+    "zip": "33602",
+    "formatted_address": "Tampa, FL, USA",
+    "resolved_city": "Tampa",
+    "resolved_state": "FL"
+  },
+  {
+    "city": "New Orleans",
+    "state": "LA",
+    "zip": "70113",
+    "formatted_address": "New Orleans, LA, USA",
+    "resolved_city": "New Orleans",
+    "resolved_state": "LA"
+  },
+  {
+    "city": "Cleveland",
+    "state": "OH",
+    "zip": "44113",
+    "formatted_address": "Cleveland, OH, USA",
+    "resolved_city": "Cleveland",
+    "resolved_state": "OH"
+  },
+  {
+    "city": "Honolulu",
+    "state": "HI",
+    "zip": "96813",
+    "formatted_address": "Honolulu, HI, USA",
+    "resolved_city": "Honolulu",
+    "resolved_state": "HI"
+  },
+  {
+    "city": "Salt Lake City",
+    "state": "UT",
+    "zip": "84111",
+    "formatted_address": "Salt Lake City, UT, USA",
+    "resolved_city": "Salt Lake City",
+    "resolved_state": "UT"
+  },
+  {
+    "city": "Birmingham",
+    "state": "AL",
+    "zip": "35203",
+    "formatted_address": "Birmingham, AL, USA",
+    "resolved_city": "Birmingham",
+    "resolved_state": "AL"
+  },
+  {
+    "city": "Richmond",
+    "state": "VA",
+    "zip": "23219",
+    "formatted_address": "Richmond, VA, USA",
+    "resolved_city": "Richmond",
+    "resolved_state": "VA"
+  },
+  {
+    "city": "Des Moines",
+    "state": "IA",
+    "zip": "50309",
+    "formatted_address": "Des Moines, IA, USA",
+    "resolved_city": "Des Moines",
+    "resolved_state": "IA"
+  },
+  {
+    "city": "Boise",
+    "state": "ID",
+    "zip": "83702",
+    "formatted_address": "Boise, ID, USA",
+    "resolved_city": "Boise",
+    "resolved_state": "ID"
+  }
+]
