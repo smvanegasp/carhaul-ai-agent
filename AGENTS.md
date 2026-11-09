@@ -30,6 +30,13 @@ files rather than reinventing.
 - **Teammate** (non-technical): manual tester. From stage 4 she calls the deployed agent, acts
   out persona cards from `docs/TESTING_GUIDE.md` and leaves feedback per call.
 
+## Status (2026-11-08)
+
+Stages 0-2 merged (PRs #1, #3, #4). Mia works end to end **in text** with the real APIs
+(`cd agent && uv run python -m mia.chat`). **Next: stage 3**, voice calls in the browser on
+LiveKit Cloud; checklist in docs/BACKLOG.md. All keys are in `.env` and verified except the
+ElevenLabs voice (see BACKLOG "Accounts and keys").
+
 ## 2. How we work
 
 - **Small stages, one branch and one PR each** (`stage-N-name`). Sergio merges; merging deploys
@@ -38,6 +45,14 @@ files rather than reinventing.
 - The agent may run `terraform plan`; **`terraform apply` needs Sergio's OK.** CI never applies
   Terraform.
 - Check `git status` before committing; never `git add -A` blindly.
+- Decide with data when it's cheap: e.g. the model choice was made from 5 runs x 3 scenarios per
+  model (pass rate, invented calls, latency), not from assumptions. Sergio likes seeing the table.
+- When the LLM misbehaves, prefer a guardrail in code (grounding.py / guardrails.py) plus a test
+  over more prompt text; record what was observed in the module docstring.
+- Windows: run ad-hoc Python edit scripts with `PYTHONUTF8=1` / explicit `encoding="utf-8"`
+  (a cp1252 write once emptied a file); print with `PYTHONIOENCODING=utf-8`.
+- LiveKit Agents is 1.8.x: check signatures in `agent/.venv` before using an API (it changes
+  fast), e.g. `uv run python -c "import inspect, livekit.agents as a; ..."`.
 
 ## 3. Architecture
 

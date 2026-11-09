@@ -47,10 +47,18 @@ One branch and one PR per stage. ✅ done · 🔜 next · ⏳ later.
 - [ ] `docker compose up` runs api + web + agent; optional ngrok for the teammate
 - [ ] Max call length (6 min)
 
-## Accounts Sergio needs (before stages 2–4)
+## Accounts and keys (checked 2026-11-08, read-only calls, values never printed)
 
-LiveKit Cloud project, Groq, Deepgram, ElevenLabs (pick a voice ID), AWS CLI profile `carhaul`,
-Twilio (stage 9).
+| Service | Status |
+| --- | --- |
+| Groq | ✅ `.env` + GitHub secret `GROQ_API_KEY` (CI runs the `-m llm` scenarios: 3/3 on main) |
+| CarHauler247 (QA key) | ✅ `CARHAULER_API_KEY_QA` |
+| Google Maps Geocoding | ✅ |
+| LiveKit Cloud | ✅ `LIVEKIT_URL` (wss://…livekit.cloud), key and secret work (`list_rooms`) |
+| Deepgram | ✅ (1 project) |
+| ElevenLabs | ⚠️ **Blocks stage 3.** The key works but is restricted (no `voices_read`, fine), and the chosen `ELEVENLABS_VOICE_ID` is a *library* voice: free accounts get `402 paid_plan_required` for library voices over the API. Fix: pick a **default/premade** voice ID, or upgrade the ElevenLabs plan. Re-test with a 2-character synthesis (`POST /v1/text-to-speech/{voice_id}`, model `eleven_flash_v2_5`). |
+| AWS CLI profile `carhaul` | ⏳ needed in stage 4 |
+| Twilio | ⏳ stage 9 |
 
 ## Ideas / later
 
