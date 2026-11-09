@@ -200,11 +200,25 @@ From Sergio's first real calls on the live site:
       details") instead of chat + timeline; feedback form at the end of the conversation
 - [x] One scroll: desktop page = screen height, only the conversation scrolls; phone = one
       column, page scroll only
-- [x] Dark navy theme + dark mode (tokens in `frontend/src/index.css`)
+- [x] Dark navy theme + dark mode (tokens in `frontend/src/index.css`). Second pass after
+      Sergio found it too dark: one navy scale (50-950), dark mode on mid-navy surfaces
+- [x] Scrolling: the conversation followed new lines with `scrollIntoView`, which also moved
+      the page; now it scrolls only its own box and only while you're at the bottom
+- [x] Numbers become words before the voice (`speech.py`, `Mia.tts_node`): prices, model
+      years, ZIPs, other numbers
+- [x] Mia ends the call herself: after the quote she asks "anything else?" and calls
+      `end_call`; a goodbye line without `end_call` also hangs up once it's spoken
+      (`guardrails.is_goodbye`; seen on Sergio's call: "...Otherwise, have a great day!" and
+      no hang-up). Checked with a scripted call
 - [ ] Sergio: deploy (`scripts/deploy.sh`) and try it; more feedback from his calls comes in
       a new chat
 
 ## Ideas / later
+
+- **Self-corrections:** "it's twenty ten... twenty twenty Toyota" was saved as 2010 (Sergio's
+  call, 2026-11-09): the last value the caller says should win (stage 8).
+- **Silence after "anything else?":** if the caller says nothing, Mia waits; LiveKit marks
+  the user away after 15 s. Say goodbye and hang up then (stage 8).
 
 - **Voice picker:** a dropdown on the call page to choose Mia's voice, the top 2 from each of
   ElevenLabs, Cartesia and Deepgram (Aura). The token request would carry the choice (room

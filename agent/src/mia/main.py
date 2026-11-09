@@ -196,6 +196,13 @@ async def entrypoint(ctx: JobContext) -> None:
     services.before_quote = before_quote
     services.end_call = session.shutdown  # drains: the goodbye finishes playing first
 
+    @session.on("agent_state_changed")
+    def _on_state(ev) -> None:
+        # Mia said goodbye without end_call (agent.llm_node): hang up once it has played.
+        if state.hang_up_after_speech and ev.new_state == "listening":
+            state.hang_up_after_speech = False
+            session.shutdown()
+
     @session.on("conversation_item_added")
     def _on_item(ev) -> None:
         item = ev.item

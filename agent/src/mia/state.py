@@ -85,8 +85,10 @@ class QuoteSession:
     human_requested: bool = False
     human_request_reason: str | None = None
     ended: bool = False
-    # Who ended it: "mia" (end_call), "time_limit" or "caller" (hung up first).
+    # Who ended it: "mia" (end_call or her goodbye), "time_limit" or "caller" (hung up first).
     end_reason: str | None = None
+    # Mia said goodbye without calling end_call: hang up once that line has been spoken.
+    hang_up_after_speech: bool = False
     # Tool calls the output guardrail dropped (invented details, unconfirmed quote).
     dropped_calls: list[dict[str, Any]] = field(default_factory=list)
     caller_turns: int = 0  # how many times the caller has spoken

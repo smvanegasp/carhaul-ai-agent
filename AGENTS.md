@@ -180,7 +180,9 @@ docker compose up        # api :8020, web :5190, DynamoDB Local :8030, agent wor
   thing twice, so there's **one conversation view**: bubbles from LiveKit's live transcription,
   with tool calls, guardrail drops and per-turn latency placed inline by wall-clock time
   (events carry `at`) behind a "Show details" switch. On desktop the page fits the screen and
-  only the conversation scrolls. **Dark navy theme with dark mode** through CSS-variable tokens.
+  only the conversation scrolls. **Navy theme with dark mode** through CSS-variable tokens on
+  one navy scale (the first dark mode was too dark to inspect). Numbers are written out as
+  words before TTS (`speech.py`) and a goodbye from Mia hangs up even without `end_call`.
 - 2026-11-09 (stage 4): **Local and AWS workers have different names**: the first scripted
   call on AWS was answered by the local Docker worker, because both registered as `mia` on the
   same LiveKit project. Now `MIA_AGENT_NAME` is `mia` only on AWS (task definition and Lambda);

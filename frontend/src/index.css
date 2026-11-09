@@ -27,52 +27,68 @@
   --color-code-ink: var(--code-ink);
 }
 
+/*
+ * One navy scale (50 lightest to 950 darkest); both modes are built from its shades so text,
+ * cards and borders stay easy to tell apart. Dark mode uses mid-navy surfaces, not near-black.
+ */
 :root {
   color-scheme: light dark;
-  --page: #eef2f8;
+  --navy-50: #f3f6fc;
+  --navy-100: #e4eaf6;
+  --navy-200: #c9d5ec;
+  --navy-300: #a3b6dc;
+  --navy-400: #7690c6;
+  --navy-500: #5672b0;
+  --navy-600: #435b96;
+  --navy-700: #374a7a;
+  --navy-800: #2c3c63;
+  --navy-900: #22304f;
+  --navy-950: #18223a;
+
+  --page: var(--navy-50);
   --surface: #ffffff;
-  --raised: #f4f7fc;
-  --line: #d6dfec;
-  --ink: #0b1b33;
-  --muted: #5a6a83;
-  --brand: #0f2a52;
-  --brand-hover: #1a3d72;
+  --raised: var(--navy-100);
+  --line: var(--navy-200);
+  --ink: var(--navy-950);
+  --muted: var(--navy-600);
+  --brand: var(--navy-800);
+  --brand-hover: var(--navy-700);
   --brand-ink: #ffffff;
-  --accent: #2a63c9;
-  --caller: #0f2a52;
-  --caller-ink: #f2f6ff;
-  --ok: #0c7a54;
-  --ok-soft: #ddf3ea;
-  --warn: #8a5300;
-  --warn-soft: #fff3dc;
-  --danger: #c42f3a;
-  --danger-soft: #fde7e9;
-  --code: #0a1430;
-  --code-ink: #dbe5f7;
+  --accent: var(--navy-500);
+  --caller: var(--navy-700);
+  --caller-ink: #ffffff;
+  --ok: #17845c;
+  --ok-soft: #dcf2e8;
+  --warn: #8c5a00;
+  --warn-soft: #fbefd5;
+  --danger: #c23a44;
+  --danger-soft: #fbe3e5;
+  --code: var(--navy-950);
+  --code-ink: var(--navy-100);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --page: #060c19;
-    --surface: #0c1528;
-    --raised: #111d36;
-    --line: #1e2c48;
-    --ink: #e5ecf8;
-    --muted: #8d9fbd;
-    --brand: #2f6fde;
-    --brand-hover: #4a84ea;
-    --brand-ink: #ffffff;
-    --accent: #7eaeff;
-    --caller: #1c3c74;
-    --caller-ink: #eaf1ff;
-    --ok: #3fcf92;
-    --ok-soft: #0e2c23;
-    --warn: #f2c467;
-    --warn-soft: #30240b;
-    --danger: #f05d67;
-    --danger-soft: #3a1418;
-    --code: #050a15;
-    --code-ink: #dbe5f7;
+    --page: var(--navy-900);
+    --surface: var(--navy-800);
+    --raised: var(--navy-700);
+    --line: var(--navy-600);
+    --ink: var(--navy-50);
+    --muted: var(--navy-200);
+    --brand: var(--navy-400);
+    --brand-hover: var(--navy-300);
+    --brand-ink: var(--navy-950);
+    --accent: var(--navy-300);
+    --caller: var(--navy-500);
+    --caller-ink: #ffffff;
+    --ok: #5fd9a6;
+    --ok-soft: #1f4a42;
+    --warn: #f3cb7a;
+    --warn-soft: #4a3d22;
+    --danger: #f2848b;
+    --danger-soft: #4f2a36;
+    --code: var(--navy-950);
+    --code-ink: var(--navy-100);
   }
 }
 

@@ -22,11 +22,18 @@ export function Conversation({
   onDetails: (on: boolean) => void;
   footer?: ReactNode;
 }) {
-  const end = useRef<HTMLDivElement>(null);
+  const box = useRef<HTMLDivElement>(null);
+  const stuck = useRef(true); // following the newest line (until the caller scrolls up)
   const shown = details ? items : items.filter((i) => i.kind === "line");
 
+  // Follow new lines by scrolling this box only (scrollIntoView would also move the page),
+  // and only while the caller is at the bottom, so scrolling up to inspect isn't undone. On a
+  // phone the box doesn't scroll (the page does), so nothing moves under the caller's thumb.
   useEffect(() => {
-    if (live) end.current?.scrollIntoView({ block: "nearest" });
+    const el = box.current;
+    if (live && el && stuck.current && el.scrollHeight > el.clientHeight) {
+      el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
+    }
   }, [live, shown.length]);
 
   return (
@@ -57,7 +64,14 @@ export function Conversation({
         </label>
       </header>
 
-      <div className="flex flex-col gap-3 p-4 lg:min-h-0 lg:flex-1 lg:overflow-y-auto">
+      <div
+        ref={box}
+        onScroll={(e) => {
+          const el = e.currentTarget;
+          stuck.current = el.scrollHeight - el.scrollTop - el.clientHeight < 80;
+        }}
+        className="flex flex-col gap-3 p-4 lg:min-h-0 lg:flex-1 lg:overflow-y-auto lg:overscroll-contain"
+      >
         {shown.length === 0 ? (
           <p className="text-sm text-muted">
             {live
@@ -76,7 +90,6 @@ export function Conversation({
           )
         )}
         {footer}
-        <div ref={end} />
       </div>
     </section>
   );

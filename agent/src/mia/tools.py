@@ -409,7 +409,8 @@ async def _quote(state: QuoteSession, services: Services) -> Result:
     after = (
         "Read `say` to the caller word for word (don't change any numbers). Then ask if they'd "
         "like to be connected with Sergio, who built this solution and would be happy to talk "
-        "about it."
+        "about it. If they say no, ask if there's anything else; when they're done, call "
+        "end_call."
     )
     if state.quote["estimate"]:
         after = "Mention the price is an estimate based on the vehicle type. " + after

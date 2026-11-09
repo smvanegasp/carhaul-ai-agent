@@ -115,7 +115,7 @@ export function CallPage() {
   );
 
   const page = (
-    <main className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-5 lg:h-dvh lg:py-6">
+    <main className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-5 lg:h-dvh lg:overflow-hidden lg:py-6">
       <header className="flex flex-col gap-1">
         <h1 className="text-2xl font-semibold tracking-tight">
           Call Mia <span className="font-normal text-muted">· F&amp;F car shipping quotes</span>
@@ -134,7 +134,7 @@ export function CallPage() {
             {conversation}
           </ErrorBoundary>
         </div>
-        <div className="lg:col-start-1 lg:row-start-2 lg:min-h-0">
+        <div className="lg:col-start-1 lg:row-start-2 lg:min-h-0 lg:overflow-y-auto lg:overscroll-contain">
           <ErrorBoundary fallback={<Notice>The stats hit a display error.</Notice>}>
             <Insights events={events} />
           </ErrorBoundary>
@@ -252,7 +252,7 @@ function HangUp({ room }: { room: Room }) {
     <button
       type="button"
       onClick={() => room.disconnect()}
-      className="rounded-full bg-danger px-5 py-2 font-medium text-white hover:opacity-90"
+      className="rounded-full bg-danger px-5 py-2 font-medium text-surface hover:opacity-90"
     >
       Hang up
     </button>
