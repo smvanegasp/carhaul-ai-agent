@@ -178,7 +178,7 @@ data "aws_subnets" "default" {
 
 resource "aws_security_group" "agent" {
   name        = "${local.name}-agent"
-  description = "Mia's voice worker: outbound only"
+  description = "Mia voice worker, outbound only"
   vpc_id      = data.aws_vpc.default.id
 
   egress {
