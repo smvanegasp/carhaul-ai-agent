@@ -11,6 +11,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { CallError, fetchCallToken, wakeMia } from "../lib/api";
 import { addEvent, EVENTS_TOPIC, parseEvent, type MiaEvent } from "../lib/events";
 import { formatClock, toTranscript, type TranscriptLine } from "../lib/transcript";
+import { ErrorBoundary } from "./ErrorBoundary";
 import { FeedbackForm } from "./FeedbackForm";
 import { LivePanel } from "./LivePanel";
 import { useWake, type Wake } from "./useWake";
@@ -94,11 +95,15 @@ export function CallPage() {
         {phase.kind === "in-call" ? (
           <RoomContext.Provider value={phase.room}>
             <RoomAudioRenderer />
-            <InCall
-              room={phase.room}
-              startedAt={phase.startedAt}
-              onTranscript={(t) => (lastTranscript.current = t)}
-            />
+            <ErrorBoundary fallback={<InCallFallback room={phase.room} />}>
+              <InCall
+                room={phase.room}
+                startedAt={phase.startedAt}
+                onTranscript={(t) => {
+                  lastTranscript.current = t;
+                }}
+              />
+            </ErrorBoundary>
           </RoomContext.Provider>
         ) : (
           <section className="flex min-w-0 flex-col items-start gap-4">
@@ -137,7 +142,11 @@ export function CallPage() {
             )}
           </section>
         )}
-        <LivePanel events={events} live={phase.kind === "in-call"} />
+        <ErrorBoundary
+          fallback={<p className="text-sm text-stone-500">The live panel hit a display error.</p>}
+        >
+          <LivePanel events={events} live={phase.kind === "in-call"} />
+        </ErrorBoundary>
       </div>
     </main>
   );
@@ -172,6 +181,22 @@ function WakeNote({ wake, onRetry }: { wake: Wake; onRetry: () => void }) {
   return null;
 }
 
+/** Shown if the in-call view breaks: the call (and Mia's audio) keeps going. */
+function InCallFallback({ room }: { room: Room }) {
+  return (
+    <section className="flex flex-col items-start gap-3 rounded-2xl border border-stone-200 bg-white p-6">
+      <p>You're still on the call with Mia; this view hit a display error.</p>
+      <button
+        type="button"
+        onClick={() => room.disconnect()}
+        className="rounded-full bg-red-600 px-5 py-2 font-medium text-white hover:bg-red-700"
+      >
+        Hang up
+      </button>
+    </section>
+  );
+}
+
 const STATE_LABEL: Record<string, string> = {
   connecting: "Connecting…",
   "pre-connect-buffering": "Connecting…",
@@ -199,7 +224,11 @@ function InCall({
   const [now, setNow] = useState(Date.now());
   const [muted, setMuted] = useState(false);
 
-  useEffect(() => onTranscript(lines), [lines, onTranscript]);
+  // A block body: an effect must return nothing or a cleanup function. Returning the array
+  // (an arrow with an expression body) crashed React mid-call and blanked the page.
+  useEffect(() => {
+    onTranscript(lines);
+  }, [lines, onTranscript]);
   useEffect(() => {
     const id = setInterval(() => setNow(Date.now()), 500);
     return () => clearInterval(id);
@@ -258,7 +287,9 @@ function InCall({
 
 function Transcript({ lines }: { lines: TranscriptLine[] }) {
   const end = useRef<HTMLDivElement>(null);
-  useEffect(() => end.current?.scrollIntoView({ block: "nearest" }), [lines.length]);
+  useEffect(() => {
+    end.current?.scrollIntoView({ block: "nearest" });
+  }, [lines.length]);
   return (
     <div className="flex max-h-[60dvh] min-h-48 w-full flex-col gap-3 overflow-y-auto rounded-2xl border border-stone-200 bg-white p-4 shadow-sm">
       {lines.length === 0 && <p className="text-sm text-stone-400">The transcript shows here.</p>}

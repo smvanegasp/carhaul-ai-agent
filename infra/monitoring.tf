@@ -45,9 +45,11 @@ resource "aws_cloudwatch_metric_alarm" "lambda_errors" {
 
 locals {
   # Logged by the worker (JSON lines in `start` mode): any ERROR, and call records not saved
-  # (agent/src/mia/records.py).
+  # (agent/src/mia/records.py). Not LiveKit's own Rust-side lines (logger "livekit"): it logs
+  # 3 "data channel closed unexpectedly" ERRORs every time a caller hangs up first, which
+  # set the alarm off on Sergio's first real call (2026-11-09).
   agent_signals = {
-    AgentErrors      = "{ $.level = \"ERROR\" }"
+    AgentErrors      = "{ $.level = \"ERROR\" && $.name != \"livekit\" }"
     RecordSaveFailed = "\"couldn't save the call record\""
   }
 }

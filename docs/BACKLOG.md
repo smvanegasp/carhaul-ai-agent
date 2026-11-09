@@ -133,7 +133,14 @@ arrived as two transcripts). Re-run 5 per setting with quotes working before cho
 - [x] Scripted call through the live site: wake 64 s, $724 quote, record + list entry in
       DynamoDB, 0 worker errors. The first try was answered by the local Docker worker (same
       agent name): now `mia` on AWS, `mia-local` locally
-- [ ] Sergio: confirm the SNS email. Later: `domain = "carhaul.sergiovanegas.com"`
+- [x] Sergio: confirm the SNS email.
+- [x] Sergio's first real browser call (2026-11-09): the page went blank and the call dropped
+      6 s in. Cause: `useEffect(() => onTranscript(lines))` returned the array, which React
+      took as a cleanup function ("destroy is not a function") and unmounted the page. Stage 3
+      was only ever tested with the Python caller. Fixed, error boundaries added, and checked
+      in headless Chrome with a fake microphone (`--use-fake-device-for-media-stream`). The
+      same call set off the worker-errors alarm: LiveKit's Rust side logs 3 ERRORs whenever
+      the caller hangs up first; the alarm now ignores logger `livekit` Later: `domain = "carhaul.sergiovanegas.com"`
       and the 2 DNS records at Hostinger
 - [ ] GitHub variables `DEPLOY_ENABLED`, `DISTRIBUTION_ID`, `SITE_URL`
 - [ ] Check the worker stops itself on AWS after 10 idle minutes
