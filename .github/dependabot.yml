@@ -26,3 +26,14 @@ updates:
     directory: /
     schedule: { interval: weekly }
     groups: { actions: { patterns: ["*"], update-types: [minor, patch] } }
+  - package-ecosystem: docker
+    directory: /agent
+    schedule: { interval: weekly }
+    groups: { docker: { patterns: ["*"], update-types: [minor, patch] } }
+    ignore:
+      - dependency-name: python
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]
+  - package-ecosystem: terraform
+    directory: /infra
+    schedule: { interval: weekly }
+    groups: { terraform: { patterns: ["*"], update-types: [minor, patch] } }

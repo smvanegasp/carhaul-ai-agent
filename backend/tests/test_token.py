@@ -4,7 +4,6 @@ import pytest
 from fastapi.testclient import TestClient
 from livekit import api
 
-from app import ratelimit
 from app.main import app
 
 # Made up per run (a literal would look like a leaked key to gitleaks).
@@ -20,10 +19,8 @@ def client(monkeypatch):
     monkeypatch.setenv("LIVEKIT_API_SECRET", SECRET)
     monkeypatch.setenv("CALLS_PER_IP_PER_HOUR", "3")
     monkeypatch.setenv("CALLS_PER_DAY", "5")
-    ratelimit.reset()
     with TestClient(app) as c:
         yield c
-    ratelimit.reset()
 
 
 def _claims(token: str):

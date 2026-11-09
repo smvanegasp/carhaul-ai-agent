@@ -47,6 +47,12 @@ Each call gets its own room. Mia greets first, says "give me one second" while t
 computed, hangs up after her goodbye (the room is deleted, which ends the call in the browser)
 and stops at 6 minutes. Calls are rate limited per IP and per day: every call costs money.
 
+**On AWS** (Terraform in `infra/`): CloudFront serves the web app from S3 and forwards `/api`
+to FastAPI on Lambda; the voice worker runs on ECS Fargate (outbound only, no load balancer);
+calls, feedback and rate-limit counters live in one DynamoDB table; secrets come from SSM.
+Merging to `main` deploys through GitHub Actions with OIDC (no AWS keys in GitHub). Alarms email
+when the API errors, the worker is down or logs errors, or a call record isn't saved.
+
 **Live panel.** The worker publishes what it does as events on the room (topic `mia.events`):
 each turn with its latency (end of turn, speech to text, LLM first token, voice first audio,
 total), each tool call with its arguments, the JSON the LLM got back and its duration, every

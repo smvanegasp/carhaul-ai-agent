@@ -5,8 +5,6 @@ from __future__ import annotations
 from decimal import Decimal
 
 import boto3
-import pytest
-from moto import mock_aws
 
 from mia import records
 from mia.events import CallEvents
@@ -70,31 +68,6 @@ def test_not_configured_means_not_saved(monkeypatch):
     monkeypatch.delenv("DYNAMODB_ENDPOINT", raising=False)
     state, events = _call()
     assert records.save(records.build(ROOM, state, events)) is False
-
-
-@pytest.fixture
-def table(monkeypatch):
-    monkeypatch.setenv("TABLE_NAME", "carhaul-test")
-    monkeypatch.delenv("DYNAMODB_ENDPOINT", raising=False)
-    for name, value in (("AWS_ACCESS_KEY_ID", "test"), ("AWS_SECRET_ACCESS_KEY", "test")):
-        monkeypatch.setenv(name, value)
-    monkeypatch.setenv("AWS_REGION", "us-east-1")
-    with mock_aws():
-        records._table.cache_clear()
-        boto3.client("dynamodb", region_name="us-east-1").create_table(
-            TableName="carhaul-test",
-            AttributeDefinitions=[
-                {"AttributeName": "pk", "AttributeType": "S"},
-                {"AttributeName": "sk", "AttributeType": "S"},
-            ],
-            KeySchema=[
-                {"AttributeName": "pk", "KeyType": "HASH"},
-                {"AttributeName": "sk", "KeyType": "RANGE"},
-            ],
-            BillingMode="PAY_PER_REQUEST",
-        )
-        yield boto3.resource("dynamodb", region_name="us-east-1").Table("carhaul-test")
-    records._table.cache_clear()
 
 
 def test_save_writes_the_record_and_the_list_entry(table):

@@ -8,7 +8,7 @@ One branch and one PR per stage. ✅ done · 🔜 next · ⏳ later.
 | 1 | CarHauler client (retries, 401/402, caching), vehicle resolution (fuzzy YMM → trim), pricing and spoken summary | ✅ |
 | 2 | Agent core in text: prompt, `QuoteSession` state, tools, guardrails, LiveKit `AgentSession` + Groq; 3 happy-path scenario tests | ✅ |
 | 3 | Web calling locally: `/api/token`, call page, Deepgram + ElevenLabs, turn detector, interruptions. Optional: share the local app through ngrok so the teammate can try it before AWS | 🔜 PR #7 open |
-| 4 | AWS deploy: Terraform (fit + ECS Fargate for the worker), Deploy workflow, SSM secrets, TESTING_GUIDE. **Teammate starts testing** | ⏳ |
+| 4 | AWS deploy: Terraform (fit + ECS Fargate for the worker), Deploy workflow, SSM secrets, TESTING_GUIDE. **Teammate starts testing** | 🔜 PR open (on top of #8), needs the `carhaul` profile |
 | 5 | Live panel (`mia.events`), call record to DynamoDB, feedback form per call | 🔜 PR open (on top of #7) |
 | 6 | Public dashboard: stats (averages/medians), call list and detail | ⏳ |
 | 7 | AI-vs-AI simulation: 8 personas × fragments, report by persona and path, nightly workflow | ⏳ |
@@ -107,6 +107,32 @@ the 2.5 s end-of-turn outliers are the turn detector waiting out a pause (the ca
 arrived as two transcripts). Re-run 5 per setting with quotes working before choosing. The
 4 s outlier in one v1 call was a 3 s Groq response.
 
+## Stage 4 (branch `stage-4-aws`, 2026-11-09)
+
+- [x] Terraform in `infra/` (fit's, adapted): DynamoDB (PITR, TTL, deletion protection),
+      Lambda + HTTP API, S3 + CloudFront with `mia.sergiovanegas.com`, GitHub OIDC deploy role,
+      email alarms (API errors, Lambda crashes, worker down, worker errors, record not saved)
+- [x] `infra/agent.tf`: ECR, ECS cluster, Fargate task (secrets from SSM, health check on the
+      worker's :8081, `MIA_TURN_DETECTOR=v1-mini`), service in the default VPC (public IP,
+      outbound only), deployment circuit breaker
+- [x] Rate-limit counters in DynamoDB (`db.increment`, TTL); catalog snapshot shared through
+      DynamoDB so new tasks don't re-fetch it
+- [x] `scripts/deploy.sh`, `scripts/set_aws_secrets.py`, `.github/workflows/deploy.yml` (off
+      until `DEPLOY_ENABLED`), CI `terraform` job, Dependabot for the agent image and Terraform
+- [x] `docs/TESTING_GUIDE.md`: how to call, 8 persona cards + 4 extra, what to write in the
+      feedback
+- [ ] Sergio: AWS profile `carhaul` (same account as `gym`; if it's another account, change
+      the state bucket and role ARNs that end in 816940506502)
+- [ ] `terraform -chdir=infra/bootstrap apply` (state bucket), then `terraform plan`
+- [ ] Sergio's OK → `cd backend && uv run python ../scripts/set_aws_secrets.py`, then
+      `scripts/deploy.sh`; add the 2 DNS records at Hostinger; confirm the SNS email
+- [ ] GitHub variables `DEPLOY_ENABLED`, `DISTRIBUTION_ID`, `SITE_URL`; one scripted call
+      against the deployed site (`mia.smoke --api https://mia.sergiovanegas.com`)
+- [ ] Share the link and TESTING_GUIDE with the teammate
+
+Cost at rest: the Fargate worker (1 vCPU / 3 GB, always on) is ~$39/month; Lambda, DynamoDB,
+CloudFront and S3 are cents at this traffic. `agent_count = 0` in tfvars stops the worker.
+
 ## Stage 5 (branch `stage-5-live-panel`, 2026-11-09)
 
 - [x] `mia/events.py`: `CallEvents` (config, turn, tool, dropped, state, end). The worker
@@ -141,7 +167,7 @@ browser (it's in the record). The page shows "Call ended" from the disconnect an
 | LiveKit Cloud | ✅ `LIVEKIT_URL` (wss://…livekit.cloud), key and secret work (`list_rooms`) |
 | Deepgram | ✅ (1 project) |
 | ElevenLabs | ✅ Default (premade) voice in `ELEVENLABS_VOICE_ID`; re-checked 2026-11-09 with a 2-character synthesis (200, `eleven_flash_v2_5`) and in real calls. The key is restricted (no `voices_read`), fine for speaking. Free accounts can't use *library* voices over the API (`402 paid_plan_required`). |
-| AWS CLI profile `carhaul` | ⏳ needed in stage 4 |
+| AWS CLI profile `carhaul` | ⏳ Sergio creates it (IAM user `carhaul-deployer`, like `gym-deployer`) |
 | Twilio | ⏳ stage 9 |
 
 ## Ideas / later
