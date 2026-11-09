@@ -5,7 +5,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
-from app import calls, db, livekit_token, ssm, worker
+from app import calls, db, livekit_token, ssm, voices, worker
 from app.config import on_aws, origin_secret
 
 
@@ -27,6 +27,7 @@ app = FastAPI(
 app.include_router(livekit_token.router)
 app.include_router(calls.router)
 app.include_router(worker.router)
+app.include_router(voices.router)
 
 
 @app.middleware("http")

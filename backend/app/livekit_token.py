@@ -9,6 +9,7 @@ IP and per day, and the token and room are short-lived. Mia herself hangs up at 
 length (agent/src/mia/main.py).
 """
 
+import json
 import os
 import uuid
 from datetime import timedelta
@@ -17,7 +18,12 @@ from fastapi import APIRouter, HTTPException, Request, status
 from livekit import api
 from pydantic import BaseModel
 
-from app import ratelimit
+from app import ratelimit, voices
+
+
+def _voice(body: "CallRequest | None") -> str:
+    voice = body.voice if body else None
+    return voice if voice in voices.KEYS else voices.DEFAULT
 
 
 def agent_name() -> str:
@@ -33,6 +39,11 @@ def _limit(name: str, default: int) -> int:
     return int(os.environ.get(name) or default)
 
 
+class CallRequest(BaseModel):
+    # One of app/voices.py's keys; anything else (or nothing) gets Mia's default voice.
+    voice: str | None = None
+
+
 class CallToken(BaseModel):
     # Field names follow LiveKit's standard token endpoint, so the web SDK can use it directly.
     server_url: str
@@ -41,7 +52,7 @@ class CallToken(BaseModel):
 
 
 @router.post("/api/token")
-def create_call_token(request: Request) -> CallToken:
+def create_call_token(request: Request, body: CallRequest | None = None) -> CallToken:
     url, key, secret = (
         os.environ.get("LIVEKIT_URL"),
         os.environ.get("LIVEKIT_API_KEY"),
@@ -79,7 +90,12 @@ def create_call_token(request: Request) -> CallToken:
         )
         .with_room_config(
             api.RoomConfiguration(
-                agents=[api.RoomAgentDispatch(agent_name=agent_name())],
+                agents=[
+                    api.RoomAgentDispatch(
+                        agent_name=agent_name(),
+                        metadata=json.dumps({"voice": _voice(body)}),
+                    )
+                ],
                 max_participants=2,  # the caller and Mia
                 empty_timeout=60,
                 departure_timeout=10,

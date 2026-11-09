@@ -8,10 +8,18 @@ export interface CallToken {
 /** Thrown with a message that can be shown to the caller as is. */
 export class CallError extends Error {}
 
-export async function fetchCallToken(fetchFn: typeof fetch = fetch): Promise<CallToken> {
+/** `voice`: one of GET /api/voices' keys (Mia's default voice if missing or unknown). */
+export async function fetchCallToken(
+  fetchFn: typeof fetch = fetch,
+  voice?: string,
+): Promise<CallToken> {
   let res: Response;
   try {
-    res = await fetchFn("/api/token", { method: "POST" });
+    res = await fetchFn("/api/token", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ voice: voice ?? null }),
+    });
   } catch {
     throw new CallError("Can't reach the server. Check your connection and try again.");
   }
@@ -74,4 +82,21 @@ export async function wakeMia(fetchFn: typeof fetch = fetch): Promise<WakeStatus
     .then((b: { detail?: unknown }) => (typeof b.detail === "string" ? b.detail : null))
     .catch(() => null);
   throw new CallError(detail ?? `Mia can't take calls right now (error ${res.status}).`);
+}
+
+/** A voice the caller can pick for Mia (backend/app/voices.py). */
+export interface VoiceOption {
+  key: string;
+  label: string;
+  default: boolean;
+}
+
+/** The voice choices; an empty list if they can't be loaded (Mia then uses her default). */
+export async function fetchVoices(fetchFn: typeof fetch = fetch): Promise<VoiceOption[]> {
+  try {
+    const res = await fetchFn("/api/voices");
+    return res.ok ? ((await res.json()) as VoiceOption[]) : [];
+  } catch {
+    return [];
+  }
 }

@@ -17,6 +17,7 @@ import { ErrorBoundary } from "./ErrorBoundary";
 import { FeedbackForm } from "./FeedbackForm";
 import { Insights } from "./Insights";
 import { useWake, type Wake } from "./useWake";
+import { useVoiceChoice, VoicePicker } from "./VoicePicker";
 
 /** Mia hangs up at 6 minutes (agent/src/mia/main.py); the timer shows it. */
 const MAX_CALL_SECONDS = 6 * 60;
@@ -49,6 +50,7 @@ export function CallPage() {
   const [events, setEvents] = useState<MiaEvent[]>([]);
   const { wake, recheck } = useWake();
   const [details, setDetails] = useState(false);
+  const voices = useVoiceChoice();
 
   const startCall = useCallback(async () => {
     setPhase({ kind: "connecting" });
@@ -62,7 +64,7 @@ export function CallPage() {
       }
       setEvents([]);
       lastLines.current = [];
-      const token = await fetchCallToken();
+      const token = await fetchCallToken(fetch, voices.selected ?? undefined);
       room = new Room({ adaptiveStream: true, dynacast: true });
       room.registerTextStreamHandler(EVENTS_TOPIC, async (reader) => {
         const event = parseEvent(await reader.readAll());
@@ -80,7 +82,7 @@ export function CallPage() {
       const message = err instanceof CallError ? err.message : micErrorMessage(err);
       setPhase({ kind: "error", message });
     }
-  }, [recheck]);
+  }, [recheck, voices.selected]);
 
   const inCall = phase.kind === "in-call";
   const callCard = inCall ? (
@@ -88,7 +90,20 @@ export function CallPage() {
       <InCallControls room={phase.room} startedAt={phase.startedAt} />
     </ErrorBoundary>
   ) : (
-    <CallButtonCard phase={phase} wake={wake} onCall={startCall} onRetry={recheck} />
+    <CallButtonCard
+      phase={phase}
+      wake={wake}
+      onCall={startCall}
+      onRetry={recheck}
+      voicePicker={
+        <VoicePicker
+          options={voices.options}
+          selected={voices.selected}
+          onChoose={voices.choose}
+          disabled={phase.kind === "connecting"}
+        />
+      }
+    />
   );
   const conversation = inCall ? (
     <LiveConversation
@@ -164,15 +179,18 @@ function CallButtonCard({
   wake,
   onCall,
   onRetry,
+  voicePicker,
 }: {
   phase: Phase;
   wake: Wake;
   onCall: () => void;
   onRetry: () => void;
+  voicePicker: ReactNode;
 }) {
   const ready = wake.kind === "ready";
   return (
     <section className="flex flex-col items-start gap-3 rounded-2xl border border-line bg-surface p-4">
+      {voicePicker}
       <button
         type="button"
         onClick={onCall}

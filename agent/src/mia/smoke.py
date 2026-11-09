@@ -63,7 +63,7 @@ async def synthesize(text: str) -> bytes:
         return r.content
 
 
-def token(room: str) -> str:
+def token(room: str, voice: str | None = None) -> str:
     # Same grants and dispatch as backend/app/livekit_token.py.
     return (
         api.AccessToken()
@@ -73,7 +73,8 @@ def token(room: str) -> str:
             api.RoomConfiguration(
                 agents=[
                     api.RoomAgentDispatch(
-                        agent_name=os.environ.get("MIA_AGENT_NAME") or "mia-local"
+                        agent_name=os.environ.get("MIA_AGENT_NAME") or "mia-local",
+                        metadata=json.dumps({"voice": voice}) if voice else "",
                     )
                 ]
             )
@@ -83,21 +84,21 @@ def token(room: str) -> str:
     )
 
 
-async def token_from_api(base: str) -> tuple[str, str, str]:
+async def token_from_api(base: str, voice: str | None = None) -> tuple[str, str, str]:
     async with httpx.AsyncClient(timeout=15) as http:
-        r = await http.post(f"{base.rstrip('/')}/api/token")
+        r = await http.post(f"{base.rstrip('/')}/api/token", json={"voice": voice})
         r.raise_for_status()
         body = r.json()
     return body["server_url"], body["participant_token"], body["room_name"]
 
 
-async def run(lines: list[str], api_base: str | None = None) -> int:
+async def run(lines: list[str], api_base: str | None = None, voice: str | None = None) -> int:
     clips = await asyncio.gather(*(synthesize(line) for line in lines))
     if api_base:
-        url, jwt, room_name = await token_from_api(api_base)
+        url, jwt, room_name = await token_from_api(api_base, voice)
     else:
         room_name = f"smoke-{uuid.uuid4().hex[:8]}"
-        url, jwt = os.environ["LIVEKIT_URL"], token(room_name)
+        url, jwt = os.environ["LIVEKIT_URL"], token(room_name, voice)
     room = rtc.Room()
     agent_state = {"value": "", "changed": asyncio.Event()}
     disconnected = asyncio.Event()
@@ -227,5 +228,6 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--lines", nargs="+", default=DEFAULT_LINES)
     parser.add_argument("--api", help="app base URL, e.g. http://localhost:5190")
+    parser.add_argument("--voice", help="Mia's voice key (mia/voices.py), e.g. cartesia-courtney")
     args = parser.parse_args()
-    raise SystemExit(asyncio.run(run(args.lines, args.api)))
+    raise SystemExit(asyncio.run(run(args.lines, args.api, args.voice)))

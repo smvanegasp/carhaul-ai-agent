@@ -53,6 +53,7 @@ locals {
   agent_secrets = [
     "LIVEKIT_URL", "LIVEKIT_API_KEY", "LIVEKIT_API_SECRET", "GROQ_API_KEY", "DEEPGRAM_API_KEY",
     "ELEVENLABS_API_KEY", "ELEVENLABS_VOICE_ID", "CARHAULER_API_KEY", "GOOGLE_MAPS_API_KEY",
+    "CARTESIA_API_KEY",
   ]
   agent_ssm_arn = "arn:aws:ssm:us-east-1:${local.account_id}:parameter${local.ssm_prefix}agent"
 }

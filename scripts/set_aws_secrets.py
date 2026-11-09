@@ -7,7 +7,8 @@ is asked for with a hidden prompt. Nothing secret is printed. Two paths, so each
 only what it needs:
 
 - /carhaul/api/    the API (Lambda): the LiveKit key to mint call tokens
-- /carhaul/agent/  the voice worker (ECS): LiveKit, Groq, Deepgram, ElevenLabs, CarHauler, Google
+- /carhaul/agent/  the voice worker (ECS): LiveKit, Groq, Deepgram, ElevenLabs, Cartesia,
+                   CarHauler, Google
 
 Uses the "carhaul" AWS profile unless AWS_PROFILE is set. If the API is already deployed, it
 is restarted so it reads the new values; the on-demand worker reads them at its next start.
@@ -34,6 +35,7 @@ PARAMETERS = {
         "ELEVENLABS_VOICE_ID",
         "CARHAULER_API_KEY",
         "GOOGLE_MAPS_API_KEY",
+        "CARTESIA_API_KEY",
     ],
 }
 # Local .env names that differ from the AWS ones.

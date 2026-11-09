@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { sendFeedback, wakeMia } from "./api";
+import { fetchCallToken, fetchVoices, sendFeedback, wakeMia } from "./api";
 import { addEvent, formatMs, median, parseEvent, toPanel, type MiaEvent } from "./events";
 
 const turn = (seq: number, role: "caller" | "mia", text: string, metrics = {}): MiaEvent => ({
@@ -153,5 +153,21 @@ describe("wakeMia", () => {
       async () => new Response(JSON.stringify({ detail: "Too many" }), { status: 429 }),
     );
     await expect(wakeMia(fetchFn)).rejects.toThrow("Too many");
+  });
+});
+
+describe("voices", () => {
+  it("sends the chosen voice with the token request", async () => {
+    const fetchFn = vi.fn(async () => new Response(JSON.stringify({}), { status: 200 }));
+    await fetchCallToken(fetchFn, "deepgram-thalia");
+    const [, init] = fetchFn.mock.calls[0] as unknown as [string, RequestInit];
+    expect(JSON.parse(init.body as string)).toEqual({ voice: "deepgram-thalia" });
+  });
+
+  it("an unreachable voice list means no picker (Mia's default voice)", async () => {
+    const fetchFn = vi.fn(async () => {
+      throw new Error("offline");
+    });
+    expect(await fetchVoices(fetchFn)).toEqual([]);
   });
 });
