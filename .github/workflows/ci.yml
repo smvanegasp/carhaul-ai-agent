@@ -31,6 +31,7 @@ jobs:
         working-directory: agent
     steps:
       - if: env.GROQ_API_KEY == ''
+        working-directory: . # agent/ doesn't exist without a checkout
         run: echo "::notice::GROQ_API_KEY secret not set; skipping LLM scenario tests"
       - if: env.GROQ_API_KEY != ''
         uses: actions/checkout@v7
