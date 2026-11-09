@@ -20,6 +20,27 @@ jobs:
       # Offline tests only; `-m live` tests call paid APIs and run locally on purpose.
       - run: uv run pytest -q
 
+  # Mia's reference conversations against the real LLM (Groq), with fake CarHauler/geocoding.
+  # Needs the GROQ_API_KEY repository secret; skipped (with a notice) without it.
+  scenarios:
+    runs-on: ubuntu-latest
+    env:
+      GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+    defaults:
+      run:
+        working-directory: agent
+    steps:
+      - if: env.GROQ_API_KEY == ''
+        run: echo "::notice::GROQ_API_KEY secret not set; skipping LLM scenario tests"
+      - if: env.GROQ_API_KEY != ''
+        uses: actions/checkout@v7
+      - if: env.GROQ_API_KEY != ''
+        uses: astral-sh/setup-uv@v7
+      - if: env.GROQ_API_KEY != ''
+        run: uv sync --frozen
+      - if: env.GROQ_API_KEY != ''
+        run: uv run pytest -m llm -q
+
   backend:
     runs-on: ubuntu-latest
     defaults:

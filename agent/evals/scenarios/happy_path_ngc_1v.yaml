@@ -1,0 +1,33 @@
+# Reference conversation 1 (docs/CONVERSATION_DESIGN.md): non-generous, complete, non-verbose.
+# Prices come from the fake CarHauler API (tests/fake_carhauler.py), not the live one.
+id: happy_path_ngc_1v
+persona: NG_C_NV
+path: SHP
+ground_truth:
+  origin: Boston, Massachusetts
+  destination: San Francisco, California
+  vehicles: [2025 Honda Civic]
+turns:
+  - user: "Yeah, sure"
+    expect:
+      on_file: {origin: null, destination: null, vehicles: []}
+      judge: Asks where the vehicle ships from, to, or both.
+  - user: "My car is in Boston, Massachusetts and I'll send it to San Francisco, California"
+    expect:
+      on_file: {origin: "Boston, Massachusetts", destination: "San Francisco, California"}
+      judge: Asks for the year, make and model of the vehicle.
+  - user: "It's a 2025 Honda Civic"
+    expect:
+      on_file: {vehicles: [2025 Honda Civic]}
+      no_tools: [get_quote]
+      judge: >-
+        Reads back the 2025 Honda Civic shipping from Boston, Massachusetts to San Francisco,
+        California and asks the caller to confirm it's correct.
+  - user: "Yep"
+    expect:
+      tools: [get_quote]
+      says: ["$1,291"]
+      judge: Gives the estimated cost and offers to connect the caller with Sergio.
+  - user: "Sure."
+    expect:
+      tools: [request_human]

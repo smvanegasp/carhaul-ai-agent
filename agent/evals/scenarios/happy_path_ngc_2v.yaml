@@ -1,0 +1,32 @@
+# Reference conversation 2: two vehicles, cities without states ("Boston to SF").
+id: happy_path_ngc_2v
+persona: NG_C_NV
+path: SHP
+ground_truth:
+  origin: Boston, Massachusetts
+  destination: San Francisco, California
+  vehicles: [2025 Honda Civic, 2020 Toyota 4Runner]
+turns:
+  - user: "Yeah, sure"
+    expect:
+      on_file: {origin: null, destination: null, vehicles: []}
+  - user: "I need to send 2 cars from Boston to SF"
+    expect:
+      on_file: {origin: "Boston, Massachusetts", destination: "San Francisco, California"}
+      judge: Asks about the first car (its year, make and model, or just which car it is).
+  - user: "It's a 2025 Honda Civic"
+    expect:
+      on_file: {vehicles: [2025 Honda Civic]}
+      judge: Asks about the second car (its year, make and model, or just which car it is).
+  - user: "It's a Toyota 4Runner from 2020"
+    expect:
+      on_file: {vehicles: [2025 Honda Civic, 2020 Toyota 4Runner]}
+      no_tools: [get_quote]
+      judge: >-
+        Reads back both vehicles (2025 Honda Civic and 2020 Toyota 4Runner) shipping from
+        Boston, Massachusetts to San Francisco, California and asks the caller to confirm.
+  - user: "Correct"
+    expect:
+      tools: [get_quote]
+      says: ["$2,311", "$1,291 for the Honda", "$1,020 for the Toyota", "licensed representative"]
+      judge: Gives the total and per-car prices and offers to connect the caller with Sergio.

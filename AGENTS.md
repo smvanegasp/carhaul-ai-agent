@@ -53,11 +53,24 @@ LiveKit Cloud ◄──► Agent worker (ECS Fargate, livekit-agents)
 The agent worker keeps a WebSocket open to LiveKit for the whole call, so it runs on ECS
 Fargate, not Lambda. Everything else follows the fit pattern.
 
+### Agent modules (`agent/src/mia/`)
+
+| Module | What |
+| --- | --- |
+| `agent.py` | `Mia` (LiveKit `Agent`): tools, the output guardrail in `llm_node`, `GroqLLM` (strict schemas off), `new_session()` |
+| `prompt.py` | Instructions and greetings (from `docs/CONVERSATION_DESIGN.md`) |
+| `state.py` | `QuoteSession`: what's on file, quote IDs, trash, stage reached, dropped calls |
+| `tools.py` | Tool logic, LiveKit-free: every result has `on_file` and `next` (what Mia does now) |
+| `grounding.py` | Was this detail actually said by the caller? Vehicle count, yes detection |
+| `guardrails.py` | Drops invented/unconfirmed tool calls before they run; fallback lines; `tidy_speech` |
+| `geo.py`, `carhauler.py`, `vehicles.py`, `pricing.py` | City → ZIP, CarHauler API, year/make/model → trim, quotes and the spoken summary |
+| `chat.py` | `uv run python -m mia.chat`: talk to Mia by typing (real APIs) |
+
 ### Repo map
 
 | Path | What |
 | --- | --- |
-| `agent/` | uv project `mia-agent`, package `src/mia/`. `geo.py`: city → ZIP (Google Maps, typo-tolerant). `carhauler.py`: CarHauler247 API client (retries, typed errors, catalog cache). `vehicles.py`: spoken year/make/model → trim. `pricing.py`: quotes, totals, the spoken summary. Later: prompt, state, tools, telemetry, evals |
+| `agent/` | uv project `mia-agent`, package `src/mia/` (see below). `evals/scenarios/*.yaml`: reference conversations |
 | `backend/` | uv project `carhaul-api`: FastAPI for Lambda (`app/`). Later: LiveKit token, calls, stats, feedback |
 | `frontend/` | React 19 + Vite + Tailwind v4. Later: call page with live panel, dashboard |
 | `notebooks/` | Exploration only; kernel is `agent/.venv` (`uv sync --group notebooks`) |
@@ -77,6 +90,11 @@ docker compose up        # api on :8020, web on :5190
   CarHauler; Groq later). They are deselected by default and never run in CI except where a
   stage says so explicitly. `tests/test_geo_accuracy.py` is about 100 Google calls;
   `tests/test_vehicles_live.py` about 80 CarHauler lookups and 1 quote.
+- `uv run python -m mia.chat` (in `agent/`) talks to Mia by typing, with the real Groq, Google
+  and CarHauler APIs; it prints every tool call, its JSON and anything the guardrail dropped.
+- `uv run pytest -m llm` replays `evals/scenarios/*.yaml` against the real LLM (fake CarHauler
+  and geocoder, so prices are fixed). `MIA_LLM_MODEL` switches the model. CI runs it when the
+  `GROQ_API_KEY` repository secret is set.
 - Offline tests use `tests/fake_carhauler.py` (respx), which mimics the real API's quirks.
   **Never assert live prices**; they change weekly.
 - CI (`.github/workflows/ci.yml`): agent, backend, frontend, docker build, gitleaks.
@@ -96,3 +114,13 @@ docker compose up        # api on :8020, web on :5190
 - 2026-11-08: Browser calling first, phone (Twilio + LiveKit SIP) in stage 9. LiveKit **Cloud**,
   not self-hosted. Brand and persona: **Mia from F&F**. Teammate role: manual tester and
   feedback. Prices and the spoken quote summary are computed by code, never by the LLM.
+- 2026-11-08 (stage 2): **gpt-oss invents tool calls** ("Yeah, sure" became
+  save_origin_destination("Los Angeles") 6/6 times on 20b; 120b does it about as often once
+  guarded). So guardrails live in code, not only in the prompt: tool calls on details the
+  caller never said, duplicate saves and quotes without a "yes" are dropped before they run;
+  spoken text is tidied (no repeats, one question at a time); the vehicle count and the yes
+  are detected from the caller's words.
+- 2026-11-08: **Model: `openai/gpt-oss-20b`** (env `MIA_LLM_MODEL` to switch). 5 runs x 3
+  scenarios with the guardrails: 20b 15/15, p50 412 ms per turn; 120b 14/15, 584 ms; Qwen
+  3.8 27B 15/15 with zero invented calls but 958 ms. Llama is no longer offered on Sergio's
+  Groq account. Re-check with the stage 7 persona simulations.
