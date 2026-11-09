@@ -95,6 +95,8 @@ arrived as two transcripts). Re-run 5 per setting with quotes working before cho
 
 ## Ideas / later
 
+- `happy_path_ngc_3v` is flaky in CI (seen once on 2026-11-09: the 3rd vehicle not saved on turn 5); 10/10 locally on the branch and on main's prompt. Track its pass rate in the stage 7 simulations.
+
 - Agent image is 1.57 GB (onnxruntime, local turn model); slim it for ECS if pulls are slow.
 - Silent caller: LiveKit marks the user "away" after 15 s; Mia could ask "are you still there?" (stage 8).
 - Frontend bundle is 811 kB (LiveKit client); code-split when the dashboard arrives.
