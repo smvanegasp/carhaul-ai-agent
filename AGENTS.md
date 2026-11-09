@@ -34,10 +34,10 @@ files rather than reinventing.
 
 Stages 0-2 merged (PRs #1, #3-#5). **Stage 3** (branch `stage-3-web-calling`): voice calls from
 the browser work locally (`docker compose up`, then "Call Mia" on http://localhost:5190),
-verified end to end with scripted voice calls (`python -m mia.smoke`). **Blocked:** the
-CarHauler free allowance (1,000 calls) ran out on 2026-11-09 (402), so quotes fail until Sergio
-adds a payment method or gets more calls; Mia offers Sergio instead meanwhile. Then: finish the
-turn-detector measurement (BACKLOG) and stage 4 (AWS).
+verified end to end with scripted voice calls (`python -m mia.smoke`), real quotes included
+(CarHauler now has a payment method; calls are paid, so still budget them). Turn detector
+chosen: `v1-mini` (BACKLOG has the 5+5 call table). Left: Sergio's own browser call (desktop
+and phone), then stage 4 (AWS).
 
 ## 2. How we work
 

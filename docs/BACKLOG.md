@@ -7,7 +7,7 @@ One branch and one PR per stage. ✅ done · 🔜 next · ⏳ later.
 | 0 | Scaffold: agent/backend/frontend projects, `geo.py` moved into the agent, CI, Dependabot, docs | ✅ |
 | 1 | CarHauler client (retries, 401/402, caching), vehicle resolution (fuzzy YMM → trim), pricing and spoken summary | ✅ |
 | 2 | Agent core in text: prompt, `QuoteSession` state, tools, guardrails, LiveKit `AgentSession` + Groq; 3 happy-path scenario tests | ✅ |
-| 3 | Web calling locally: `/api/token`, call page, Deepgram + ElevenLabs, turn detector, interruptions. Optional: share the local app through ngrok so the teammate can try it before AWS | 🔜 PR open, blocked on CarHauler 402 |
+| 3 | Web calling locally: `/api/token`, call page, Deepgram + ElevenLabs, turn detector, interruptions. Optional: share the local app through ngrok so the teammate can try it before AWS | 🔜 PR #7 open |
 | 4 | AWS deploy: Terraform (fit + ECS Fargate for the worker), Deploy workflow, SSM secrets, TESTING_GUIDE. **Teammate starts testing** | ⏳ |
 | 5 | Live panel (`mia.events`), call record to DynamoDB, feedback form per call | ⏳ |
 | 6 | Public dashboard: stats (averages/medians), call list and detail | ⏳ |
@@ -52,15 +52,42 @@ One branch and one PR per stage. ✅ done · 🔜 next · ⏳ later.
 - [x] Max call length (6 min, `MIA_MAX_CALL_SECONDS`): Mia says a closing line and hangs up
 - [x] Voice smoke test `python -m mia.smoke` (scripted caller through LiveKit), per-turn
       latency in the call log (`latency.py`)
-- [ ] **Blocked: CarHauler 402** (free 1,000 calls used up). Sergio: add a payment method at
-      carhauler247.com/apiClient/payment-method or ask for more calls. Until then quotes fail
-      and Mia offers Sergio instead (the designed error path).
-- [ ] Finish the turn-detector measurement once CarHauler works (below), then set
-      `MIA_TURN_DETECTOR` explicitly for ECS
+- [x] CarHauler 402 resolved (Sergio added a payment method, 2026-11-09); quotes work again
+- [x] Turn-detector measurement with quotes working (below): no latency difference, so
+      **`v1-mini`** (local) for ECS. Set `MIA_TURN_DETECTOR=v1-mini` in the stage 4 task
+      definition
 - [ ] Sergio: a real call from the browser (desktop and phone) to check echo, barge-in and
       how the turn taking feels; then share via ngrok with the teammate
 
-### Measurements (2026-11-09, `mia.smoke`, 5 caller lines, real APIs)
+### Turn detector, re-run with quotes working (2026-11-09, Docker worker, `mia.smoke`)
+
+5 calls per setting, every one reached the real $724 quote and Mia hung up. Per call, ms
+(e2e = server side, caller's end of speech to Mia's first audio; heard = as the scripted caller
+hears it):
+
+| Turn detector | e2e p50 | e2e p90 | end of turn p50 / p90 | STT p50 | LLM TTFT p50 | TTS TTFB p50 | Heard p50 |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| v1 | 1959 | 3196 | 577 / 577 | 309 | 414 | 183 | 1812 |
+| v1 | 1428 | 3110 | 577 / 578 | 276 | 268 | 168 | 1250 |
+| v1 | 2288 | 3351 | 577 / 2502 | 277 | 492 | 164 | 2297 |
+| v1 | 1351 | 3090 | 577 / 577 | 204 | 321 | 178 | 1047 |
+| v1 | 1388 | 4032 | 577 / 2501 | 205 | 270 | 172 | 1359 |
+| v1-mini | 1267 | 3141 | 577 / 577 | 233 | 227 | 173 | 1297 |
+| v1-mini | 1605 | 3530 | 577 / 577 | 312 | 332 | 193 | 1265 |
+| v1-mini | 1320 | 3127 | 577 / 2501 | 261 | 302 | 176 | 1422 |
+| v1-mini | 2678 | 3106 | 578 / 2502 | 281 | 287 | 169 | 1984 |
+| v1-mini | 1488 | 3271 | 577 / 578 | 305 | 374 | 182 | 1281 |
+| **median v1** | **1428** | | | | | | **1359** |
+| **median v1-mini** | **1488** | | | | | | **1297** |
+
+The two models are within noise of each other. The slow calls on both sides are the same
+2.5 s end-of-turn wait (the caller's line arrived as two transcripts), not the model. The
+~3.1 s e2e p90 in every call is the quote turn (tool call + CarHauler + filler line).
+Choice: **v1-mini**. Same latency, it is LiveKit's default for `start` (production), and it
+doesn't add a per-turn call to LiveKit Inference. The cost is image size and memory on Fargate
+(see the 1.57 GB note below).
+
+### Earlier measurements (2026-11-09, partly on the CarHauler error path)
 
 Per call, median ms (e2e = caller's last word to Mia starting to answer, server side):
 
@@ -85,7 +112,7 @@ arrived as two transcripts). Re-run 5 per setting with quotes working before cho
 | Service | Status |
 | --- | --- |
 | Groq | ✅ `.env` + GitHub secret `GROQ_API_KEY` (CI runs the `-m llm` scenarios: 3/3 on main) |
-| CarHauler247 (QA key) | ❌ 402 since 2026-11-09: free tier (1,000 calls, catalog lookups included) used up. Needs a payment method or more calls |
+| CarHauler247 (QA key) | ✅ Payment method added 2026-11-09 after the free tier (1,000 calls, catalog lookups included) ran out; calls are now paid, so budget live runs |
 | Google Maps Geocoding | ✅ |
 | LiveKit Cloud | ✅ `LIVEKIT_URL` (wss://…livekit.cloud), key and secret work (`list_rooms`) |
 | Deepgram | ✅ (1 project) |
