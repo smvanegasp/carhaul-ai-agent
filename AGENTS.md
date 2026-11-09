@@ -37,8 +37,13 @@ the browser work locally (`docker compose up`, then "Call Mia" on http://localho
 verified end to end with scripted voice calls (`python -m mia.smoke`), real quotes included
 (CarHauler now has a payment method; calls are paid, so still budget them). Turn detector
 chosen: `v1-mini` (BACKLOG has the 5+5 call table). Left: Sergio's own browser call (desktop
-and phone). **Stage 5** (branch `stage-5-live-panel`, on top of stage 3): live panel, call
-records in DynamoDB, feedback form; verified with a scripted call. Then stage 4 (AWS).
+and phone). Stages 3 and 5 (live panel, call records, feedback) merged (PRs #7, #8).
+**Stage 4** (branch `stage-4-aws`, PR #9): Terraform, deploy script and workflow, SSM secrets
+script, TESTING_GUIDE; the worker is **on demand** (started by `/api/wake`, exits when idle) so
+hosting stays around $1/month. **Deployed** (2026-11-09) at
+https://dj7jlcxkdszj1.cloudfront.net (profile `carhaul`, account 816940506502): Mia wakes in
+~64 s, a scripted call through the live site got the $724 quote and its record is in DynamoDB.
+No custom domain yet; later `carhaul.sergiovanegas.com`.
 
 ## 2. How we work
 
@@ -86,6 +91,7 @@ Fargate, not Lambda. Everything else follows the fit pattern.
 | `main.py` | The voice worker (`AgentServer`, agent name `mia`): STT/TTS/VAD/turn detector, filler and hang-up hooks, 6-min limit, events published to the room, call record saved at the end |
 | `events.py` | `CallEvents`: turns with latency, tool calls with JSON, guardrail drops, state; the live panel's stream (`mia.events`) and the record's content |
 | `records.py` | The call record and its DynamoDB write (keys documented there; shared table with the backend) |
+| `idle.py` | On AWS the worker exits after 10 idle minutes (no call, no wake) or 2 hours, so it only costs money around calls |
 | `catalog.py` | CarHauler catalog snapshot on disk (a week), so worker restarts don't spend API calls |
 | `latency.py` | Per-turn latency from `ChatMessage.metrics` (end of turn, LLM TTFT, TTS TTFB, e2e) |
 | `smoke.py` | `uv run python -m mia.smoke [--api http://localhost:5190]`: a scripted caller phones the running worker through LiveKit |
@@ -95,11 +101,12 @@ Fargate, not Lambda. Everything else follows the fit pattern.
 | Path | What |
 | --- | --- |
 | `agent/` | uv project `mia-agent`, package `src/mia/` (see below). `evals/scenarios/*.yaml`: reference conversations |
-| `backend/` | uv project `carhaul-api`: FastAPI for Lambda (`app/`). `POST /api/token` (`livekit_token.py`, rate limited by `ratelimit.py`), `POST /api/calls/{room}/feedback` (`calls.py`), DynamoDB in `db.py`. Later: call list and stats |
+| `backend/` | uv project `carhaul-api`: FastAPI for Lambda (`app/`). `POST /api/token` (`livekit_token.py`, rate limited by `ratelimit.py`), `POST /api/calls/{room}/feedback` (`calls.py`), `POST /api/wake` (`worker.py`: starts the on-demand worker), DynamoDB in `db.py`. Later: call list and stats |
 | `frontend/` | React 19 + Vite + Tailwind v4 + LiveKit components. `src/call/`: `CallPage.tsx` (call, state, timer, mute, transcript), `LivePanel.tsx` (from `lib/events.ts`), `FeedbackForm.tsx`. Later: dashboard |
 | `notebooks/` | Exploration only; kernel is `agent/.venv` (`uv sync --group notebooks`) |
 | `docs/` | BACKLOG, CONVERSATION_DESIGN, TESTING_GUIDE (stage 4) |
-| `infra/`, `scripts/` | Stage 4: Terraform and deploy/secrets scripts (copied from fit) |
+| `infra/` | Terraform (profile `carhaul`, everything `carhaul-*`): DynamoDB, Lambda + HTTP API, S3 + CloudFront (custom domain optional), on-demand ECS Fargate worker task (`agent.tf`), GitHub OIDC deploy role, alarms. `bootstrap/`: the state bucket |
+| `scripts/` | `deploy.sh` (images, `terraform apply`, frontend, new worker), `set_aws_secrets.py` (.env → SSM), `upload_frontend.sh` |
 
 ## 4. Run and test
 
@@ -111,7 +118,7 @@ docker compose up        # api :8020, web :5190, DynamoDB Local :8030, agent wor
 ```
 
 - Voice without Docker: `cd agent && uv run python -m mia.main dev` (worker) plus the api and
-  web. Run **either** the compose `agent` or a host worker: both register as `mia` and would
+  web. Run **either** the compose `agent` or a host worker: both register as `mia-local` and would
   split the calls. `uv run python -m mia.main console` talks to Mia with your own mic.
 - `uv run python -m mia.smoke` (in `agent/`) phones the running worker with a scripted caller
   and prints the transcript and timings; `--api http://localhost:5190` goes through
@@ -139,7 +146,8 @@ docker compose up        # api :8020, web :5190, DynamoDB Local :8030, agent wor
 ## 5. Secrets and safety
 
 - Local secrets live in the repo-root `.env` (git-ignored); names are in `.env.example`. On AWS
-  they go to SSM Parameter Store under `/carhaul/` (stage 4, `scripts/set_aws_secrets.py`).
+  they go to SSM Parameter Store (`scripts/set_aws_secrets.py`): `/carhaul/api/` (LiveKit key,
+  read by the Lambda) and `/carhaul/agent/` (every provider key, injected into the ECS task).
 - **Never print, cat or echo secret values**; check only that a variable is set (or its length).
   Never ask Sergio to paste keys into chat. Never commit them; gitleaks runs in CI.
 - Sergio's phone number (stage 9) goes only to SSM as `TRANSFER_PHONE_NUMBER`.
@@ -168,6 +176,22 @@ docker compose up        # api :8020, web :5190, DynamoDB Local :8030, agent wor
 - 2026-11-09: **CarHauler free tier ran out** (1,000 calls, catalog lookups included). The
   worker had re-fetched the catalog (69 calls) on every process start; now it's cached on disk
   for a week (`catalog.py`).
+- 2026-11-09 (stage 4): **Local and AWS workers have different names**: the first scripted
+  call on AWS was answered by the local Docker worker, because both registered as `mia` on the
+  same LiveKit project. Now `MIA_AGENT_NAME` is `mia` only on AWS (task definition and Lambda);
+  everything local defaults to `mia-local`. Also, the two warm processes of a fresh task both
+  fetched the CarHauler catalog (2 x 69 paid calls): `catalog.warm` now takes a file lock.
+- 2026-11-09 (stage 4): **Hosting must stay around $1-2/month** (Sergio: personal project). So
+  the worker is an **on-demand ECS Fargate task**, not a service: opening the call page calls
+  `/api/wake`, which starts it (~1 min cold start; at most 20 starts a day; a lock row prevents
+  double starts) and the page waits until its health check (registered with LiveKit) passes.
+  The worker exits after 10 minutes with no call and no wake, or after 2 hours (`idle.py`). An
+  always-on 1 vCPU / 3 GB task would have been ~$39/month. It runs in the default VPC's public
+  subnets with a public IP (outbound only, no load balancer, no NAT: NAT alone is ~$32/month),
+  `v1-mini` turn detector, 2 warm processes. ECR keeps 2 images per repo (storage is billed).
+  The CarHauler catalog snapshot is also kept in DynamoDB (gzipped, ~22 KB) because tasks have
+  no lasting disk: otherwise each start would spend 69 paid calls. Rate-limit counters moved to
+  DynamoDB (fit's `db.increment`). Secrets split by reader: the API only sees the LiveKit key.
 - 2026-11-09 (stage 5): The worker writes the call record to DynamoDB itself (boto3, ECS task
   role later) instead of posting it to the API: no internal endpoint to protect, and the API
   stays the browser's. Live panel events travel as LiveKit text streams (topic `mia.events`,

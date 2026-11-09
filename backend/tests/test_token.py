@@ -4,7 +4,6 @@ import pytest
 from fastapi.testclient import TestClient
 from livekit import api
 
-from app import ratelimit
 from app.main import app
 
 # Made up per run (a literal would look like a leaked key to gitleaks).
@@ -20,10 +19,8 @@ def client(monkeypatch):
     monkeypatch.setenv("LIVEKIT_API_SECRET", SECRET)
     monkeypatch.setenv("CALLS_PER_IP_PER_HOUR", "3")
     monkeypatch.setenv("CALLS_PER_DAY", "5")
-    ratelimit.reset()
     with TestClient(app) as c:
         yield c
-    ratelimit.reset()
 
 
 def _claims(token: str):
@@ -38,7 +35,7 @@ def test_token_joins_its_own_room_and_dispatches_mia(client):
     assert claims.video.room == body["room_name"] and claims.video.room_join
     assert claims.video.can_publish_sources == ["microphone"]
     assert not claims.video.room_admin
-    assert [a.agent_name for a in claims.room_config.agents] == ["mia"]
+    assert [a.agent_name for a in claims.room_config.agents] == ["mia-local"]
     assert claims.room_config.max_participants == 2
 
 
@@ -77,3 +74,9 @@ def test_spoofed_forwarded_for_uses_the_proxys_entry(client):
 def test_not_configured(client, monkeypatch):
     monkeypatch.delenv("LIVEKIT_API_SECRET")
     assert client.post("/api/token").status_code == 503
+
+
+def test_aws_dispatches_the_production_worker(client, monkeypatch):
+    monkeypatch.setenv("MIA_AGENT_NAME", "mia")
+    claims = _claims(client.post("/api/token").json()["participant_token"])
+    assert [a.agent_name for a in claims.room_config.agents] == ["mia"]

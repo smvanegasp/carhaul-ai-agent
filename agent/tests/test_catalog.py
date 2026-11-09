@@ -37,3 +37,30 @@ def test_stale_or_missing_or_broken_files_are_ignored(tmp_path):
     assert catalog.load(path)["cache"][("/car/makes", ())][1][0]["name"] == "Toyota"
     path.write_text("{not json", encoding="utf-8")
     assert catalog.load(path) is None
+
+
+def test_the_shared_copy_in_dynamodb_round_trips(table):
+    snap = {"cache": {("/car/makes", ()): (0.0, [{"id": 1, "name": "Toyota"}])}, "index": []}
+    assert catalog.load_shared() is None
+    assert catalog.save_shared(snap)
+    loaded = catalog.load_shared()
+    assert loaded["cache"][("/car/makes", ())][1][0]["name"] == "Toyota"
+    # Stale copies are ignored like stale files.
+    catalog.save_shared(snap, now=time.time() - catalog.MAX_AGE_SECONDS - 1)
+    assert catalog.load_shared() is None
+
+
+def test_warm_uses_the_shared_copy_before_fetching(table, tmp_path, monkeypatch):
+    snap = {"cache": {("/car/makes", ()): (0.0, [{"id": 1, "name": "Honda"}])}, "index": []}
+    catalog.save_shared(snap)
+    monkeypatch.setattr(catalog, "_snapshot", None)
+
+    async def no_fetch(_client):
+        raise AssertionError("fetched from CarHauler")
+
+    monkeypatch.setattr(catalog, "fetch", no_fetch)
+    path = tmp_path / "catalog.json"
+    warmed = catalog.warm(path)
+    assert warmed["cache"][("/car/makes", ())][1][0]["name"] == "Honda"
+    assert catalog.load(path)  # and it's on disk for the next restart
+    monkeypatch.setattr(catalog, "_snapshot", None)

@@ -53,3 +53,25 @@ export async function sendFeedback(
     .catch(() => null);
   throw new CallError(detail ?? `Couldn't send your feedback (error ${res.status}).`);
 }
+
+/** What POST /api/wake returns (backend/app/worker.py). */
+export interface WakeStatus {
+  state: "ready" | "starting" | "unavailable";
+  detail: string;
+}
+
+/** Ask for Mia's voice worker (on AWS it only runs around calls; starting takes ~1 minute). */
+export async function wakeMia(fetchFn: typeof fetch = fetch): Promise<WakeStatus> {
+  let res: Response;
+  try {
+    res = await fetchFn("/api/wake", { method: "POST" });
+  } catch {
+    throw new CallError("Can't reach the server. Check your connection and try again.");
+  }
+  if (res.ok) return (await res.json()) as WakeStatus;
+  const detail = await res
+    .json()
+    .then((b: { detail?: unknown }) => (typeof b.detail === "string" ? b.detail : null))
+    .catch(() => null);
+  throw new CallError(detail ?? `Mia can't take calls right now (error ${res.status}).`);
+}

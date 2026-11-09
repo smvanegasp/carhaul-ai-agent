@@ -8,7 +8,7 @@ One branch and one PR per stage. ✅ done · 🔜 next · ⏳ later.
 | 1 | CarHauler client (retries, 401/402, caching), vehicle resolution (fuzzy YMM → trim), pricing and spoken summary | ✅ |
 | 2 | Agent core in text: prompt, `QuoteSession` state, tools, guardrails, LiveKit `AgentSession` + Groq; 3 happy-path scenario tests | ✅ |
 | 3 | Web calling locally: `/api/token`, call page, Deepgram + ElevenLabs, turn detector, interruptions. Optional: share the local app through ngrok so the teammate can try it before AWS | 🔜 PR #7 open |
-| 4 | AWS deploy: Terraform (fit + ECS Fargate for the worker), Deploy workflow, SSM secrets, TESTING_GUIDE. **Teammate starts testing** | ⏳ |
+| 4 | AWS deploy: Terraform (fit + on-demand ECS Fargate worker), Deploy workflow, SSM secrets, TESTING_GUIDE. **Teammate starts testing** | 🔜 PR #9 open: plan, then deploy |
 | 5 | Live panel (`mia.events`), call record to DynamoDB, feedback form per call | 🔜 PR open (on top of #7) |
 | 6 | Public dashboard: stats (averages/medians), call list and detail | ⏳ |
 | 7 | AI-vs-AI simulation: 8 personas × fragments, report by persona and path, nightly workflow | ⏳ |
@@ -107,6 +107,45 @@ the 2.5 s end-of-turn outliers are the turn detector waiting out a pause (the ca
 arrived as two transcripts). Re-run 5 per setting with quotes working before choosing. The
 4 s outlier in one v1 call was a 3 s Groq response.
 
+## Stage 4 (branch `stage-4-aws`, 2026-11-09)
+
+- [x] Terraform in `infra/` (fit's, adapted): DynamoDB (PITR, TTL, deletion protection),
+      Lambda + HTTP API, S3 + CloudFront (custom domain optional: `domain` in tfvars), GitHub
+      OIDC deploy role, email alarms (API errors, Lambda crashes, worker not starting, worker
+      errors, record not saved)
+- [x] `infra/agent.tf`: ECR, ECS cluster, Fargate task definition (secrets from SSM, health
+      check on the worker's :8081 every 10 s, `MIA_TURN_DETECTOR=v1-mini`), default VPC
+      (public IP, outbound only). **No ECS service: the worker is on demand**
+- [x] On demand: `POST /api/wake` (`backend/app/worker.py`) starts the task (lock row, 20
+      starts/day) and reports `starting`/`ready`; the call page wakes Mia on load and waits;
+      `mia/idle.py` exits the worker after 10 idle minutes or 2 hours (checked in Docker: it
+      drains and exits 0)
+- [x] Rate-limit counters in DynamoDB (`db.increment`, TTL); catalog snapshot shared through
+      DynamoDB so new tasks don't re-fetch it
+- [x] `scripts/deploy.sh`, `scripts/set_aws_secrets.py`, `.github/workflows/deploy.yml` (off
+      until `DEPLOY_ENABLED`), CI `terraform` job, Dependabot for the agent image and Terraform
+- [x] `docs/TESTING_GUIDE.md`: how to call, 8 persona cards + 4 extra, what to write in the
+      feedback
+- [x] Sergio: AWS profile `carhaul` (same account as `gym`)
+- [x] `terraform -chdir=infra/bootstrap apply` (state bucket), secrets, `scripts/deploy.sh`
+      (Sergio, 2026-11-09): https://dj7jlcxkdszj1.cloudfront.net. First apply failed on an
+      apostrophe in the security group description (AWS rejects it); fixed and re-run
+- [x] Scripted call through the live site: wake 64 s, $724 quote, record + list entry in
+      DynamoDB, 0 worker errors. The first try was answered by the local Docker worker (same
+      agent name): now `mia` on AWS, `mia-local` locally
+- [ ] Sergio: confirm the SNS email. Later: `domain = "carhaul.sergiovanegas.com"`
+      and the 2 DNS records at Hostinger
+- [ ] GitHub variables `DEPLOY_ENABLED`, `DISTRIBUTION_ID`, `SITE_URL`
+- [ ] Check the worker stops itself on AWS after 10 idle minutes
+- [ ] Share the link and TESTING_GUIDE with the teammate
+
+Expected cost (about 40 calls in 10 sessions a month): worker ~5 h awake x $0.06 ≈ $0.30, ECR
+storage (2 images per repo) ≈ $0.20, Lambda/DynamoDB/CloudFront/S3/logs/alarms within free
+tiers or cents: **AWS ≈ $0.50-1/month**, ~$0 with no calls. Per call on top (rough): Deepgram
+~$0.015 for 2 min, Groq < $0.001, ElevenLabs free up to ~10k characters a month, LiveKit free
+tier, plus CarHauler's per-call price. Worst case if someone abuses `/api/wake`: 20 starts a
+day x 10 min ≈ $6/month.
+
 ## Stage 5 (branch `stage-5-live-panel`, 2026-11-09)
 
 - [x] `mia/events.py`: `CallEvents` (config, turn, tool, dropped, state, end). The worker
@@ -141,7 +180,7 @@ browser (it's in the record). The page shows "Call ended" from the disconnect an
 | LiveKit Cloud | ✅ `LIVEKIT_URL` (wss://…livekit.cloud), key and secret work (`list_rooms`) |
 | Deepgram | ✅ (1 project) |
 | ElevenLabs | ✅ Default (premade) voice in `ELEVENLABS_VOICE_ID`; re-checked 2026-11-09 with a 2-character synthesis (200, `eleven_flash_v2_5`) and in real calls. The key is restricted (no `voices_read`), fine for speaking. Free accounts can't use *library* voices over the API (`402 paid_plan_required`). |
-| AWS CLI profile `carhaul` | ⏳ needed in stage 4 |
+| AWS CLI profile `carhaul` | ✅ IAM user `carhaul-deployer`, account 816940506502 (same as `gym`), default VPC present |
 | Twilio | ⏳ stage 9 |
 
 ## Ideas / later

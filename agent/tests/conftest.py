@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+import boto3
 import pytest
 import respx
 from fake_carhauler import BASE, FakeCarHauler
+from moto import mock_aws
 
 from mia.carhauler import CarHaulerClient
 from mia.vehicles import VehicleResolver
@@ -27,3 +29,31 @@ async def client(fake_api):
 @pytest.fixture
 def resolver(client):
     return VehicleResolver(client)
+
+
+@pytest.fixture
+def table(monkeypatch):
+    """An empty DynamoDB table (moto) that records.py and catalog.py write to."""
+    monkeypatch.setenv("TABLE_NAME", "carhaul-test")
+    monkeypatch.delenv("DYNAMODB_ENDPOINT", raising=False)
+    for name, value in (("AWS_ACCESS_KEY_ID", "test"), ("AWS_SECRET_ACCESS_KEY", "test")):
+        monkeypatch.setenv(name, value)
+    monkeypatch.setenv("AWS_REGION", "us-east-1")
+    from mia import records
+
+    with mock_aws():
+        records._table.cache_clear()
+        boto3.client("dynamodb", region_name="us-east-1").create_table(
+            TableName="carhaul-test",
+            AttributeDefinitions=[
+                {"AttributeName": "pk", "AttributeType": "S"},
+                {"AttributeName": "sk", "AttributeType": "S"},
+            ],
+            KeySchema=[
+                {"AttributeName": "pk", "KeyType": "HASH"},
+                {"AttributeName": "sk", "KeyType": "RANGE"},
+            ],
+            BillingMode="PAY_PER_REQUEST",
+        )
+        yield boto3.resource("dynamodb", region_name="us-east-1").Table("carhaul-test")
+    records._table.cache_clear()

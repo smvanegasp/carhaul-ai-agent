@@ -69,7 +69,15 @@ def token(room: str) -> str:
         api.AccessToken()
         .with_identity(f"smoke-{room}")
         .with_grants(api.VideoGrants(room_join=True, room=room))
-        .with_room_config(api.RoomConfiguration(agents=[api.RoomAgentDispatch(agent_name="mia")]))
+        .with_room_config(
+            api.RoomConfiguration(
+                agents=[
+                    api.RoomAgentDispatch(
+                        agent_name=os.environ.get("MIA_AGENT_NAME") or "mia-local"
+                    )
+                ]
+            )
+        )
         .with_ttl(timedelta(minutes=10))
         .to_jwt()
     )

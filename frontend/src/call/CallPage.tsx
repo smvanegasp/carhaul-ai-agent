@@ -8,11 +8,12 @@ import {
 import { Room, RoomEvent } from "livekit-client";
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import { CallError, fetchCallToken } from "../lib/api";
+import { CallError, fetchCallToken, wakeMia } from "../lib/api";
 import { addEvent, EVENTS_TOPIC, parseEvent, type MiaEvent } from "../lib/events";
 import { formatClock, toTranscript, type TranscriptLine } from "../lib/transcript";
 import { FeedbackForm } from "./FeedbackForm";
 import { LivePanel } from "./LivePanel";
+import { useWake, type Wake } from "./useWake";
 
 /** Mia hangs up at 6 minutes (agent/src/mia/main.py); the timer shows it. */
 const MAX_CALL_SECONDS = 6 * 60;
@@ -38,13 +39,20 @@ export function CallPage() {
   const lastTranscript = useRef<TranscriptLine[]>([]);
   // Mia's events (live panel); kept after the call so the caller can look back at it.
   const [events, setEvents] = useState<MiaEvent[]>([]);
+  const { wake, recheck } = useWake();
 
   const startCall = useCallback(async () => {
     setPhase({ kind: "connecting" });
-    setEvents([]);
-    lastTranscript.current = [];
     let room: Room | undefined;
     try {
+      // She may have gone back to sleep while the page sat open: then wait for her again.
+      if ((await wakeMia()).state !== "ready") {
+        setPhase({ kind: "idle" });
+        recheck();
+        return;
+      }
+      setEvents([]);
+      lastTranscript.current = [];
       const token = await fetchCallToken();
       room = new Room({ adaptiveStream: true, dynacast: true });
       room.registerTextStreamHandler(EVENTS_TOPIC, async (reader) => {
@@ -67,8 +75,9 @@ export function CallPage() {
       const message = err instanceof CallError ? err.message : micErrorMessage(err);
       setPhase({ kind: "error", message });
     }
-  }, []);
+  }, [recheck]);
 
+  const ready = wake.kind === "ready";
   return (
     <main className="mx-auto flex min-h-dvh max-w-7xl flex-col gap-6 px-4 py-8 md:py-12">
       <header className="flex flex-col gap-2">
@@ -96,16 +105,19 @@ export function CallPage() {
             <button
               type="button"
               onClick={startCall}
-              disabled={phase.kind === "connecting"}
+              disabled={phase.kind === "connecting" || !ready}
               className="rounded-full bg-emerald-600 px-8 py-4 text-lg font-semibold text-white shadow-sm transition hover:bg-emerald-700 disabled:cursor-wait disabled:opacity-60"
             >
               {phase.kind === "connecting"
                 ? "Calling…"
-                : phase.kind === "idle"
-                  ? "Call Mia"
-                  : "Call again"}
+                : !ready
+                  ? "Mia is waking up…"
+                  : phase.kind === "idle"
+                    ? "Call Mia"
+                    : "Call again"}
             </button>
-            {phase.kind === "idle" && (
+            <WakeNote wake={wake} onRetry={recheck} />
+            {phase.kind === "idle" && ready && (
               <p className="text-sm text-stone-500">
                 Your browser will ask for the microphone. Calls are recorded as transcripts to
                 improve Mia.
@@ -129,6 +141,35 @@ export function CallPage() {
       </div>
     </main>
   );
+}
+
+function WakeNote({ wake, onRetry }: { wake: Wake; onRetry: () => void }) {
+  const [now, setNow] = useState(Date.now());
+  useEffect(() => {
+    if (wake.kind !== "starting") return;
+    const id = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, [wake.kind]);
+
+  if (wake.kind === "starting") {
+    return (
+      <p className="text-sm text-stone-600" aria-live="polite">
+        Mia only runs when someone wants to call, so she takes about a minute to wake up
+        {` (${Math.round((now - wake.since) / 1000)} s so far)`}. Keep this page open.
+      </p>
+    );
+  }
+  if (wake.kind === "unavailable") {
+    return (
+      <p role="alert" className="text-sm text-red-700">
+        {wake.message}{" "}
+        <button type="button" onClick={onRetry} className="underline">
+          Try again
+        </button>
+      </p>
+    );
+  }
+  return null;
 }
 
 const STATE_LABEL: Record<string, string> = {

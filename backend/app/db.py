@@ -1,10 +1,12 @@
 """DynamoDB access (fit's pattern): one table, keys ``pk``/``sk``.
 
 The agent worker writes the call records (``agent/src/mia/records.py`` documents the keys);
-the API adds feedback and, from stage 6, reads calls for the dashboard.
+the API adds feedback, keeps the rate-limit counters (``COUNTER#...``, expired through the
+``ttl`` attribute) and, from stage 6, reads calls for the dashboard.
 """
 
 import os
+import time
 from decimal import Decimal
 from functools import lru_cache
 from typing import Any
@@ -45,6 +47,10 @@ def create_table_if_missing() -> None:
         BillingMode="PAY_PER_REQUEST",
     )
     client.get_waiter("table_exists").wait(TableName=table_name())
+    client.update_time_to_live(
+        TableName=table_name(),
+        TimeToLiveSpecification={"Enabled": True, "AttributeName": "ttl"},
+    )
 
 
 def _from_dynamo(value: Any) -> Any:
@@ -54,7 +60,7 @@ def _from_dynamo(value: Any) -> Any:
     if isinstance(value, list):
         return [_from_dynamo(v) for v in value]
     if isinstance(value, dict):
-        return {k: _from_dynamo(v) for k, v in value.items() if k not in ("pk", "sk")}
+        return {k: _from_dynamo(v) for k, v in value.items() if k not in ("pk", "sk", "ttl")}
     return value
 
 
@@ -91,3 +97,15 @@ def query(pk: str, sk_prefix: str = "") -> list[dict[str, Any]]:
         )
         rows.extend(response["Items"])
     return [_from_dynamo(r) for r in rows]
+
+
+def increment(key: str, ttl_seconds: int) -> int:
+    """Atomically add 1 to a counter row and return the new value (rate limits)."""
+    response = get_table().update_item(
+        Key={"pk": f"COUNTER#{key}", "sk": "COUNTER"},
+        UpdateExpression="ADD #n :one SET #ttl = if_not_exists(#ttl, :ttl)",
+        ExpressionAttributeNames={"#n": "n", "#ttl": "ttl"},
+        ExpressionAttributeValues={":one": 1, ":ttl": int(time.time()) + ttl_seconds},
+        ReturnValues="UPDATED_NEW",
+    )
+    return int(response["Attributes"]["n"])
