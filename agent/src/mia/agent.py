@@ -20,7 +20,7 @@ from livekit.agents import (
 )
 from livekit.plugins import groq
 
-from mia import guardrails, tools
+from mia import guardrails, speech, tools
 from mia.prompt import INSTRUCTIONS, pick_greeting
 from mia.state import QuoteSession
 from mia.tools import Services
@@ -197,11 +197,26 @@ class Mia(Agent):
             for d in dropped:
                 self.services.events.dropped(d["tool"], d["args"] or "", d["why"])
         if not runs_tool:
-            speech = guardrails.tidy_speech(text)
-            if not speech and dropped:
-                speech = guardrails.fallback_line(state)
-            if speech:
-                yield speech
+            spoken = guardrails.tidy_speech(text)
+            if not spoken and dropped:
+                spoken = guardrails.fallback_line(state)
+            if spoken and guardrails.is_goodbye(spoken) and not state.ended:
+                # She's closing the call without end_call: hang up after this line plays.
+                logger.info("goodbye without end_call; hanging up after it")
+                state.ended, state.end_reason = True, "mia"
+                state.hang_up_after_speech = True
+            if spoken:
+                yield spoken
+
+    async def tts_node(self, text: AsyncIterable[str], model_settings):
+        """Numbers become words before any voice reads them (see speech.py)."""
+
+        async def spoken() -> AsyncIterable[str]:
+            async for chunk in text:
+                yield speech.for_tts(chunk)
+
+        async for frame in Agent.default.tts_node(self, spoken(), model_settings):
+            yield frame
 
     async def on_enter(self) -> None:
         if self._speak_greeting:  # voice: say it without waiting for the LLM

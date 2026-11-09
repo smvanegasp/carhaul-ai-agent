@@ -14,6 +14,7 @@ LLM function tools.
 from __future__ import annotations
 
 import asyncio
+import inspect
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from typing import Any
@@ -52,9 +53,10 @@ class Services:
     carhauler: CarHaulerClient
     resolver: VehicleResolver
     geocode: Callable[..., dict[str, Any]] = city_to_zip  # sync; run in a thread
-    # Voice only: say a filler line while the quote is computed; hang up (agent.py calls it
-    # once the goodbye has been spoken).
-    say_filler: Callable[[str], Any] | None = None
+    # Voice only: say the filler line and play the "calculating" sound while the quote is
+    # computed (returns an awaitable that's done when Mia may read the price); hang up
+    # (agent.py calls it once the goodbye has been spoken).
+    before_quote: Callable[[str], Any] | None = None
     end_call: Callable[[], Any] | None = None
     # The call's events (live panel, call record). Text chat and tests get one that only
     # keeps them; the worker's also publishes them to the room.
@@ -353,11 +355,24 @@ async def get_quote(
         )
     assert state.origin and state.destination
     state.advance(Stage.CONFIRM)
-    if services.say_filler:
-        maybe = services.say_filler("Give me one second while I calculate your quote.")
-        if asyncio.iscoroutine(maybe):
-            await maybe
+    pause = services.before_quote(FILLER) if services.before_quote else None
+    result = await _quote(state, services)
+    # The price waits for the filler and the typing sound, so it feels calculated (Sergio's
+    # call, 2026-11-09); never more than a few seconds even if the audio hangs.
+    if inspect.isawaitable(pause):
+        try:
+            await asyncio.wait_for(pause, timeout=MAX_QUOTE_PAUSE_SECONDS)
+        except TimeoutError:
+            pass
+    return result
 
+
+FILLER = "Give me one second while I calculate your quote."
+MAX_QUOTE_PAUSE_SECONDS = 8.0
+
+
+async def _quote(state: QuoteSession, services: Services) -> Result:
+    assert state.origin and state.destination
     requests = [
         QuoteRequest(
             from_zip=state.origin.zip,
@@ -394,7 +409,8 @@ async def get_quote(
     after = (
         "Read `say` to the caller word for word (don't change any numbers). Then ask if they'd "
         "like to be connected with Sergio, who built this solution and would be happy to talk "
-        "about it."
+        "about it. If they say no, ask if there's anything else; when they're done, call "
+        "end_call."
     )
     if state.quote["estimate"]:
         after = "Mention the price is an estimate based on the vehicle type. " + after

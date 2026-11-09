@@ -128,3 +128,19 @@ def tidy_speech(text: str) -> str:
         if sentence.endswith("?"):
             break
     return " ".join(out)
+
+
+# Mia's own closing line. On Sergio's call (2026-11-09) the caller said "Nope" to the Sergio
+# offer and Mia answered "...Otherwise, have a great day!" without calling end_call, so the
+# caller had to hang up. A closing line now ends the call once it has been spoken.
+_GOODBYE = re.compile(
+    r"\b(?:good ?bye|bye now|have an? (?:great|good|nice|wonderful|lovely) "
+    r"(?:day|one|night|evening|afternoon|weekend)|take care|thanks? (?:you )?for calling)\b",
+    re.IGNORECASE,
+)
+
+
+def is_goodbye(speech: str) -> bool:
+    """True if Mia is closing the call (a goodbye in her last sentence)."""
+    sentences = [s for s in _SENTENCE_END.split(speech.strip()) if s.strip()]
+    return bool(sentences) and bool(_GOODBYE.search(sentences[-1]))

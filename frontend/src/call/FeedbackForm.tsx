@@ -23,11 +23,7 @@ export function FeedbackForm({ room }: { room: string }) {
   >({ kind: "editing" });
 
   if (status.kind === "sent") {
-    return (
-      <p className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-emerald-900">
-        Thanks for the feedback!
-      </p>
-    );
+    return <p className="rounded-2xl bg-ok-soft p-4 text-ok">Thanks for the feedback!</p>;
   }
 
   const submit = async (e: FormEvent) => {
@@ -46,7 +42,7 @@ export function FeedbackForm({ room }: { room: string }) {
   return (
     <form
       onSubmit={submit}
-      className="flex w-full flex-col gap-3 rounded-2xl border border-stone-200 bg-white p-4 shadow-sm"
+      className="mt-2 flex w-full flex-col gap-3 rounded-2xl border border-line bg-raised p-4"
     >
       <fieldset className="flex flex-col gap-2">
         <legend className="mb-1 font-medium">How did the call go?</legend>
@@ -54,10 +50,10 @@ export function FeedbackForm({ room }: { room: string }) {
           {RATINGS.map((r) => (
             <label
               key={r.value}
-              className={`cursor-pointer rounded-full border px-4 py-1.5 text-sm has-focus-visible:ring-2 has-focus-visible:ring-sky-400 ${
+              className={`cursor-pointer rounded-full border px-4 py-1.5 text-sm has-focus-visible:ring-2 has-focus-visible:ring-accent ${
                 rating === r.value
-                  ? "border-emerald-600 bg-emerald-600 text-white"
-                  : "border-stone-300 hover:bg-stone-100"
+                  ? "border-brand bg-brand text-brand-ink"
+                  : "border-line bg-surface hover:bg-raised"
               }`}
             >
               <input
@@ -75,37 +71,37 @@ export function FeedbackForm({ room }: { room: string }) {
       </fieldset>
       <label className="flex flex-col gap-1 text-sm">
         <span>
-          What worked, what didn't? <span className="text-stone-500">(optional)</span>
+          What worked, what didn't? <span className="text-muted">(optional)</span>
         </span>
         <textarea
           value={comment}
           onChange={(e) => setComment(e.target.value)}
           maxLength={2000}
           rows={3}
-          className="rounded-lg border border-stone-300 p-2"
+          className="rounded-lg border border-line bg-surface p-2 text-ink placeholder:text-muted"
           placeholder="e.g. she talked over me when I paused, or got my car wrong"
         />
       </label>
       <label className="flex flex-col gap-1 text-sm">
         <span>
-          Persona card <span className="text-stone-500">(testers only, optional)</span>
+          Persona card <span className="text-muted">(testers only, optional)</span>
         </span>
         <input
           value={persona}
           onChange={(e) => setPersona(e.target.value)}
           maxLength={100}
-          className="rounded-lg border border-stone-300 p-2"
+          className="rounded-lg border border-line bg-surface p-2 text-ink placeholder:text-muted"
         />
       </label>
       {status.kind === "error" && (
-        <p role="alert" className="text-sm text-red-700">
+        <p role="alert" className="text-sm text-danger">
           {status.message}
         </p>
       )}
       <button
         type="submit"
         disabled={rating == null || status.kind === "sending"}
-        className="self-start rounded-full bg-stone-900 px-5 py-2 font-medium text-white hover:bg-stone-700 disabled:opacity-50"
+        className="self-start rounded-full bg-brand px-5 py-2 font-medium text-brand-ink hover:bg-brand-hover disabled:opacity-50"
       >
         {status.kind === "sending" ? "Sending…" : "Send feedback"}
       </button>

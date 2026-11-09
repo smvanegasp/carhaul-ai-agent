@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import asyncio
+
 import httpx
 import pytest
 from fake_geo import fake_city_to_zip
@@ -244,11 +246,35 @@ async def test_quote_service_error_escalates(state, services, fake_api):
 
 async def test_filler_is_spoken_before_quoting(state, services):
     said = []
-    services.say_filler = said.append
+    services.before_quote = said.append
     await _route(state, services)
     await tools.save_vehicle(state, services, year=2025, make="Honda", model="Civic")
     await tools.get_quote(state, services)
     assert said == ["Give me one second while I calculate your quote."]
+
+
+async def test_the_price_waits_for_the_typing_sound(state, services):
+    # The voice hook returns an awaitable (filler + ~2 s of typing); the result comes after it.
+    order = []
+
+    async def typing():
+        await asyncio.sleep(0.05)
+        order.append("typing done")
+
+    services.before_quote = lambda _text: typing()
+    await _route(state, services)
+    await tools.save_vehicle(state, services, year=2025, make="Honda", model="Civic")
+    r = await tools.get_quote(state, services)
+    order.append("quote returned")
+    assert r["ok"] and order == ["typing done", "quote returned"]
+
+
+async def test_a_stuck_sound_never_holds_the_price(state, services, monkeypatch):
+    monkeypatch.setattr(tools, "MAX_QUOTE_PAUSE_SECONDS", 0.05)
+    services.before_quote = lambda _text: asyncio.Event().wait()  # never finishes
+    await _route(state, services)
+    await tools.save_vehicle(state, services, year=2025, make="Honda", model="Civic")
+    assert (await tools.get_quote(state, services))["ok"]
 
 
 # --- people --------------------------------------------------------------------------------

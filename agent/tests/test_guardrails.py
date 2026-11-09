@@ -2,6 +2,9 @@ from __future__ import annotations
 
 import json
 
+import pytest
+
+from mia import guardrails
 from mia.guardrails import check_call, fallback_line, read_back
 from mia.state import Place, QuoteSession
 
@@ -118,3 +121,29 @@ def test_tidy_speech_drops_repeats_and_extra_questions():
     assert tidy_speech(quote) == quote
     assert tidy_speech("It ships in 4.5 days. Okay?") == "It ships in 4.5 days. Okay?"
     assert tidy_speech("") == ""
+
+
+@pytest.mark.parametrize(
+    "speech",
+    [
+        "Alright. If you have any other questions, just let me know. Otherwise, have a great day!",
+        "Thank you for calling F&F. Have a great day!",
+        "Goodbye!",
+        "Okay, take care.",
+    ],
+)
+def test_mias_goodbye_is_detected(speech):
+    assert guardrails.is_goodbye(speech)
+
+
+@pytest.mark.parametrize(
+    "speech",
+    [
+        "Where are you shipping the car from, and where is it going?",
+        "Your estimated cost is $724. Would you like me to connect you with Sergio?",
+        # A greeting thanks them for calling but goes on with a question.
+        "Thanks for calling F&F. I'm Mia. Shall we get started?",
+    ],
+)
+def test_other_lines_are_not_goodbyes(speech):
+    assert not guardrails.is_goodbye(speech)

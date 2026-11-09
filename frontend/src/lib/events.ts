@@ -9,6 +9,8 @@ interface Base {
   seq: number;
   /** Seconds since the call started. */
   t: number;
+  /** Wall clock, epoch ms (the worker's clock, like the transcription timestamps). */
+  at?: number;
 }
 
 export interface ConfigEvent extends Base {

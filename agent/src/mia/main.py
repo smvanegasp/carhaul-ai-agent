@@ -22,6 +22,9 @@ from pathlib import Path
 from dotenv import load_dotenv
 from livekit.agents import (
     AgentServer,
+    AudioConfig,
+    BackgroundAudioPlayer,
+    BuiltinAudioClip,
     JobContext,
     JobProcess,
     cli,
@@ -46,6 +49,8 @@ load_dotenv(Path(__file__).resolve().parents[3] / ".env")  # local runs; Docker 
 AGENT_NAME = os.environ.get("MIA_AGENT_NAME") or "mia-local"
 MAX_CALL_SECONDS = float(os.environ.get("MIA_MAX_CALL_SECONDS", 6 * 60))
 TTS_MODEL = "eleven_flash_v2_5"  # lowest-latency ElevenLabs model; verified on the free plan
+# Keyboard typing between "give me one second" and the price, so it feels calculated.
+TYPING_SECONDS = 2.0
 TIME_UP = (
     "We've reached the time limit for this call, so I'll have to stop here. Thanks for calling "
     "F&F, goodbye!"
@@ -165,12 +170,38 @@ async def entrypoint(ctx: JobContext) -> None:
     )
 
     # Voice-only hooks for the tools (see tools.Services).
-    def say_filler(text: str):
-        events.turn("assistant", text, kind="filler")
-        return session.say(text, add_to_chat_ctx=False)
+    background = BackgroundAudioPlayer()
 
-    services.say_filler = say_filler
+    def before_quote(text: str) -> asyncio.Future[None]:
+        """Filler line, then ~2 s of keyboard typing on its own track; the future is done when
+        Mia may read the price (tools.get_quote waits for it)."""
+        events.turn("assistant", text, kind="filler")
+        done: asyncio.Future[None] = asyncio.get_running_loop().create_future()
+
+        async def typing() -> None:
+            try:
+                play = background.play(AudioConfig(BuiltinAudioClip.KEYBOARD_TYPING, volume=0.8))
+                await asyncio.sleep(TYPING_SECONDS)
+                play.stop()
+            except Exception:  # the sound is a nicety; never block the quote on it
+                logger.warning("typing sound failed", exc_info=True)
+            finally:
+                if not done.done():
+                    done.set_result(None)
+
+        handle = session.say(text, add_to_chat_ctx=False)
+        handle.add_done_callback(lambda _: asyncio.ensure_future(typing()))
+        return done
+
+    services.before_quote = before_quote
     services.end_call = session.shutdown  # drains: the goodbye finishes playing first
+
+    @session.on("agent_state_changed")
+    def _on_state(ev) -> None:
+        # Mia said goodbye without end_call (agent.llm_node): hang up once it has played.
+        if state.hang_up_after_speech and ev.new_state == "listening":
+            state.hang_up_after_speech = False
+            session.shutdown()
 
     @session.on("conversation_item_added")
     def _on_item(ev) -> None:
@@ -219,6 +250,7 @@ async def entrypoint(ctx: JobContext) -> None:
         # When Mia hangs up the room is deleted, which disconnects the browser too.
         room_options=room_io.RoomOptions(delete_room_on_close=True),
     )
+    await background.start(room=ctx.room, agent_session=session)
 
 
 if __name__ == "__main__":

@@ -32,18 +32,16 @@ files rather than reinventing.
 
 ## Status (2026-11-09)
 
-Stages 0-2 merged (PRs #1, #3-#5). **Stage 3** (branch `stage-3-web-calling`): voice calls from
-the browser work locally (`docker compose up`, then "Call Mia" on http://localhost:5190),
-verified end to end with scripted voice calls (`python -m mia.smoke`), real quotes included
-(CarHauler now has a payment method; calls are paid, so still budget them). Turn detector
-chosen: `v1-mini` (BACKLOG has the 5+5 call table). Left: Sergio's own browser call (desktop
-and phone). Stages 3 and 5 (live panel, call records, feedback) merged (PRs #7, #8).
-**Stage 4** (branch `stage-4-aws`, PR #9): Terraform, deploy script and workflow, SSM secrets
-script, TESTING_GUIDE; the worker is **on demand** (started by `/api/wake`, exits when idle) so
-hosting stays around $1/month. **Deployed** (2026-11-09) at
-https://dj7jlcxkdszj1.cloudfront.net (profile `carhaul`, account 816940506502): Mia wakes in
-~64 s, a scripted call through the live site got the $724 quote and its record is in DynamoDB.
-No custom domain yet; later `carhaul.sergiovanegas.com`.
+Stages 0-5 merged (PRs #1-#11), stage 4 included: **Mia is live on AWS** at
+https://dj7jlcxkdszj1.cloudfront.net (profile `carhaul`, account 816940506502). The worker is
+**on demand** (`/api/wake` starts it, ~64 s; it exits after 10 idle minutes), so hosting is
+about $1/month. Sergio's real browser call worked after the call-page crash fix (#11).
+Branch `ui-refresh-typing-sound` (PR open): keyboard-typing sound before the quote, one
+conversation view instead of chat + timeline, one scroll, dark navy theme with dark mode.
+Next: Sergio's feedback from his calls (in a new chat), then stage 8 (non-happy paths) or 6
+(dashboard). Deploys are manual (`scripts/deploy.sh` in Git Bash, Sergio types `yes`); the
+GitHub deploy workflow is off until the `DEPLOY_ENABLED` variable is set. No custom domain yet
+(later `carhaul.sergiovanegas.com`).
 
 ## 2. How we work
 
@@ -102,7 +100,7 @@ Fargate, not Lambda. Everything else follows the fit pattern.
 | --- | --- |
 | `agent/` | uv project `mia-agent`, package `src/mia/` (see below). `evals/scenarios/*.yaml`: reference conversations |
 | `backend/` | uv project `carhaul-api`: FastAPI for Lambda (`app/`). `POST /api/token` (`livekit_token.py`, rate limited by `ratelimit.py`), `POST /api/calls/{room}/feedback` (`calls.py`), `POST /api/wake` (`worker.py`: starts the on-demand worker), DynamoDB in `db.py`. Later: call list and stats |
-| `frontend/` | React 19 + Vite + Tailwind v4 + LiveKit components. `src/call/`: `CallPage.tsx` (call, state, timer, mute, transcript), `LivePanel.tsx` (from `lib/events.ts`), `FeedbackForm.tsx`. Later: dashboard |
+| `frontend/` | React 19 + Vite + Tailwind v4 + LiveKit components. `src/call/`: `CallPage.tsx` (layout, call controls, wake), `Conversation.tsx` (chat + inline tool calls and latency behind "Show details", built by `lib/conversation.ts`), `Insights.tsx` (stage, stats, latency, on file), `FeedbackForm.tsx`, `useWake.ts`. Colors are theme tokens in `src/index.css` (light and dark). Later: dashboard |
 | `notebooks/` | Exploration only; kernel is `agent/.venv` (`uv sync --group notebooks`) |
 | `docs/` | BACKLOG, CONVERSATION_DESIGN, TESTING_GUIDE (stage 4) |
 | `infra/` | Terraform (profile `carhaul`, everything `carhaul-*`): DynamoDB, Lambda + HTTP API, S3 + CloudFront (custom domain optional), on-demand ECS Fargate worker task (`agent.tf`), GitHub OIDC deploy role, alarms. `bootstrap/`: the state bucket |
@@ -176,6 +174,15 @@ docker compose up        # api :8020, web :5190, DynamoDB Local :8030, agent wor
 - 2026-11-09: **CarHauler free tier ran out** (1,000 calls, catalog lookups included). The
   worker had re-fetched the catalog (69 calls) on every process start; now it's cached on disk
   for a week (`catalog.py`).
+- 2026-11-09 (UI): After Sergio's first calls: a **keyboard-typing sound** (LiveKit's built-in
+  `KEYBOARD_TYPING` clip on a background track, 2 s) plays between "give me one second" and the
+  price; `get_quote` waits for it (max 8 s). The chat and the panel's timeline showed the same
+  thing twice, so there's **one conversation view**: bubbles from LiveKit's live transcription,
+  with tool calls, guardrail drops and per-turn latency placed inline by wall-clock time
+  (events carry `at`) behind a "Show details" switch. On desktop the page fits the screen and
+  only the conversation scrolls. **Navy theme with dark mode** through CSS-variable tokens on
+  one navy scale (the first dark mode was too dark to inspect). Numbers are written out as
+  words before TTS (`speech.py`) and a goodbye from Mia hangs up even without `end_call`.
 - 2026-11-09 (stage 4): **Local and AWS workers have different names**: the first scripted
   call on AWS was answered by the local Docker worker, because both registered as `mia` on the
   same LiveKit project. Now `MIA_AGENT_NAME` is `mia` only on AWS (task definition and Lambda);

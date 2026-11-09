@@ -10,6 +10,8 @@ export interface TranscriptLine {
   who: "you" | "mia";
   text: string;
   final: boolean;
+  /** When the line started (epoch ms, the sender's clock: the worker for both sides). */
+  at: number;
 }
 
 /**
@@ -18,7 +20,7 @@ export interface TranscriptLine {
  * the caller sees their words appear while they talk.
  */
 export function toTranscript(streams: TranscriptStream[], myIdentity: string): TranscriptLine[] {
-  const bySegment = new Map<string, TranscriptLine & { at: number }>();
+  const bySegment = new Map<string, TranscriptLine>();
   for (const s of streams) {
     const attrs = s.streamInfo.attributes ?? {};
     const id = attrs["lk.segment_id"] ?? s.streamInfo.id;
@@ -33,9 +35,7 @@ export function toTranscript(streams: TranscriptStream[], myIdentity: string): T
       at: prev ? prev.at : s.streamInfo.timestamp,
     });
   }
-  return [...bySegment.values()]
-    .sort((a, b) => a.at - b.at)
-    .map(({ at: _at, ...line }) => line);
+  return [...bySegment.values()].sort((a, b) => a.at - b.at);
 }
 
 /** "m:ss" for the call timer. */

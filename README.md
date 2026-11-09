@@ -5,8 +5,8 @@ an open car-shipping quote from the [CarHauler247](https://carhauler247.com/) AP
 talk, a live panel shows the transcript, every tool call (with its JSON) and how long each part
 of the pipeline took. A public dashboard shows how calls go overall.
 
-> Status: voice calls from the browser and the live panel work locally (stages 3 and 5).
-> Deploying to AWS and the dashboard are coming in stages (see [docs/BACKLOG.md](docs/BACKLOG.md)).
+> Status: live on AWS (stages 0-5). The public dashboard, harder conversations and a phone
+> line are coming in stages (see [docs/BACKLOG.md](docs/BACKLOG.md)).
 
 ## Stack
 
@@ -59,8 +59,9 @@ when the API errors, the worker can't start or logs errors, or a call record isn
 **Live panel.** The worker publishes what it does as events on the room (topic `mia.events`):
 each turn with its latency (end of turn, speech to text, LLM first token, voice first audio,
 total), each tool call with its arguments, the JSON the LLM got back and its duration, every
-call the guardrail dropped, and what's on file. The call page shows them next to the call and
-keeps them afterwards, with a feedback form. When the call ends the worker saves the whole
+call the guardrail dropped, and what's on file. The call page shows one conversation (the
+live transcript, with the tool calls and latency inline behind "Show details") next to the
+call's stats, keeps it afterwards, and ends with a feedback form. When the call ends the worker saves the whole
 record (state, transcript, events, latency, talk time, interruptions) to DynamoDB; feedback is
 saved next to it. The dashboard (stage 6) reads those records.
 

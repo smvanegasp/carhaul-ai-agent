@@ -1,10 +1,10 @@
 """What happens during a call, as events: for the live panel and the call record.
 
-Every event is a dict with ``type``, ``seq`` (order) and ``t`` (seconds since the call
-started). The voice worker publishes each one to the room as a text stream on the topic
-``mia.events`` (``frontend/src/lib/events.ts`` reads them), and keeps them all for the call
-record (``records.py``). Text chat and tests use ``CallEvents()`` with no sink: events are only
-kept.
+Every event is a dict with ``type``, ``seq`` (order), ``t`` (seconds since the call
+started) and ``at`` (epoch ms). The voice worker publishes each one to the room as a text
+stream on the topic ``mia.events`` (``frontend/src/lib/events.ts`` reads them), and keeps them
+all for the call record (``records.py``). Text chat and tests use ``CallEvents()`` with no
+sink: events are only kept.
 
 Types:
 
@@ -70,6 +70,9 @@ class CallEvents:
             "type": type_,
             "seq": len(self.events),
             "t": round(time.time() - self.started, 2),
+            # Wall clock (ms), the same clock as the transcription streams' timestamps: the
+            # call page uses it to place tool calls between the right chat lines.
+            "at": round(time.time() * 1000),
             **data,
         }
         self.events.append(event)
