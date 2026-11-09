@@ -5,6 +5,7 @@ description = "Mia, the F&F car-shipping voice agent (LiveKit worker)."
 readme = "README.md"
 requires-python = ">=3.12,<3.13"
 dependencies = [
+    "boto3>=1.40",
     "googlemaps>=4.10.0",
     "httpx>=0.28.1",
     "livekit-agents[deepgram,elevenlabs,groq,silero]>=1.8.11",
@@ -14,6 +15,7 @@ dependencies = [
 
 [dependency-groups]
 dev = [
+    "moto[dynamodb]>=5.2.4",
     "pytest>=8",
     "pytest-asyncio>=1.4.1.post1",
     "pyyaml>=6.0.3",

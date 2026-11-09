@@ -4,6 +4,15 @@
 # Share with the teammate: `ngrok http 5190` (see README).
 name: carhaul
 
+# The API and the agent share the table: the agent writes call records, the API feedback.
+x-local-dynamodb: &local-dynamodb
+  DYNAMODB_ENDPOINT: http://dynamodb:8000
+  TABLE_NAME: carhaul
+  AWS_REGION: us-east-1
+  # DynamoDB Local accepts any credentials; these are not real keys.
+  AWS_ACCESS_KEY_ID: local
+  AWS_SECRET_ACCESS_KEY: local
+
 services:
   api:
     build:
@@ -16,10 +25,14 @@ services:
     environment:
       # Docker on Windows doesn't forward file-change events into containers.
       WATCHFILES_FORCE_POLLING: "true"
+      AUTO_CREATE_TABLE: "1"
+      <<: *local-dynamodb
     ports:
       - "8020:8080"
     volumes:
       - ./backend/app:/app/app
+    depends_on:
+      - dynamodb
 
   web:
     image: node:22-alpine
@@ -45,10 +58,26 @@ services:
     environment:
       MIA_IDLE_PROCESSES: "1"
       MIA_TURN_DETECTOR: ${MIA_TURN_DETECTOR:-}
+      <<: *local-dynamodb
     volumes:
       # The CarHauler catalog snapshot survives restarts (catalog calls cost API allowance).
       - agent_cache:/home/mia/.cache/mia
+    depends_on:
+      - api  # creates the table
+
+  # Call records and feedback (DynamoDB itself on AWS). Port 8030 lets scripts on the host
+  # look at the records.
+  dynamodb:
+    image: amazon/dynamodb-local:latest
+    # Root so it can write to the named volume.
+    user: root
+    command: -jar DynamoDBLocal.jar -sharedDb -dbPath /data
+    volumes:
+      - dynamodb_data:/data
+    ports:
+      - "8030:8000"
 
 volumes:
   web_node_modules:
   agent_cache:
+  dynamodb_data:

@@ -1,6 +1,6 @@
 import { CallPage } from "./call/CallPage";
 
-// One page for now: the call. Stage 5 adds the live panel next to it, stage 6 the dashboard.
+// One page for now: the call with its live panel. Stage 6 adds the dashboard.
 export function App() {
   return <CallPage />;
 }

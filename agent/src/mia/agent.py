@@ -5,7 +5,8 @@ from __future__ import annotations
 import json
 import logging
 import os
-from collections.abc import AsyncIterable
+import time
+from collections.abc import AsyncIterable, Awaitable
 from typing import Any
 
 from livekit.agents import (
@@ -107,6 +108,25 @@ def _json(result: dict[str, Any]) -> str:
     return json.dumps(result, ensure_ascii=False, default=str)
 
 
+async def _run_tool(
+    services: Services,
+    state: QuoteSession,
+    name: str,
+    args: dict[str, Any],
+    run: Awaitable[dict[str, Any]],
+) -> str:
+    """Run one tool and report it (with its timing and what's on file after) as events."""
+    started = time.perf_counter()
+    result: dict[str, Any] | None = None
+    try:
+        result = await run
+        return _json(result)
+    finally:
+        events = services.events
+        events.tool(name, args, result, (time.perf_counter() - started) * 1000)
+        events.state(state.snapshot(), str(state.stage), state.quote)
+
+
 class Mia(Agent):
     def __init__(
         self,
@@ -174,6 +194,8 @@ class Mia(Agent):
         if dropped:
             state.dropped_calls.extend(dropped)
             logger.info("guardrail dropped tool calls: %s", dropped)
+            for d in dropped:
+                self.services.events.dropped(d["tool"], d["args"] or "", d["why"])
         if not runs_tool:
             speech = guardrails.tidy_speech(text)
             if not speech and dropped:
@@ -184,6 +206,7 @@ class Mia(Agent):
     async def on_enter(self) -> None:
         if self._speak_greeting:  # voice: say it without waiting for the LLM
             self.session.say(self.greeting, add_to_chat_ctx=False)
+            self.services.events.turn("assistant", self.greeting, kind="greeting")
 
     @function_tool
     async def save_origin_destination(
@@ -202,16 +225,20 @@ class Mia(Agent):
             destination_city: Delivery city, exactly as the caller said it. Omit if not said.
             destination_state: Delivery state, only if the caller said it.
         """
-        return _json(
-            await tools.save_origin_destination(
-                context.userdata,
-                self.services,
-                origin_city=origin_city,
-                origin_state=origin_state,
-                destination_city=destination_city,
-                destination_state=destination_state,
-                said=caller_said(self.chat_ctx),
-            )
+        args = {
+            "origin_city": origin_city,
+            "origin_state": origin_state,
+            "destination_city": destination_city,
+            "destination_state": destination_state,
+        }
+        return await _run_tool(
+            self.services,
+            context.userdata,
+            "save_origin_destination",
+            args,
+            tools.save_origin_destination(
+                context.userdata, self.services, **args, said=caller_said(self.chat_ctx)
+            ),
         )
 
     @function_tool
@@ -235,27 +262,35 @@ class Mia(Agent):
             drivable: False only if the caller said the vehicle doesn't run.
             total_vehicles: How many vehicles they're shipping in total, if they said so.
         """
-        return _json(
-            await tools.save_vehicle(
-                context.userdata,
-                self.services,
-                year=year,
-                make=make,
-                model=model,
-                vehicle_type=vehicle_type,
-                drivable=drivable,
-                total_vehicles=total_vehicles,
-                said=caller_said(self.chat_ctx),
-            )
+        args = {
+            "year": year,
+            "make": make,
+            "model": model,
+            "vehicle_type": vehicle_type,
+            "drivable": drivable,
+            "total_vehicles": total_vehicles,
+        }
+        return await _run_tool(
+            self.services,
+            context.userdata,
+            "save_vehicle",
+            args,
+            tools.save_vehicle(
+                context.userdata, self.services, **args, said=caller_said(self.chat_ctx)
+            ),
         )
 
     @function_tool
     async def get_quote(self, context: RunContext[QuoteSession]) -> str:
         """Get the price for every vehicle on file. Only after the caller confirmed the details."""
-        return _json(
-            await tools.get_quote(
+        return await _run_tool(
+            self.services,
+            context.userdata,
+            "get_quote",
+            {},
+            tools.get_quote(
                 context.userdata, self.services, last_said=caller_last_said(self.chat_ctx)
-            )
+            ),
         )
 
     @function_tool
@@ -265,15 +300,27 @@ class Mia(Agent):
         Args:
             reason: Short reason, e.g. "wants to talk after quote" or "asked for a human".
         """
-        return _json(await tools.request_human(context.userdata, self.services, reason=reason))
+        return await _run_tool(
+            self.services,
+            context.userdata,
+            "request_human",
+            {"reason": reason},
+            tools.request_human(context.userdata, self.services, reason=reason),
+        )
 
     @function_tool
     async def end_call(self, context: RunContext[QuoteSession]) -> str:
         """End the call when the caller is done. You'll say goodbye right after."""
-        result = await tools.end_call(context.userdata, self.services)
+        result = await _run_tool(
+            self.services,
+            context.userdata,
+            "end_call",
+            {},
+            tools.end_call(context.userdata, self.services),
+        )
         hang_up = self.services.end_call
         if hang_up:
             # The goodbye is generated from this tool's result and played on the same speech
             # handle (like livekit.agents.beta.tools.EndCallTool), so hang up once it's done.
             context.speech_handle.add_done_callback(lambda _: hang_up())
-        return _json(result)
+        return result

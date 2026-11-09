@@ -9,7 +9,10 @@ import { Room, RoomEvent } from "livekit-client";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { CallError, fetchCallToken } from "../lib/api";
+import { addEvent, EVENTS_TOPIC, parseEvent, type MiaEvent } from "../lib/events";
 import { formatClock, toTranscript, type TranscriptLine } from "../lib/transcript";
+import { FeedbackForm } from "./FeedbackForm";
+import { LivePanel } from "./LivePanel";
 
 /** Mia hangs up at 6 minutes (agent/src/mia/main.py); the timer shows it. */
 const MAX_CALL_SECONDS = 6 * 60;
@@ -18,7 +21,7 @@ type Phase =
   | { kind: "idle" }
   | { kind: "connecting" }
   | { kind: "in-call"; room: Room; startedAt: number }
-  | { kind: "ended"; transcript: TranscriptLine[] }
+  | { kind: "ended"; roomName: string; transcript: TranscriptLine[] }
   | { kind: "error"; message: string };
 
 function micErrorMessage(err: unknown): string {
@@ -33,15 +36,27 @@ function micErrorMessage(err: unknown): string {
 export function CallPage() {
   const [phase, setPhase] = useState<Phase>({ kind: "idle" });
   const lastTranscript = useRef<TranscriptLine[]>([]);
+  // Mia's events (live panel); kept after the call so the caller can look back at it.
+  const [events, setEvents] = useState<MiaEvent[]>([]);
 
   const startCall = useCallback(async () => {
     setPhase({ kind: "connecting" });
+    setEvents([]);
+    lastTranscript.current = [];
     let room: Room | undefined;
     try {
       const token = await fetchCallToken();
       room = new Room({ adaptiveStream: true, dynacast: true });
+      room.registerTextStreamHandler(EVENTS_TOPIC, async (reader) => {
+        const event = parseEvent(await reader.readAll());
+        if (event) setEvents((prev) => addEvent(prev, event));
+      });
       room.once(RoomEvent.Disconnected, () =>
-        setPhase({ kind: "ended", transcript: lastTranscript.current }),
+        setPhase({
+          kind: "ended",
+          roomName: token.room_name,
+          transcript: lastTranscript.current,
+        }),
       );
       await room.connect(token.server_url, token.participant_token);
       await room.localParticipant.setMicrophoneEnabled(true);
@@ -55,58 +70,63 @@ export function CallPage() {
   }, []);
 
   return (
-    <main className="mx-auto flex min-h-dvh max-w-5xl flex-col gap-6 px-4 py-8 md:py-12">
+    <main className="mx-auto flex min-h-dvh max-w-7xl flex-col gap-6 px-4 py-8 md:py-12">
       <header className="flex flex-col gap-2">
         <h1 className="text-3xl font-semibold">Call Mia</h1>
         <p className="max-w-2xl text-stone-600">
-          Mia is F&amp;F's voice assistant for open car-shipping quotes. Tell her where your car
-          is going from and to, and its year, make and model, and she'll give you a price. Calls
-          last up to {MAX_CALL_SECONDS / 60} minutes.
+          Mia is F&amp;F's voice assistant for open car-shipping quotes. Tell her where your car is
+          going from and to, and its year, make and model, and she'll give you a price. Calls last
+          up to {MAX_CALL_SECONDS / 60} minutes. The panel shows what she does under the hood: every
+          tool call, what's on file and how long each step takes.
         </p>
       </header>
 
-      {phase.kind === "in-call" ? (
-        <RoomContext.Provider value={phase.room}>
-          <RoomAudioRenderer />
-          <InCall
-            room={phase.room}
-            startedAt={phase.startedAt}
-            onTranscript={(t) => (lastTranscript.current = t)}
-          />
-        </RoomContext.Provider>
-      ) : (
-        <section className="flex flex-col items-start gap-4">
-          <button
-            type="button"
-            onClick={startCall}
-            disabled={phase.kind === "connecting"}
-            className="rounded-full bg-emerald-600 px-8 py-4 text-lg font-semibold text-white shadow-sm transition hover:bg-emerald-700 disabled:cursor-wait disabled:opacity-60"
-          >
-            {phase.kind === "connecting"
-              ? "Calling…"
-              : phase.kind === "idle"
-                ? "Call Mia"
-                : "Call again"}
-          </button>
-          {phase.kind === "idle" && (
-            <p className="text-sm text-stone-500">
-              Your browser will ask for the microphone. Calls are recorded as transcripts to
-              improve Mia.
-            </p>
-          )}
-          {phase.kind === "error" && (
-            <p role="alert" className="text-red-700">
-              {phase.message}
-            </p>
-          )}
-          {phase.kind === "ended" && (
-            <>
-              <p className="text-stone-600">Call ended. Thanks for talking to Mia!</p>
-              {phase.transcript.length > 0 && <Transcript lines={phase.transcript} />}
-            </>
-          )}
-        </section>
-      )}
+      <div className="grid items-start gap-6 lg:grid-cols-2">
+        {phase.kind === "in-call" ? (
+          <RoomContext.Provider value={phase.room}>
+            <RoomAudioRenderer />
+            <InCall
+              room={phase.room}
+              startedAt={phase.startedAt}
+              onTranscript={(t) => (lastTranscript.current = t)}
+            />
+          </RoomContext.Provider>
+        ) : (
+          <section className="flex min-w-0 flex-col items-start gap-4">
+            <button
+              type="button"
+              onClick={startCall}
+              disabled={phase.kind === "connecting"}
+              className="rounded-full bg-emerald-600 px-8 py-4 text-lg font-semibold text-white shadow-sm transition hover:bg-emerald-700 disabled:cursor-wait disabled:opacity-60"
+            >
+              {phase.kind === "connecting"
+                ? "Calling…"
+                : phase.kind === "idle"
+                  ? "Call Mia"
+                  : "Call again"}
+            </button>
+            {phase.kind === "idle" && (
+              <p className="text-sm text-stone-500">
+                Your browser will ask for the microphone. Calls are recorded as transcripts to
+                improve Mia.
+              </p>
+            )}
+            {phase.kind === "error" && (
+              <p role="alert" className="text-red-700">
+                {phase.message}
+              </p>
+            )}
+            {phase.kind === "ended" && (
+              <>
+                <p className="text-stone-600">Call ended. Thanks for talking to Mia!</p>
+                <FeedbackForm key={phase.roomName} room={phase.roomName} />
+                {phase.transcript.length > 0 && <Transcript lines={phase.transcript} />}
+              </>
+            )}
+          </section>
+        )}
+        <LivePanel events={events} live={phase.kind === "in-call"} />
+      </div>
     </main>
   );
 }
@@ -150,7 +170,7 @@ function InCall({
   };
 
   return (
-    <section className="grid gap-6 md:grid-cols-2">
+    <section className="flex min-w-0 flex-col gap-6">
       <div className="flex flex-col gap-4 rounded-2xl border border-stone-200 bg-white p-6 shadow-sm">
         <div className="flex items-center gap-3">
           <span

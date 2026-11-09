@@ -9,7 +9,7 @@ One branch and one PR per stage. ✅ done · 🔜 next · ⏳ later.
 | 2 | Agent core in text: prompt, `QuoteSession` state, tools, guardrails, LiveKit `AgentSession` + Groq; 3 happy-path scenario tests | ✅ |
 | 3 | Web calling locally: `/api/token`, call page, Deepgram + ElevenLabs, turn detector, interruptions. Optional: share the local app through ngrok so the teammate can try it before AWS | 🔜 PR #7 open |
 | 4 | AWS deploy: Terraform (fit + ECS Fargate for the worker), Deploy workflow, SSM secrets, TESTING_GUIDE. **Teammate starts testing** | ⏳ |
-| 5 | Live panel (`mia.events`), call record to DynamoDB, feedback form per call | ⏳ |
+| 5 | Live panel (`mia.events`), call record to DynamoDB, feedback form per call | 🔜 PR open (on top of #7) |
 | 6 | Public dashboard: stats (averages/medians), call list and detail | ⏳ |
 | 7 | AI-vs-AI simulation: 8 personas × fragments, report by persona and path, nightly workflow | ⏳ |
 | 8 | Non-happy paths: changes + trash, error matrix, FAQs, off-topic guardrail | ⏳ |
@@ -106,6 +106,30 @@ Per call, median ms (e2e = caller's last word to Mia starting to answer, server 
 the 2.5 s end-of-turn outliers are the turn detector waiting out a pause (the caller's line
 arrived as two transcripts). Re-run 5 per setting with quotes working before choosing. The
 4 s outlier in one v1 call was a 3 s Groq response.
+
+## Stage 5 (branch `stage-5-live-panel`, 2026-11-09)
+
+- [x] `mia/events.py`: `CallEvents` (config, turn, tool, dropped, state, end). The worker
+      publishes each event as a text stream on topic `mia.events` (`RoomPublisher` in
+      `main.py`: in order, queued until the room is connected)
+- [x] Tool calls wrapped in `agent._run_tool` (args, result JSON, ok, ms, then the state);
+      guardrail drops, the greeting, the filler line and the time-limit line are events too
+- [x] `mia/records.py`: call record (state, transcript, events, latency summary, talk time,
+      interruptions, tool calls/errors) to DynamoDB at the end of the call: `CALL#<room>` /
+      `RECORD`, plus a summary under `CALLS` / `<started_at>#<room>` for the stage 6 list.
+      Written by the worker itself (boto3; ECS task role in stage 4). Not configured → only
+      logged
+- [x] Backend `app/db.py` (fit's pattern) and `POST /api/calls/{room}/feedback` (rating 1-5,
+      comment, persona card; rate limited; works before the record exists)
+- [x] Frontend: `LivePanel` (pipeline, stage, tool calls, drops, quote, latency medians and
+      last, on file, timeline with expandable tool JSON) next to the call, kept after it;
+      `FeedbackForm` after the call
+- [x] `docker compose` adds DynamoDB Local (host port 8030); `mia.smoke` also checks the
+      event stream (22 events, none missing, in a real call)
+- [ ] Sergio: look at the panel in a real browser call (desktop and phone)
+
+Known: when Mia hangs up she deletes the room, so the `end` event usually doesn't reach the
+browser (it's in the record). The page shows "Call ended" from the disconnect anyway.
 
 ## Accounts and keys (checked 2026-11-08, read-only calls, values never printed)
 
