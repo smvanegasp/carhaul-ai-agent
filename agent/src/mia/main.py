@@ -5,7 +5,8 @@
     uv run python -m mia.main start      # production (Docker / ECS)
     uv run python -m mia.smoke           # a scripted caller phones the running worker
 
-It registers as the agent ``mia``; the backend's ``/api/token`` dispatches it into each new
+It registers as ``MIA_AGENT_NAME`` (``mia`` on AWS, ``mia-local`` anywhere else); the
+backend's ``/api/token`` dispatches that name into each new
 call room. Pipeline: Deepgram nova-3 (STT) → Groq gpt-oss-20b (LLM, guardrails in agent.py) →
 ElevenLabs flash v2.5 (TTS), with Silero VAD, LiveKit's turn detector and interruptions.
 """
@@ -39,7 +40,10 @@ from mia.vehicles import VehicleResolver
 
 load_dotenv(Path(__file__).resolve().parents[3] / ".env")  # local runs; Docker passes env vars
 
-AGENT_NAME = "mia"  # the backend dispatches this name (backend/app/livekit_token.py)
+# The name the backend dispatches into each call room (backend/app/livekit_token.py). Only AWS
+# uses "mia"; anything local defaults to "mia-local", so a worker on a laptop can't take calls
+# from the live site (both share one LiveKit project; seen on 2026-11-09).
+AGENT_NAME = os.environ.get("MIA_AGENT_NAME") or "mia-local"
 MAX_CALL_SECONDS = float(os.environ.get("MIA_MAX_CALL_SECONDS", 6 * 60))
 TTS_MODEL = "eleven_flash_v2_5"  # lowest-latency ElevenLabs model; verified on the free plan
 TIME_UP = (

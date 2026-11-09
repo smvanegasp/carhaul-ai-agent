@@ -116,7 +116,8 @@ resource "aws_lambda_function" "api" {
       # Every call spends money (Groq, Deepgram, ElevenLabs, LiveKit, CarHauler).
       CALLS_PER_IP_PER_HOUR = "6"
       CALLS_PER_DAY         = tostring(var.calls_per_day)
-      # The on-demand worker it starts (infra/agent.tf).
+      # The on-demand worker it starts and dispatches into calls (infra/agent.tf).
+      MIA_AGENT_NAME        = "mia"
       AGENT_CLUSTER         = aws_ecs_cluster.main.name
       AGENT_TASK_FAMILY     = aws_ecs_task_definition.agent.family
       AGENT_SUBNETS         = join(",", data.aws_subnets.default.ids)

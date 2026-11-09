@@ -127,12 +127,16 @@ arrived as two transcripts). Re-run 5 per setting with quotes working before cho
 - [x] `docs/TESTING_GUIDE.md`: how to call, 8 persona cards + 4 extra, what to write in the
       feedback
 - [x] Sergio: AWS profile `carhaul` (same account as `gym`)
-- [ ] `terraform -chdir=infra/bootstrap apply` (state bucket), then `terraform plan`
-- [ ] Sergio's OK → `cd backend && uv run python ../scripts/set_aws_secrets.py`, then
-      `scripts/deploy.sh`; confirm the SNS email. Later: `domain = "carhaul.sergiovanegas.com"`
+- [x] `terraform -chdir=infra/bootstrap apply` (state bucket), secrets, `scripts/deploy.sh`
+      (Sergio, 2026-11-09): https://dj7jlcxkdszj1.cloudfront.net. First apply failed on an
+      apostrophe in the security group description (AWS rejects it); fixed and re-run
+- [x] Scripted call through the live site: wake 64 s, $724 quote, record + list entry in
+      DynamoDB, 0 worker errors. The first try was answered by the local Docker worker (same
+      agent name): now `mia` on AWS, `mia-local` locally
+- [ ] Sergio: confirm the SNS email. Later: `domain = "carhaul.sergiovanegas.com"`
       and the 2 DNS records at Hostinger
-- [ ] GitHub variables `DEPLOY_ENABLED`, `DISTRIBUTION_ID`, `SITE_URL`; one scripted call
-      against the deployed site (`mia.smoke --api https://<cloudfront address>`)
+- [ ] GitHub variables `DEPLOY_ENABLED`, `DISTRIBUTION_ID`, `SITE_URL`
+- [ ] Check the worker stops itself on AWS after 10 idle minutes
 - [ ] Share the link and TESTING_GUIDE with the teammate
 
 Expected cost (about 40 calls in 10 sessions a month): worker ~5 h awake x $0.06 ≈ $0.30, ECR

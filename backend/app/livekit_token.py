@@ -19,7 +19,12 @@ from pydantic import BaseModel
 
 from app import ratelimit
 
-AGENT_NAME = "mia"  # agent/src/mia/main.py registers this name
+
+def agent_name() -> str:
+    """The worker to dispatch (agent/src/mia/main.py): "mia" on AWS, "mia-local" otherwise, so
+    a local worker never takes the live site's calls (they share one LiveKit project)."""
+    return os.environ.get("MIA_AGENT_NAME") or "mia-local"
+
 
 router = APIRouter()
 
@@ -74,7 +79,7 @@ def create_call_token(request: Request) -> CallToken:
         )
         .with_room_config(
             api.RoomConfiguration(
-                agents=[api.RoomAgentDispatch(agent_name=AGENT_NAME)],
+                agents=[api.RoomAgentDispatch(agent_name=agent_name())],
                 max_participants=2,  # the caller and Mia
                 empty_timeout=60,
                 departure_timeout=10,

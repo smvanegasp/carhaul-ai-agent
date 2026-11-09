@@ -40,9 +40,10 @@ chosen: `v1-mini` (BACKLOG has the 5+5 call table). Left: Sergio's own browser c
 and phone). Stages 3 and 5 (live panel, call records, feedback) merged (PRs #7, #8).
 **Stage 4** (branch `stage-4-aws`, PR #9): Terraform, deploy script and workflow, SSM secrets
 script, TESTING_GUIDE; the worker is **on demand** (started by `/api/wake`, exits when idle) so
-hosting stays around $1/month. Profile `carhaul` exists (account 816940506502). Next:
-`terraform plan`, then Sergio's OK for the first `scripts/deploy.sh`. No custom domain yet
-(the cloudfront.net address); later `carhaul.sergiovanegas.com`.
+hosting stays around $1/month. **Deployed** (2026-11-09) at
+https://dj7jlcxkdszj1.cloudfront.net (profile `carhaul`, account 816940506502): Mia wakes in
+~64 s, a scripted call through the live site got the $724 quote and its record is in DynamoDB.
+No custom domain yet; later `carhaul.sergiovanegas.com`.
 
 ## 2. How we work
 
@@ -117,7 +118,7 @@ docker compose up        # api :8020, web :5190, DynamoDB Local :8030, agent wor
 ```
 
 - Voice without Docker: `cd agent && uv run python -m mia.main dev` (worker) plus the api and
-  web. Run **either** the compose `agent` or a host worker: both register as `mia` and would
+  web. Run **either** the compose `agent` or a host worker: both register as `mia-local` and would
   split the calls. `uv run python -m mia.main console` talks to Mia with your own mic.
 - `uv run python -m mia.smoke` (in `agent/`) phones the running worker with a scripted caller
   and prints the transcript and timings; `--api http://localhost:5190` goes through
@@ -175,6 +176,11 @@ docker compose up        # api :8020, web :5190, DynamoDB Local :8030, agent wor
 - 2026-11-09: **CarHauler free tier ran out** (1,000 calls, catalog lookups included). The
   worker had re-fetched the catalog (69 calls) on every process start; now it's cached on disk
   for a week (`catalog.py`).
+- 2026-11-09 (stage 4): **Local and AWS workers have different names**: the first scripted
+  call on AWS was answered by the local Docker worker, because both registered as `mia` on the
+  same LiveKit project. Now `MIA_AGENT_NAME` is `mia` only on AWS (task definition and Lambda);
+  everything local defaults to `mia-local`. Also, the two warm processes of a fresh task both
+  fetched the CarHauler catalog (2 x 69 paid calls): `catalog.warm` now takes a file lock.
 - 2026-11-09 (stage 4): **Hosting must stay around $1-2/month** (Sergio: personal project). So
   the worker is an **on-demand ECS Fargate task**, not a service: opening the call page calls
   `/api/wake`, which starts it (~1 min cold start; at most 20 starts a day; a lock row prevents

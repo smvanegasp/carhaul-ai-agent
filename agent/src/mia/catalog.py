@@ -18,6 +18,7 @@ this snapshot.
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import gzip
 import json
 import logging
@@ -125,12 +126,31 @@ _lock = threading.Lock()
 _snapshot: Snapshot | None = None
 
 
+@contextlib.contextmanager
+def _across_processes(path: Path):
+    """One process at a time: the worker warms several processes at once, and on a fresh task
+    each fetched the catalog (2 x 69 paid calls on the first AWS start, 2026-11-09). The
+    second one waits and then finds the first one's file. POSIX only (Docker, ECS)."""
+    try:
+        import fcntl
+    except ImportError:  # Windows host runs: no lock
+        yield
+        return
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with open(path.with_suffix(".lock"), "w") as lock:
+        fcntl.flock(lock, fcntl.LOCK_EX)
+        try:
+            yield
+        finally:
+            fcntl.flock(lock, fcntl.LOCK_UN)
+
+
 def warm(path: Path | None = None) -> Snapshot:
     """Once per process: the file if fresh, otherwise fetch (69 calls) and save it. Never
     raises; on failure calls start cold and the resolver fetches what it needs."""
     global _snapshot
     path = path or cache_file()
-    with _lock:
+    with _lock, _across_processes(path):
         if _snapshot is not None:
             return _snapshot
         snap = load(path)

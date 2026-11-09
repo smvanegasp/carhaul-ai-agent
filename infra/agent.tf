@@ -131,6 +131,8 @@ resource "aws_ecs_task_definition" "agent" {
     stopTimeout = 120
     environment = [
       { name = "TABLE_NAME", value = aws_dynamodb_table.main.name },
+      # The production worker's name (local ones are "mia-local"); the API dispatches it.
+      { name = "MIA_AGENT_NAME", value = "mia" },
       { name = "AWS_REGION", value = "us-east-1" },
       # Chosen from 5+5 scripted calls (docs/BACKLOG.md, stage 3): same latency as the cloud
       # model, and no per-turn call to LiveKit Inference.
