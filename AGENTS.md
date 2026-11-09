@@ -37,7 +37,8 @@ the browser work locally (`docker compose up`, then "Call Mia" on http://localho
 verified end to end with scripted voice calls (`python -m mia.smoke`), real quotes included
 (CarHauler now has a payment method; calls are paid, so still budget them). Turn detector
 chosen: `v1-mini` (BACKLOG has the 5+5 call table). Left: Sergio's own browser call (desktop
-and phone), then stage 4 (AWS).
+and phone). **Stage 5** (branch `stage-5-live-panel`, on top of stage 3): live panel, call
+records in DynamoDB, feedback form; verified with a scripted call. Then stage 4 (AWS).
 
 ## 2. How we work
 
@@ -82,7 +83,9 @@ Fargate, not Lambda. Everything else follows the fit pattern.
 | `guardrails.py` | Drops invented/unconfirmed tool calls before they run; fallback lines; `tidy_speech` |
 | `geo.py`, `carhauler.py`, `vehicles.py`, `pricing.py` | City → ZIP, CarHauler API, year/make/model → trim, quotes and the spoken summary |
 | `chat.py` | `uv run python -m mia.chat`: talk to Mia by typing (real APIs) |
-| `main.py` | The voice worker (`AgentServer`, agent name `mia`): STT/TTS/VAD/turn detector, filler and hang-up hooks, 6-min limit, call record + latency logged at the end |
+| `main.py` | The voice worker (`AgentServer`, agent name `mia`): STT/TTS/VAD/turn detector, filler and hang-up hooks, 6-min limit, events published to the room, call record saved at the end |
+| `events.py` | `CallEvents`: turns with latency, tool calls with JSON, guardrail drops, state; the live panel's stream (`mia.events`) and the record's content |
+| `records.py` | The call record and its DynamoDB write (keys documented there; shared table with the backend) |
 | `catalog.py` | CarHauler catalog snapshot on disk (a week), so worker restarts don't spend API calls |
 | `latency.py` | Per-turn latency from `ChatMessage.metrics` (end of turn, LLM TTFT, TTS TTFB, e2e) |
 | `smoke.py` | `uv run python -m mia.smoke [--api http://localhost:5190]`: a scripted caller phones the running worker through LiveKit |
@@ -92,8 +95,8 @@ Fargate, not Lambda. Everything else follows the fit pattern.
 | Path | What |
 | --- | --- |
 | `agent/` | uv project `mia-agent`, package `src/mia/` (see below). `evals/scenarios/*.yaml`: reference conversations |
-| `backend/` | uv project `carhaul-api`: FastAPI for Lambda (`app/`). `POST /api/token` (`livekit_token.py`, rate limited by `ratelimit.py`). Later: calls, stats, feedback |
-| `frontend/` | React 19 + Vite + Tailwind v4 + LiveKit components. `src/call/CallPage.tsx`: call button, state, timer, mute, transcript. Later: live panel, dashboard |
+| `backend/` | uv project `carhaul-api`: FastAPI for Lambda (`app/`). `POST /api/token` (`livekit_token.py`, rate limited by `ratelimit.py`), `POST /api/calls/{room}/feedback` (`calls.py`), DynamoDB in `db.py`. Later: call list and stats |
+| `frontend/` | React 19 + Vite + Tailwind v4 + LiveKit components. `src/call/`: `CallPage.tsx` (call, state, timer, mute, transcript), `LivePanel.tsx` (from `lib/events.ts`), `FeedbackForm.tsx`. Later: dashboard |
 | `notebooks/` | Exploration only; kernel is `agent/.venv` (`uv sync --group notebooks`) |
 | `docs/` | BACKLOG, CONVERSATION_DESIGN, TESTING_GUIDE (stage 4) |
 | `infra/`, `scripts/` | Stage 4: Terraform and deploy/secrets scripts (copied from fit) |
@@ -104,7 +107,7 @@ Fargate, not Lambda. Everything else follows the fit pattern.
 cd agent    && uv sync && uv run pytest -q && uv run ruff check . && uv run ruff format --check .
 cd backend  && uv sync && uv run pytest -q && uv run ruff check . && uv run ruff format --check .
 cd frontend && npm ci && npm test && npm run build
-docker compose up        # api on :8020, web on :5190, agent worker (connects out to LiveKit)
+docker compose up        # api :8020, web :5190, DynamoDB Local :8030, agent worker (connects out to LiveKit)
 ```
 
 - Voice without Docker: `cd agent && uv run python -m mia.main dev` (worker) plus the api and
@@ -165,6 +168,11 @@ docker compose up        # api on :8020, web on :5190, agent worker (connects ou
 - 2026-11-09: **CarHauler free tier ran out** (1,000 calls, catalog lookups included). The
   worker had re-fetched the catalog (69 calls) on every process start; now it's cached on disk
   for a week (`catalog.py`).
+- 2026-11-09 (stage 5): The worker writes the call record to DynamoDB itself (boto3, ECS task
+  role later) instead of posting it to the API: no internal endpoint to protect, and the API
+  stays the browser's. Live panel events travel as LiveKit text streams (topic `mia.events`,
+  no size limit, unlike data packets). Feedback doesn't require the record to exist yet (the
+  form shows as the call ends, before the worker has saved it).
 - 2026-11-08: **Model: `openai/gpt-oss-20b`** (env `MIA_LLM_MODEL` to switch). 5 runs x 3
   scenarios with the guardrails: 20b 15/15, p50 412 ms per turn; 120b 14/15, 584 ms; Qwen
   3.8 27B 15/15 with zero invented calls but 958 ms. Llama is no longer offered on Sergio's

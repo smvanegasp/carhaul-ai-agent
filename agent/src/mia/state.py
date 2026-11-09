@@ -171,7 +171,7 @@ class QuoteSession:
         }
 
     def to_record(self) -> dict[str, Any]:
-        """Full state for logs and the call record (stage 5)."""
+        """Full state for logs and the call record (records.py)."""
         return {
             "origin": asdict(self.origin) if self.origin else None,
             "destination": asdict(self.destination) if self.destination else None,

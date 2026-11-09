@@ -1,16 +1,19 @@
 import hmac
+import os
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
-from app import livekit_token, ssm
+from app import calls, db, livekit_token, ssm
 from app.config import on_aws, origin_secret
 
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     ssm.load_parameters()
+    if os.environ.get("AUTO_CREATE_TABLE") == "1":  # docker compose (DynamoDB Local)
+        db.create_table_if_missing()
     yield
 
 
@@ -22,6 +25,7 @@ app = FastAPI(
     lifespan=lifespan,
 )
 app.include_router(livekit_token.router)
+app.include_router(calls.router)
 
 
 @app.middleware("http")

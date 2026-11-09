@@ -20,6 +20,7 @@ from typing import Any
 
 from mia import grounding
 from mia.carhauler import CarHaulerClient, CarHaulerError, ErrorCode
+from mia.events import CallEvents
 from mia.geo import CityToZipError, city_to_zip
 from mia.pricing import QuoteRequest, quote_vehicles, summarize
 from mia.state import Place, QuoteSession, Stage
@@ -46,7 +47,7 @@ ESCALATE = (
 
 @dataclass
 class Services:
-    """Shared by every call a worker handles."""
+    """What the tools use besides the call state (one per call)."""
 
     carhauler: CarHaulerClient
     resolver: VehicleResolver
@@ -55,6 +56,9 @@ class Services:
     # once the goodbye has been spoken).
     say_filler: Callable[[str], Any] | None = None
     end_call: Callable[[], Any] | None = None
+    # The call's events (live panel, call record). Text chat and tests get one that only
+    # keeps them; the worker's also publishes them to the room.
+    events: CallEvents = field(default_factory=CallEvents)
     extra: dict[str, Any] = field(default_factory=dict)
 
 

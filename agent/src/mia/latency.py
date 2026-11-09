@@ -14,8 +14,8 @@ is deprecated in 1.8):
 ``python -m mia.smoke`` (5 turns): server-side e2e p50 734 ms vs 1.39 s heard by the caller,
 the gap being the VAD's 0.55 s of silence before it decides speech ended, plus the network.
 
-The worker logs ``summary()`` when the call ends; stage 5 sends the per-turn values to the
-live panel and the call record.
+``events.CallEvents`` feeds this from every turn: the per-turn values go to the live panel,
+``summary()`` to the call record.
 """
 
 from __future__ import annotations

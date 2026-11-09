@@ -23,3 +23,33 @@ export async function fetchCallToken(fetchFn: typeof fetch = fetch): Promise<Cal
     .catch(() => null);
   throw new CallError(detail ?? `Mia can't take calls right now (error ${res.status}).`);
 }
+
+export interface FeedbackIn {
+  rating: number;
+  comment: string;
+  persona: string;
+}
+
+/** POST /api/calls/{room}/feedback (backend/app/calls.py). */
+export async function sendFeedback(
+  room: string,
+  feedback: FeedbackIn,
+  fetchFn: typeof fetch = fetch,
+): Promise<void> {
+  let res: Response;
+  try {
+    res = await fetchFn(`/api/calls/${encodeURIComponent(room)}/feedback`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(feedback),
+    });
+  } catch {
+    throw new CallError("Can't reach the server. Check your connection and try again.");
+  }
+  if (res.ok) return;
+  const detail = await res
+    .json()
+    .then((b: { detail?: unknown }) => (typeof b.detail === "string" ? b.detail : null))
+    .catch(() => null);
+  throw new CallError(detail ?? `Couldn't send your feedback (error ${res.status}).`);
+}

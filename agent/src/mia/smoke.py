@@ -6,7 +6,9 @@
 The caller joins a new room with the same dispatch as /api/token, speaks each line (Deepgram
 Aura TTS, a different voice from Mia's) once Mia stops talking, and prints both sides of the
 transcript plus the response time as heard by the caller: from the end of the caller's audio
-until Mia's state turns to "speaking". It uses the real APIs, including one CarHauler quote.
+until Mia's state turns to "speaking". It also checks the live panel's event stream
+(``mia.events``): each tool call and guardrail drop is printed, with a count by type at the
+end. It uses the real APIs, including one CarHauler quote.
 Pass ``--lines "..." "..."`` for another script, and ``--api http://localhost:5190`` to get
 the token from the running app's /api/token (the browser's path) instead of minting one here.
 """
@@ -15,6 +17,7 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import json
 import os
 import statistics
 import time
@@ -116,6 +119,21 @@ async def run(lines: list[str], api_base: str | None = None) -> int:
         "lk.transcription", lambda r, i: asyncio.create_task(on_transcript(r, i))
     )
 
+    events: list[dict] = []
+
+    async def on_event(reader: rtc.TextStreamReader, _identity: str) -> None:
+        event = json.loads(await reader.read_all())
+        events.append(event)
+        if event["type"] == "tool":
+            ok = "ok" if event["ok"] else "ERROR"
+            print(f"{stamp()} {DIM}tool {event['name']} {ok} {event['ms']} ms{RESET}")
+        elif event["type"] == "dropped":
+            print(f"{stamp()} {DIM}guardrail dropped {event['tool']}: {event['why']}{RESET}")
+
+    room.register_text_stream_handler(
+        "mia.events", lambda r, i: asyncio.create_task(on_event(r, i))
+    )
+
     async def wait_state(*states: str, timeout: float = 30) -> str:
         deadline = time.monotonic() + timeout
         while agent_state["value"] not in states:
@@ -181,6 +199,12 @@ async def run(lines: list[str], api_base: str | None = None) -> int:
         pump_task.cancel()
         await room.disconnect()
 
+    counts: dict[str, int] = {}
+    for e in events:
+        counts[e["type"]] = counts.get(e["type"], 0) + 1
+    seqs = sorted(e["seq"] for e in events)
+    gaps = "none missing" if seqs == list(range(len(seqs))) else f"seq gaps in {seqs}"
+    print(f"\nmia.events: {len(events)} received ({gaps}): {counts}")
     if responses:
         print(
             f"\nresponse as heard: p50 {statistics.median(responses) * 1000:.0f} ms, "
