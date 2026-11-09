@@ -1,3 +1,4 @@
+import json
 import secrets
 
 import pytest
@@ -80,3 +81,25 @@ def test_aws_dispatches_the_production_worker(client, monkeypatch):
     monkeypatch.setenv("MIA_AGENT_NAME", "mia")
     claims = _claims(client.post("/api/token").json()["participant_token"])
     assert [a.agent_name for a in claims.room_config.agents] == ["mia"]
+
+
+def _voice_in(token: str) -> str:
+    [dispatch] = _claims(token).room_config.agents
+    return json.loads(dispatch.metadata)["voice"]
+
+
+def test_the_chosen_voice_goes_to_the_worker(client):
+    body = client.post("/api/token", json={"voice": "cartesia-courtney"}).json()
+    assert _voice_in(body["participant_token"]) == "cartesia-courtney"
+
+
+@pytest.mark.parametrize("payload", [None, {}, {"voice": "not-a-voice"}])
+def test_no_or_unknown_voice_gets_the_default(client, payload):
+    body = client.post("/api/token", json=payload).json()
+    assert _voice_in(body["participant_token"]) == "elevenlabs-mia"
+
+
+def test_the_voice_list(client):
+    voices = client.get("/api/voices").json()
+    assert len(voices) == 6
+    assert [v["key"] for v in voices if v["default"]] == ["elevenlabs-mia"]

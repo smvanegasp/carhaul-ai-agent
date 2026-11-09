@@ -31,9 +31,9 @@ from livekit.agents import (
     inference,
     room_io,
 )
-from livekit.plugins import deepgram, elevenlabs, silero
+from livekit.plugins import deepgram, silero
 
-from mia import catalog, idle, records
+from mia import catalog, idle, records, voices
 from mia.agent import Mia, make_llm, new_session
 from mia.carhauler import CarHaulerClient
 from mia.events import TOPIC, CallEvents
@@ -48,7 +48,6 @@ load_dotenv(Path(__file__).resolve().parents[3] / ".env")  # local runs; Docker 
 # from the live site (both share one LiveKit project; seen on 2026-11-09).
 AGENT_NAME = os.environ.get("MIA_AGENT_NAME") or "mia-local"
 MAX_CALL_SECONDS = float(os.environ.get("MIA_MAX_CALL_SECONDS", 6 * 60))
-TTS_MODEL = "eleven_flash_v2_5"  # lowest-latency ElevenLabs model; verified on the free plan
 # Keyboard typing between "give me one second" and the price, so it feels calculated.
 TYPING_SECONDS = 2.0
 TIME_UP = (
@@ -117,6 +116,16 @@ class RoomPublisher:
         self.task.cancel()
 
 
+def _dispatch_metadata(ctx: JobContext) -> dict:
+    """What the API put in the agent dispatch (backend/app/livekit_token.py): the caller's
+    voice choice. Anything unreadable means defaults."""
+    try:
+        data = json.loads(ctx.job.metadata or "{}")
+    except ValueError:
+        return {}
+    return data if isinstance(data, dict) else {}
+
+
 def _turn_detector_version() -> dict[str, str]:
     """MIA_TURN_DETECTOR=v1 (LiveKit Cloud model) or v1-mini (runs in the worker). Unset,
     LiveKit picks v1 in `dev` and v1-mini in `start`."""
@@ -139,11 +148,12 @@ async def entrypoint(ctx: JobContext) -> None:
     publisher = RoomPublisher(ctx.room)
     events = services.events = CallEvents(sink=publisher)
     llm = make_llm()
+    voice = voices.pick(_dispatch_metadata(ctx).get("voice"))
     turn_detector = os.environ.get("MIA_TURN_DETECTOR") or "auto"
     events.config(
         stt="Deepgram nova-3",
         llm=f"Groq {llm.model}",
-        tts=f"ElevenLabs {TTS_MODEL}",
+        tts=voice.label,
         turn_detector=f"LiveKit {turn_detector}",
         max_call_s=str(int(MAX_CALL_SECONDS)),
     )
@@ -152,12 +162,7 @@ async def entrypoint(ctx: JobContext) -> None:
         state,
         llm=llm,
         stt=deepgram.STT(model="nova-3", language="en-US"),
-        tts=elevenlabs.TTS(
-            voice_id=os.environ["ELEVENLABS_VOICE_ID"],
-            model=TTS_MODEL,
-            # The plugin reads ELEVEN_API_KEY; our .env and SSM use ELEVENLABS_API_KEY.
-            api_key=os.environ["ELEVENLABS_API_KEY"],
-        ),
+        tts=voices.make_tts(voice),
         vad=ctx.proc.userdata["vad"],
         turn_handling={
             # LiveKit's end-of-turn model: waits when "I want to ship my Honda from..." trails

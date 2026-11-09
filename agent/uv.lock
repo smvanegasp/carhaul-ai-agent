@@ -757,6 +757,9 @@ wheels = [
 ]
 
 [package.optional-dependencies]
+cartesia = [
+    { name = "livekit-plugins-cartesia" },
+]
 codecs = [
     { name = "numpy" },
 ]
@@ -819,6 +822,18 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/e0/29/18d7c360642e519124c8e5ae422dac36e22d74696a476edcc48fc6217d36/livekit_local_inference-0.2.7-cp312-cp312-manylinux_2_27_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:d8fc1803a65654cc5061274a1aee067c584e2f0fd4ead85659f8f26ec06880f8", size = 34835065, upload-time = "2026-08-18T09:46:41.926Z" },
     { url = "https://files.pythonhosted.org/packages/37/61/0b073e893274e461019516f8610029ceab74c06b9f6496b34be9ed704039/livekit_local_inference-0.2.7-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:449411e6cf01057e761588d6c19f1978d0ff652235d43de1780aa0b866b1435d", size = 34876716, upload-time = "2026-08-18T09:46:44.7Z" },
     { url = "https://files.pythonhosted.org/packages/13/30/230770d450305c53cad880445d046c7f84c26507b61c50fe185ea15a29ca/livekit_local_inference-0.2.7-cp312-cp312-win_amd64.whl", hash = "sha256:5a497ed9dc7f11666b2226cf195c85bd12f511ad7d57dbd7857bec4c573b9031", size = 34877098, upload-time = "2026-08-18T09:46:47.717Z" },
+]
+
+[[package]]
+name = "livekit-plugins-cartesia"
+version = "1.8.11"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "livekit-agents" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/57/42/22c431720670c854b0d33ae6ff845ece6d56d679574033c761055c071af5/livekit_plugins_cartesia-1.8.11.tar.gz", hash = "sha256:62d14f09c082c9dc17795767405764bacef35daf47b619b7674e5c028efb8eba", size = 20215, upload-time = "2026-11-05T19:45:49.161Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/57/82/171a8d0a68f1631b38949e51083a37d4b5cce9654e601548543718008a33/livekit_plugins_cartesia-1.8.11-py3-none-any.whl", hash = "sha256:c42992e1730501ba990305a51013fbc6541ee730be158ba1d8d793d231786a4f", size = 27897, upload-time = "2026-11-05T19:45:47.884Z" },
 ]
 
 [[package]]
@@ -966,7 +981,7 @@ dependencies = [
     { name = "boto3" },
     { name = "googlemaps" },
     { name = "httpx" },
-    { name = "livekit-agents", extra = ["deepgram", "elevenlabs", "groq", "silero"] },
+    { name = "livekit-agents", extra = ["cartesia", "deepgram", "elevenlabs", "groq", "silero"] },
     { name = "num2words" },
     { name = "python-dotenv" },
     { name = "tenacity" },
@@ -990,7 +1005,7 @@ requires-dist = [
     { name = "boto3", specifier = ">=1.40" },
     { name = "googlemaps", specifier = ">=4.10.0" },
     { name = "httpx", specifier = ">=0.28.1" },
-    { name = "livekit-agents", extras = ["deepgram", "elevenlabs", "groq", "silero"], specifier = ">=1.8.11" },
+    { name = "livekit-agents", extras = ["cartesia", "deepgram", "elevenlabs", "groq", "silero"], specifier = ">=1.8.11" },
     { name = "num2words", specifier = ">=0.5.14" },
     { name = "python-dotenv", specifier = ">=1.0.0" },
     { name = "tenacity", specifier = ">=9.2.1" },

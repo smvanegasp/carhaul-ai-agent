@@ -90,6 +90,8 @@ Fargate, not Lambda. Everything else follows the fit pattern.
 | `events.py` | `CallEvents`: turns with latency, tool calls with JSON, guardrail drops, state; the live panel's stream (`mia.events`) and the record's content |
 | `records.py` | The call record and its DynamoDB write (keys documented there; shared table with the backend) |
 | `idle.py` | On AWS the worker exits after 10 idle minutes (no call, no wake) or 2 hours, so it only costs money around calls |
+| `voices.py` | The 6 voices callers can pick (2 each: ElevenLabs, Cartesia, Deepgram), at a slightly slower pace; keys match `backend/app/voices.py` |
+| `speech.py` | Numbers written out as words before any voice reads them (`Mia.tts_node`) |
 | `catalog.py` | CarHauler catalog snapshot on disk (a week), so worker restarts don't spend API calls |
 | `latency.py` | Per-turn latency from `ChatMessage.metrics` (end of turn, LLM TTFT, TTS TTFB, e2e) |
 | `smoke.py` | `uv run python -m mia.smoke [--api http://localhost:5190]`: a scripted caller phones the running worker through LiveKit |
@@ -174,6 +176,9 @@ docker compose up        # api :8020, web :5190, DynamoDB Local :8030, agent wor
 - 2026-11-09: **CarHauler free tier ran out** (1,000 calls, catalog lookups included). The
   worker had re-fetched the catalog (69 calls) on every process start; now it's cached on disk
   for a week (`catalog.py`).
+- 2026-11-09: **Voice picker**: callers choose Mia's voice from 6 (top 2 of ElevenLabs,
+  Cartesia, Deepgram). The choice rides in the agent dispatch metadata, so no extra API or
+  state; the API only accepts known keys. All voices run at speed 0.92 and get numbers as words.
 - 2026-11-09 (UI): After Sergio's first calls: a **keyboard-typing sound** (LiveKit's built-in
   `KEYBOARD_TYPING` clip on a background track, 2 s) plays between "give me one second" and the
   price; `get_quote` waits for it (max 8 s). The chat and the panel's timeline showed the same

@@ -213,6 +213,33 @@ From Sergio's first real calls on the live site:
 - [ ] Sergio: deploy (`scripts/deploy.sh`) and try it; more feedback from his calls comes in
       a new chat
 
+## Voice picker (branch `voice-picker`, on top of the UI refresh, 2026-11-09)
+
+- [x] `mia/voices.py`: 6 voices, 2 per provider (ElevenLabs flash v2.5: Mia's default and
+      Jessica; Cartesia sonic-3: Courtney and Jessica; Deepgram Aura-2: Thalia and
+      Andromeda), each at speed 0.92 (callers found Mia fast)
+- [x] `GET /api/voices`; `/api/token` takes `{"voice": key}` (unknown → default) and passes it
+      in the agent dispatch metadata; the worker builds that TTS. The keys are checked to match
+      across agent and backend (`tests/test_voices.py`)
+- [x] Call page dropdown "Mia's voice", remembered in the browser; the stats show the voice
+- [x] `CARTESIA_API_KEY` in `.env`, `/carhaul/agent/` (set_aws_secrets) and the ECS task
+- [x] Scripted call with `--voice cartesia-courtney` through `/api/token`: $724 quote, Mia hung
+      up herself, voice first audio p50 155 ms in the call
+- [ ] Sergio: `set_aws_secrets.py` again (adds the Cartesia key), then `scripts/deploy.sh`
+
+Time to first audio, one-off synthesis of "Your estimated cost is one thousand, one hundred
+ninety-one dollars. Would you like me to connect you with Sergio?", 3 runs each, 2026-11-09
+(in calls the voices stream, which is faster: Cartesia was 155 ms):
+
+| Voice | TTFB p50 | Runs (ms) | Audio length |
+| --- | --- | --- | --- |
+| ElevenLabs · Mia (default) | 187 ms | 308, 187, 185 | 6.7 s |
+| ElevenLabs · Jessica | 177 ms | 177, 177, 182 | 6.1 s |
+| Cartesia · Courtney | 406 ms | 474, 406, 149 | 5.8 s |
+| Cartesia · Jessica | 288 ms | 280, 288, 330 | 6.2 s |
+| Deepgram · Thalia | 212 ms | 436, 181, 212 | 7.1 s |
+| Deepgram · Andromeda | 184 ms | 176, 207, 184 | 7.1 s |
+
 ## Ideas / later
 
 - **Self-corrections:** "it's twenty ten... twenty twenty Toyota" was saved as 2010 (Sergio's
@@ -220,10 +247,8 @@ From Sergio's first real calls on the live site:
 - **Silence after "anything else?":** if the caller says nothing, Mia waits; LiveKit marks
   the user away after 15 s. Say goodbye and hang up then (stage 8).
 
-- **Voice picker:** a dropdown on the call page to choose Mia's voice, the top 2 from each of
-  ElevenLabs, Cartesia and Deepgram (Aura). The token request would carry the choice (room
-  metadata or participant attributes) and the worker would build that TTS per call. Compare
-  latency (TTS first audio) and cost per character in the same table.
+- **Voice picker, next:** compare cost per character per provider, and the voices' latency
+  in real calls (the call records keep `tts_node_ttfb` and the config event names the voice).
 
 - `happy_path_ngc_3v` is flaky in CI (seen once on 2026-11-09: the 3rd vehicle not saved on turn 5); 10/10 locally on the branch and on main's prompt. Track its pass rate in the stage 7 simulations.
 
