@@ -167,15 +167,45 @@ code, never by the model.) Example ZIPs from the notes: Boston 02110, San Franci
 ## CarHauler247 API
 
 Base URL `https://carhauler247.com/api/public/v2`, header `Authorization: Bearer <key>`.
+Interactive docs: <https://carhauler247.com/api-docs/v2> (OpenAPI at `/openapi/v2.json`).
+Client: `agent/src/mia/carhauler.py`.
 
 | Endpoint | Returns |
 | --- | --- |
-| `GET /car/makes` | `[{id, name}]` |
+| `GET /car/makes` | `[{id, name}]` (71 makes) |
 | `GET /car/models?makeId=4` | `[{id, name}]` |
-| `GET /car/years?modelId=48` (to verify: the notes show `/car/models?modelId=48`) | `[2025, 2024, …]` |
-| `GET /car/trims?modelId=48&year=2025` | `[{id, name}]` |
-| `GET /zipcode/search?zipPrefix=31401` | `[{zip, city, state}]` |
+| `GET /car/years?modelId=48` | `[2025, 2024, …]` (verified; the notes' `/car/models?modelId=` returns 400) |
+| `GET /car/trims?modelId=48&year=2025` | `[{id, name}]`, base trim first |
+| `GET /zipcode/search?zipPrefix=31401` | up to 8 `{zip, city, state}` |
 | `GET /quote?fromZip&toZip&vehicleType&isOperational&shippingDate&trimId` | `{success, quote: {price, distance, drivingTime, vehicleType, carrier, operational}}` |
+
+Cost: free tier, then $0.0042 per quote and $0.0001 per lookup.
+
+**Quote parameters:** `vehicleType` is one of sedan, suv, pickup, truck, van, minivan,
+hatchback, convertible, coupe, wagon (default sedan). `trimId` wins over `vehicleType`.
+`isOperational=false` (not drivable) added about $490 on the Boston → SF Civic.
+`shippingDate` defaults to 7 days out and can't be in the past.
+
+**Behavior verified on 2026-11-08 (not all in the docs):**
+
+| Case | Response | `ErrorCode` |
+| --- | --- | --- |
+| Bad or missing key | HTTP 401 | `AUTH` (escalate) |
+| Free calls used up | HTTP 402 (docs) | `PAYMENT_REQUIRED` (escalate) |
+| Several quotes within seconds | HTTP 200 `success:false` "Too many requests…", clears in ~15 s | `RATE_LIMITED` (retried, then escalate) |
+| Invalid origin / destination ZIP | 200 `success:false` "Invalid origin ZIP code…" | `INVALID_ORIGIN_ZIP` / `INVALID_DESTINATION_ZIP` |
+| Same origin and destination | 200 `success:false` "…cannot be the same" | `SAME_ZIP` |
+| Unknown trim | 200 `success:false` "Invalid trim ID…" | `INVALID_TRIM` |
+| Past date | 200 `success:false` "Invalid shipping date…" | `INVALID_DATE` |
+| Unknown `vehicleType` | priced as a sedan, no error | rejected locally: `INVALID_VEHICLE_TYPE` |
+| Models of Daihatsu, Freightliner, SRT | HTML error page (200) | treated as "no models" |
+| Year with no trims | `[]` | `NO_TRIMS` |
+
+Lookups were not rate-limited (71 concurrent model lookups were fine). ZIPs are sent as
+5-character strings to keep leading zeros (Boston 02110).
+
+**Live prices change** (the notes' Civic was $1,291; on 2026-11-08 it was $1,194), so tests
+never assert live prices.
 
 Website vs API: the website accepts a city or a ZIP (via Google); the API only takes ZIPs, so we
 geocode. Not in the API: carrier type, payment options, extra cargo, modified body. Drivable

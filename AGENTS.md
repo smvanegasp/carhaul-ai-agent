@@ -57,7 +57,7 @@ Fargate, not Lambda. Everything else follows the fit pattern.
 
 | Path | What |
 | --- | --- |
-| `agent/` | uv project `mia-agent`, package `src/mia/`. `geo.py`: city → ZIP (Google Maps, typo-tolerant). Later: prompt, state, tools, CarHauler client, pricing, telemetry, evals |
+| `agent/` | uv project `mia-agent`, package `src/mia/`. `geo.py`: city → ZIP (Google Maps, typo-tolerant). `carhauler.py`: CarHauler247 API client (retries, typed errors, catalog cache). `vehicles.py`: spoken year/make/model → trim. `pricing.py`: quotes, totals, the spoken summary. Later: prompt, state, tools, telemetry, evals |
 | `backend/` | uv project `carhaul-api`: FastAPI for Lambda (`app/`). Later: LiveKit token, calls, stats, feedback |
 | `frontend/` | React 19 + Vite + Tailwind v4. Later: call page with live panel, dashboard |
 | `notebooks/` | Exploration only; kernel is `agent/.venv` (`uv sync --group notebooks`) |
@@ -73,9 +73,12 @@ cd frontend && npm ci && npm test && npm run build
 docker compose up        # api on :8020, web on :5190
 ```
 
-- `uv run pytest -m live` (in `agent/`) runs tests that call **paid APIs** (Google Maps now,
-  CarHauler and Groq later). They are deselected by default and never run in CI except where a
-  stage says so explicitly. `tests/test_geo_accuracy.py` is about 100 Google calls.
+- `uv run pytest -m live` (in `agent/`) runs tests that call **paid APIs** (Google Maps,
+  CarHauler; Groq later). They are deselected by default and never run in CI except where a
+  stage says so explicitly. `tests/test_geo_accuracy.py` is about 100 Google calls;
+  `tests/test_vehicles_live.py` about 80 CarHauler lookups and 1 quote.
+- Offline tests use `tests/fake_carhauler.py` (respx), which mimics the real API's quirks.
+  **Never assert live prices**; they change weekly.
 - CI (`.github/workflows/ci.yml`): agent, backend, frontend, docker build, gitleaks.
 
 ## 5. Secrets and safety
