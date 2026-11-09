@@ -178,7 +178,9 @@ function OnFileCard({ panel }: { panel: Panel }) {
 
 function Timeline({ panel }: { panel: Panel }) {
   const end = useRef<HTMLLIElement>(null);
-  useEffect(() => end.current?.scrollIntoView({ block: "nearest" }), [panel.timeline.length]);
+  useEffect(() => {
+    end.current?.scrollIntoView({ block: "nearest" });
+  }, [panel.timeline.length]);
   return (
     <div className="rounded-xl bg-white p-3 ring-1 ring-stone-200">
       <h3 className="mb-2 text-sm font-semibold">Timeline</h3>
