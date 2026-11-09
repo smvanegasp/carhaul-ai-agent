@@ -26,10 +26,6 @@ output "agent_cluster" {
   value = aws_ecs_cluster.main.name
 }
 
-output "agent_service" {
-  value = aws_ecs_service.agent.name
-}
-
 output "table_name" {
   value = aws_dynamodb_table.main.name
 }

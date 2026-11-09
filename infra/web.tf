@@ -107,12 +107,13 @@ resource "aws_cloudfront_distribution" "main" {
     }
   }
 
-  # Served on the custom domain (domain.tf); the cloudfront.net name keeps working.
-  aliases = [var.domain]
+  # The custom domain when set (domain.tf); the cloudfront.net name always works.
+  aliases = local.custom_domain ? [var.domain] : []
 
   viewer_certificate {
-    acm_certificate_arn      = aws_acm_certificate_validation.app.certificate_arn
-    ssl_support_method       = "sni-only"
-    minimum_protocol_version = "TLSv1.2_2021"
+    cloudfront_default_certificate = !local.custom_domain
+    acm_certificate_arn            = local.custom_domain ? aws_acm_certificate_validation.app[0].certificate_arn : null
+    ssl_support_method             = local.custom_domain ? "sni-only" : null
+    minimum_protocol_version       = local.custom_domain ? "TLSv1.2_2021" : "TLSv1"
   }
 }

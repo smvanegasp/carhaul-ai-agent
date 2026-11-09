@@ -9,8 +9,8 @@ only what it needs:
 - /carhaul/api/    the API (Lambda): the LiveKit key to mint call tokens
 - /carhaul/agent/  the voice worker (ECS): LiveKit, Groq, Deepgram, ElevenLabs, CarHauler, Google
 
-Uses the "carhaul" AWS profile unless AWS_PROFILE is set. If the API or the worker is already
-deployed, it is restarted so it reads the new values.
+Uses the "carhaul" AWS profile unless AWS_PROFILE is set. If the API is already deployed, it
+is restarted so it reads the new values; the on-demand worker reads them at its next start.
 """
 
 import getpass
@@ -90,16 +90,6 @@ def main() -> None:
         print("Restarted the API so it picks up the new values.")
     except lam.exceptions.ResourceNotFoundException:
         pass
-
-    # ECS reads the secrets when a task starts: start a new worker.
-    ecs = session.client("ecs")
-    try:
-        services = ecs.describe_services(cluster="carhaul", services=["carhaul-agent"])
-    except ecs.exceptions.ClusterNotFoundException:
-        return
-    if any(s["status"] == "ACTIVE" for s in services.get("services", [])):
-        ecs.update_service(cluster="carhaul", service="carhaul-agent", forceNewDeployment=True)
-        print("Started a new voice worker so it picks up the new values.")
 
 
 if __name__ == "__main__":

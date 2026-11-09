@@ -29,7 +29,7 @@ from livekit.agents import (
 )
 from livekit.plugins import deepgram, elevenlabs, silero
 
-from mia import catalog, records
+from mia import catalog, idle, records
 from mia.agent import Mia, make_llm, new_session
 from mia.carhauler import CarHaulerClient
 from mia.events import TOPIC, CallEvents
@@ -66,6 +66,8 @@ server = AgentServer(
     num_idle_processes=int(os.environ.get("MIA_IDLE_PROCESSES", 2)),
     initialize_process_timeout=30,
 )
+# On AWS the worker runs only around calls and exits when idle (mia/idle.py).
+idle.install(server)
 
 
 class RoomPublisher:

@@ -10,15 +10,16 @@ resource "aws_ecr_repository" "api" {
 
 resource "aws_ecr_lifecycle_policy" "api" {
   repository = aws_ecr_repository.api.name
-  policy     = local.keep_last_5_images
+  policy     = local.keep_last_images
 }
 
 locals {
-  keep_last_5_images = jsonencode({
+  # ECR storage is billed per GB-month and the worker image is ~1.6 GB: keep only 2 per repo.
+  keep_last_images = jsonencode({
     rules = [{
       rulePriority = 1
-      description  = "Keep the last 5 images"
-      selection    = { tagStatus = "any", countType = "imageCountMoreThan", countNumber = 5 }
+      description  = "Keep the last 2 images"
+      selection    = { tagStatus = "any", countType = "imageCountMoreThan", countNumber = 2 }
       action       = { type = "expire" }
     }]
   })
@@ -71,6 +72,23 @@ resource "aws_iam_role_policy" "api" {
         Resource = aws_dynamodb_table.main.arn
       },
       {
+        # Start the on-demand worker and see whether it's up (backend/app/worker.py).
+        Effect   = "Allow"
+        Action   = "ecs:RunTask"
+        Resource = "arn:aws:ecs:us-east-1:${local.account_id}:task-definition/${aws_ecs_task_definition.agent.family}:*"
+      },
+      {
+        Effect    = "Allow"
+        Action    = ["ecs:ListTasks", "ecs:DescribeTasks"]
+        Resource  = "*"
+        Condition = { ArnEquals = { "ecs:cluster" = aws_ecs_cluster.main.arn } }
+      },
+      {
+        Effect   = "Allow"
+        Action   = "iam:PassRole"
+        Resource = [aws_iam_role.agent_execution.arn, aws_iam_role.agent_task.arn]
+      },
+      {
         # Only the API's own secrets (the LiveKit key to mint call tokens), not the worker's.
         # SecureStrings use the AWS-managed aws/ssm key, whose policy already allows SSM use.
         Effect   = "Allow"
@@ -98,6 +116,12 @@ resource "aws_lambda_function" "api" {
       # Every call spends money (Groq, Deepgram, ElevenLabs, LiveKit, CarHauler).
       CALLS_PER_IP_PER_HOUR = "6"
       CALLS_PER_DAY         = tostring(var.calls_per_day)
+      # The on-demand worker it starts (infra/agent.tf).
+      AGENT_CLUSTER         = aws_ecs_cluster.main.name
+      AGENT_TASK_FAMILY     = aws_ecs_task_definition.agent.family
+      AGENT_SUBNETS         = join(",", data.aws_subnets.default.ids)
+      AGENT_SECURITY_GROUP  = aws_security_group.agent.id
+      WORKER_STARTS_PER_DAY = tostring(var.worker_starts_per_day)
       # Lambda Web Adapter: wait for uvicorn's port (the HTTP check would need the origin header).
       AWS_LWA_READINESS_CHECK_PROTOCOL = "tcp"
     }

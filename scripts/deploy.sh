@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
-# Deploy to AWS: images -> ECR, Terraform apply, frontend -> S3, CloudFront invalidation, and a
-# new worker. Merges into main deploy code automatically (.github/workflows/deploy.yml); run
+# Deploy to AWS: images -> ECR, Terraform apply, frontend -> S3, CloudFront invalidation. The
+# on-demand worker uses the new image the next time it starts. Merges into main deploy code
+# automatically (.github/workflows/deploy.yml); run
 # this by hand for the first deploy and for infrastructure changes.
 # Run from Git Bash in the repo root:  scripts/deploy.sh
 # Extra arguments go to `terraform apply` (e.g. -auto-approve).
@@ -39,11 +40,6 @@ docker push "$registry/carhaul-agent:latest"
 
 echo "== Terraform apply"
 tf apply -input=false "$@"
-
-echo "== Rolling the worker to the new image"
-aws ecs update-service --cluster "$(tf output -raw agent_cluster)" \
-  --service "$(tf output -raw agent_service)" --force-new-deployment \
-  --query service.deployments[0].rolloutState --output text
 
 bucket=$(tf output -raw web_bucket)
 distribution=$(tf output -raw distribution_id)

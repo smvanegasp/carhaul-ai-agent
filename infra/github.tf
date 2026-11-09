@@ -1,6 +1,7 @@
 # Lets .github/workflows/deploy.yml deploy code with short-lived credentials (OIDC), no AWS keys
-# in GitHub. The role can push both images, roll Lambda and the ECS worker, upload the frontend
-# and invalidate CloudFront; infrastructure changes still go through a local `terraform apply`.
+# in GitHub. The role can push both images, roll Lambda, upload the frontend and invalidate
+# CloudFront (the on-demand worker picks up the new image at its next start); infrastructure
+# changes still go through a local `terraform apply`.
 
 locals {
   # GitHub's immutable subject ("owner@ownerId/repo@repoId"), so a deleted and re-created repo
@@ -59,12 +60,6 @@ resource "aws_iam_role_policy" "github_deploy" {
         Effect   = "Allow"
         Action   = ["lambda:UpdateFunctionCode", "lambda:GetFunction", "lambda:GetFunctionConfiguration"]
         Resource = aws_lambda_function.api.arn
-      },
-      {
-        # A new deployment of the same task definition pulls the new ":latest" worker image.
-        Effect   = "Allow"
-        Action   = ["ecs:UpdateService", "ecs:DescribeServices"]
-        Resource = aws_ecs_service.agent.id
       },
       {
         Effect   = "Allow"

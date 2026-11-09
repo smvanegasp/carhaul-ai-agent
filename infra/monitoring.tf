@@ -1,4 +1,5 @@
-# Email alerts: the API failing, the voice worker down or erroring, call records not saved.
+# Email alerts: the API failing, the voice worker not starting or erroring, call records not
+# saved.
 # Free at this size (CloudWatch's first 10 alarms and metrics, SNS's first 1,000 emails).
 
 resource "aws_sns_topic" "alerts" {
@@ -42,25 +43,6 @@ resource "aws_cloudwatch_metric_alarm" "lambda_errors" {
   alarm_actions       = [aws_sns_topic.alerts.arn]
 }
 
-# ECS reports the service's CPU every minute while a worker runs; no data means no worker
-# (crash loop, missing secret, image pull failure). Off when agent_count is 0 on purpose.
-resource "aws_cloudwatch_metric_alarm" "agent_down" {
-  count               = var.agent_count > 0 ? 1 : 0
-  alarm_name          = "${local.name}-agent-down"
-  alarm_description   = "No voice worker has been running for 10 minutes: nobody can call Mia. Check the ECS service events and /ecs/${local.name}-agent logs."
-  namespace           = "AWS/ECS"
-  metric_name         = "CPUUtilization"
-  dimensions          = { ClusterName = aws_ecs_cluster.main.name, ServiceName = aws_ecs_service.agent.name }
-  statistic           = "SampleCount"
-  period              = 300
-  evaluation_periods  = 2
-  threshold           = 1
-  comparison_operator = "LessThanThreshold"
-  treat_missing_data  = "breaching"
-  alarm_actions       = [aws_sns_topic.alerts.arn]
-  ok_actions          = [aws_sns_topic.alerts.arn]
-}
-
 locals {
   # Logged by the worker (JSON lines in `start` mode): any ERROR, and call records not saved
   # (agent/src/mia/records.py).
@@ -82,6 +64,35 @@ resource "aws_cloudwatch_log_metric_filter" "agent" {
     value         = "1"
     default_value = "0"
   }
+}
+
+# The API couldn't start the on-demand worker (backend/app/worker.py logs this line).
+resource "aws_cloudwatch_log_metric_filter" "worker_start_failed" {
+  name           = "WorkerStartFailed"
+  log_group_name = aws_cloudwatch_log_group.api.name
+  pattern        = "\"Couldn't start the voice worker\""
+
+  metric_transformation {
+    name          = "WorkerStartFailed"
+    namespace     = "CarHaul"
+    value         = "1"
+    default_value = "0"
+  }
+}
+
+resource "aws_cloudwatch_metric_alarm" "worker_start_failed" {
+  alarm_name          = "${local.name}-worker-not-starting"
+  alarm_description   = "The API couldn't start Mia's voice worker (ECS RunTask failed): nobody can call. Check the API logs."
+  namespace           = "CarHaul"
+  metric_name         = "WorkerStartFailed"
+  statistic           = "Sum"
+  period              = 300
+  evaluation_periods  = 1
+  threshold           = 1
+  comparison_operator = "GreaterThanOrEqualToThreshold"
+  treat_missing_data  = "notBreaching"
+  alarm_actions       = [aws_sns_topic.alerts.arn]
+  depends_on          = [aws_cloudwatch_log_metric_filter.worker_start_failed]
 }
 
 resource "aws_cloudwatch_metric_alarm" "agent_errors" {

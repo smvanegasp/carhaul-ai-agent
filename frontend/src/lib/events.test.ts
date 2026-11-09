@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { sendFeedback } from "./api";
+import { sendFeedback, wakeMia } from "./api";
 import { addEvent, formatMs, median, parseEvent, toPanel, type MiaEvent } from "./events";
 
 const turn = (seq: number, role: "caller" | "mia", text: string, metrics = {}): MiaEvent => ({
@@ -136,5 +136,22 @@ describe("sendFeedback", () => {
     await expect(
       sendFeedback("call-abc", { rating: 4, comment: "", persona: "" }, fetchFn),
     ).rejects.toThrow("Slow down");
+  });
+});
+
+describe("wakeMia", () => {
+  it("returns the worker's state", async () => {
+    const fetchFn = vi.fn(
+      async () => new Response(JSON.stringify({ state: "starting", detail: "" }), { status: 200 }),
+    );
+    expect((await wakeMia(fetchFn)).state).toBe("starting");
+    expect(fetchFn).toHaveBeenCalledWith("/api/wake", { method: "POST" });
+  });
+
+  it("turns a rate limit into a message", async () => {
+    const fetchFn = vi.fn(
+      async () => new Response(JSON.stringify({ detail: "Too many" }), { status: 429 }),
+    );
+    await expect(wakeMia(fetchFn)).rejects.toThrow("Too many");
   });
 });

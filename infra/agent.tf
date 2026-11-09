@@ -1,7 +1,12 @@
-# The voice worker (agent/Dockerfile) on ECS Fargate. It keeps a WebSocket open to LiveKit Cloud
-# for every call, so it can't be a Lambda. It only connects out (LiveKit, Groq, Deepgram,
-# ElevenLabs, CarHauler, Google): no load balancer and no inbound port. It runs in the default
-# VPC's public subnets with a public IP, which avoids a NAT gateway (~$32/month).
+# The voice worker (agent/Dockerfile) on ECS Fargate, **on demand**: there is no ECS service
+# keeping it up. The API starts one task when someone opens the call page (backend/app/worker.py)
+# and the worker exits after 10 idle minutes (agent/src/mia/idle.py), so an unused site costs
+# nothing and a test session costs cents (1 vCPU / 3 GB is ~$0.06/hour, billed per second).
+#
+# It keeps a WebSocket open to LiveKit Cloud for every call, so it can't be a Lambda. It only
+# connects out (LiveKit, Groq, Deepgram, ElevenLabs, CarHauler, Google): no load balancer and
+# no inbound port. It runs in the default VPC's public subnets with a public IP, which avoids a
+# NAT gateway (~$32/month).
 
 variable "agent_cpu" {
   description = "Worker vCPU units (1024 = 1 vCPU). Each call runs in its own process."
@@ -15,10 +20,10 @@ variable "agent_memory" {
   default     = 3072
 }
 
-variable "agent_count" {
-  description = "Running workers. 0 stops the worker (and its cost) without destroying anything."
+variable "worker_starts_per_day" {
+  description = "How many times a day the API may start the worker (a cost guard)."
   type        = number
-  default     = 1
+  default     = 20
 }
 
 resource "aws_ecr_repository" "agent" {
@@ -31,7 +36,7 @@ resource "aws_ecr_repository" "agent" {
 
 resource "aws_ecr_lifecycle_policy" "agent" {
   repository = aws_ecr_repository.agent.name
-  policy     = local.keep_last_5_images
+  policy     = local.keep_last_images
 }
 
 resource "aws_cloudwatch_log_group" "agent" {
@@ -121,8 +126,8 @@ resource "aws_ecs_task_definition" "agent" {
     name      = "agent"
     image     = "${aws_ecr_repository.agent.repository_url}:latest"
     essential = true
-    # On a deploy ECS sends SIGTERM; the worker stops taking calls and lets the current ones
-    # finish, for up to 2 minutes (Fargate's maximum). Calls are at most 6 minutes.
+    # If ECS stops the task, the worker lets current calls finish for up to 2 minutes
+    # (Fargate's maximum). Normally it stops itself when idle, with no call running.
     stopTimeout = 120
     environment = [
       { name = "TABLE_NAME", value = aws_dynamodb_table.main.name },
@@ -131,15 +136,19 @@ resource "aws_ecs_task_definition" "agent" {
       # model, and no per-turn call to LiveKit Inference.
       { name = "MIA_TURN_DETECTOR", value = "v1-mini" },
       { name = "MIA_IDLE_PROCESSES", value = "2" },
+      # Exit after 10 minutes with no call and no wake from the call page; 2 hours at most.
+      { name = "MIA_IDLE_EXIT_SECONDS", value = "600" },
+      { name = "MIA_MAX_UPTIME_SECONDS", value = "7200" },
     ]
     secrets = [for s in local.agent_secrets : { name = s, valueFrom = "${local.agent_ssm_arn}/${s}" }]
     healthCheck = {
       # The worker's own health endpoint: 200 once it's registered with LiveKit.
-      command     = ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8081/', timeout=3)"]
-      interval    = 30
+      command = ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8081/', timeout=3)"]
+      # Often: the call page waits for HEALTHY before letting the caller call.
+      interval    = 10
       timeout     = 5
       retries     = 3
-      startPeriod = 60
+      startPeriod = 120
     }
     logConfiguration = {
       logDriver = "awslogs"
@@ -178,28 +187,5 @@ resource "aws_security_group" "agent" {
     to_port     = 0
     protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
-  }
-}
-
-resource "aws_ecs_service" "agent" {
-  name            = "${local.name}-agent"
-  cluster         = aws_ecs_cluster.main.id
-  task_definition = aws_ecs_task_definition.agent.arn
-  desired_count   = var.agent_count
-  launch_type     = "FARGATE"
-
-  # Start the new worker before stopping the old one, so a deploy doesn't drop calls.
-  deployment_minimum_healthy_percent = 100
-  deployment_maximum_percent         = 200
-
-  deployment_circuit_breaker {
-    enable   = true
-    rollback = true
-  }
-
-  network_configuration {
-    subnets          = data.aws_subnets.default.ids
-    security_groups  = [aws_security_group.agent.id]
-    assign_public_ip = true
   }
 }

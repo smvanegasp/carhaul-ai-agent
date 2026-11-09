@@ -37,11 +37,12 @@ the browser work locally (`docker compose up`, then "Call Mia" on http://localho
 verified end to end with scripted voice calls (`python -m mia.smoke`), real quotes included
 (CarHauler now has a payment method; calls are paid, so still budget them). Turn detector
 chosen: `v1-mini` (BACKLOG has the 5+5 call table). Left: Sergio's own browser call (desktop
-and phone). **Stage 5** (branch `stage-5-live-panel`, on top of stage 3): live panel, call
-records in DynamoDB, feedback form; verified with a scripted call. **Stage 4** (branch
-`stage-4-aws`, on top of stage 5): Terraform, deploy script and workflow, SSM secrets script,
-TESTING_GUIDE written and `terraform validate` passes; **waiting for the AWS profile
-`carhaul`** to run `terraform plan`, then Sergio's OK for the first `scripts/deploy.sh`.
+and phone). Stages 3 and 5 (live panel, call records, feedback) merged (PRs #7, #8).
+**Stage 4** (branch `stage-4-aws`, PR #9): Terraform, deploy script and workflow, SSM secrets
+script, TESTING_GUIDE; the worker is **on demand** (started by `/api/wake`, exits when idle) so
+hosting stays around $1/month. Profile `carhaul` exists (account 816940506502). Next:
+`terraform plan`, then Sergio's OK for the first `scripts/deploy.sh`. No custom domain yet
+(the cloudfront.net address); later `carhaul.sergiovanegas.com`.
 
 ## 2. How we work
 
@@ -89,6 +90,7 @@ Fargate, not Lambda. Everything else follows the fit pattern.
 | `main.py` | The voice worker (`AgentServer`, agent name `mia`): STT/TTS/VAD/turn detector, filler and hang-up hooks, 6-min limit, events published to the room, call record saved at the end |
 | `events.py` | `CallEvents`: turns with latency, tool calls with JSON, guardrail drops, state; the live panel's stream (`mia.events`) and the record's content |
 | `records.py` | The call record and its DynamoDB write (keys documented there; shared table with the backend) |
+| `idle.py` | On AWS the worker exits after 10 idle minutes (no call, no wake) or 2 hours, so it only costs money around calls |
 | `catalog.py` | CarHauler catalog snapshot on disk (a week), so worker restarts don't spend API calls |
 | `latency.py` | Per-turn latency from `ChatMessage.metrics` (end of turn, LLM TTFT, TTS TTFB, e2e) |
 | `smoke.py` | `uv run python -m mia.smoke [--api http://localhost:5190]`: a scripted caller phones the running worker through LiveKit |
@@ -98,11 +100,11 @@ Fargate, not Lambda. Everything else follows the fit pattern.
 | Path | What |
 | --- | --- |
 | `agent/` | uv project `mia-agent`, package `src/mia/` (see below). `evals/scenarios/*.yaml`: reference conversations |
-| `backend/` | uv project `carhaul-api`: FastAPI for Lambda (`app/`). `POST /api/token` (`livekit_token.py`, rate limited by `ratelimit.py`), `POST /api/calls/{room}/feedback` (`calls.py`), DynamoDB in `db.py`. Later: call list and stats |
+| `backend/` | uv project `carhaul-api`: FastAPI for Lambda (`app/`). `POST /api/token` (`livekit_token.py`, rate limited by `ratelimit.py`), `POST /api/calls/{room}/feedback` (`calls.py`), `POST /api/wake` (`worker.py`: starts the on-demand worker), DynamoDB in `db.py`. Later: call list and stats |
 | `frontend/` | React 19 + Vite + Tailwind v4 + LiveKit components. `src/call/`: `CallPage.tsx` (call, state, timer, mute, transcript), `LivePanel.tsx` (from `lib/events.ts`), `FeedbackForm.tsx`. Later: dashboard |
 | `notebooks/` | Exploration only; kernel is `agent/.venv` (`uv sync --group notebooks`) |
 | `docs/` | BACKLOG, CONVERSATION_DESIGN, TESTING_GUIDE (stage 4) |
-| `infra/` | Terraform (profile `carhaul`, everything `carhaul-*`): DynamoDB, Lambda + HTTP API, S3 + CloudFront (`mia.sergiovanegas.com`), ECS Fargate worker (`agent.tf`), GitHub OIDC deploy role, alarms. `bootstrap/`: the state bucket |
+| `infra/` | Terraform (profile `carhaul`, everything `carhaul-*`): DynamoDB, Lambda + HTTP API, S3 + CloudFront (custom domain optional), on-demand ECS Fargate worker task (`agent.tf`), GitHub OIDC deploy role, alarms. `bootstrap/`: the state bucket |
 | `scripts/` | `deploy.sh` (images, `terraform apply`, frontend, new worker), `set_aws_secrets.py` (.env → SSM), `upload_frontend.sh` |
 
 ## 4. Run and test
@@ -173,13 +175,17 @@ docker compose up        # api :8020, web :5190, DynamoDB Local :8030, agent wor
 - 2026-11-09: **CarHauler free tier ran out** (1,000 calls, catalog lookups included). The
   worker had re-fetched the catalog (69 calls) on every process start; now it's cached on disk
   for a week (`catalog.py`).
-- 2026-11-09 (stage 4): The worker runs on **ECS Fargate in the default VPC's public subnets
-  with a public IP** (outbound only, no load balancer, no NAT: saves ~$32/month), 1 vCPU / 3 GB,
-  `v1-mini` turn detector, 2 warm processes. Deploys start the new task before stopping the old
-  one, which finishes its calls for up to 120 s (Fargate's max). The CarHauler catalog snapshot
-  is also kept in DynamoDB (gzipped, ~22 KB) because tasks have no lasting disk: otherwise each
-  deploy would spend 69 paid calls. Rate-limit counters moved to DynamoDB (fit's
-  `db.increment`). Secrets split by reader: the API only sees the LiveKit key.
+- 2026-11-09 (stage 4): **Hosting must stay around $1-2/month** (Sergio: personal project). So
+  the worker is an **on-demand ECS Fargate task**, not a service: opening the call page calls
+  `/api/wake`, which starts it (~1 min cold start; at most 20 starts a day; a lock row prevents
+  double starts) and the page waits until its health check (registered with LiveKit) passes.
+  The worker exits after 10 minutes with no call and no wake, or after 2 hours (`idle.py`). An
+  always-on 1 vCPU / 3 GB task would have been ~$39/month. It runs in the default VPC's public
+  subnets with a public IP (outbound only, no load balancer, no NAT: NAT alone is ~$32/month),
+  `v1-mini` turn detector, 2 warm processes. ECR keeps 2 images per repo (storage is billed).
+  The CarHauler catalog snapshot is also kept in DynamoDB (gzipped, ~22 KB) because tasks have
+  no lasting disk: otherwise each start would spend 69 paid calls. Rate-limit counters moved to
+  DynamoDB (fit's `db.increment`). Secrets split by reader: the API only sees the LiveKit key.
 - 2026-11-09 (stage 5): The worker writes the call record to DynamoDB itself (boto3, ECS task
   role later) instead of posting it to the API: no internal endpoint to protect, and the API
   stays the browser's. Live panel events travel as LiveKit text streams (topic `mia.events`,

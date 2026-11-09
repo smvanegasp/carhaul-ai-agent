@@ -1,7 +1,8 @@
 name: Deploy
 
 # After CI passes on main (that is, after a merge), deploy the code to AWS: the API image to
-# Lambda, the worker image to ECS, the frontend to S3 + CloudFront. Infrastructure is not
+# Lambda, the worker image to ECR (the on-demand worker runs it at its next start), the frontend
+# to S3 + CloudFront. Infrastructure is not
 # applied here: run `terraform apply` (scripts/deploy.sh) locally before merging code that
 # needs it.
 #
@@ -31,8 +32,6 @@ env:
   FUNCTION: carhaul-api
   API_REPOSITORY: carhaul-api
   AGENT_REPOSITORY: carhaul-agent
-  CLUSTER: carhaul
-  SERVICE: carhaul-agent
   WEB_BUCKET: carhaul-web-816940506502
   DISTRIBUTION_ID: ${{ vars.DISTRIBUTION_ID }}
   SITE_URL: ${{ vars.SITE_URL }}
@@ -92,13 +91,6 @@ jobs:
             -t "$IMAGE:latest" -t "$IMAGE:$SHA" agent
           docker push --all-tags "$IMAGE"
 
-      - name: Start a worker on the new image
-        run: |
-          # The task definition points at ":latest"; a new deployment starts a task on it and
-          # stops the old one after it has finished its calls (up to 2 minutes).
-          aws ecs update-service --cluster "$CLUSTER" --service "$SERVICE" \
-            --force-new-deployment --query service.deployments[0].rolloutState --output text
-
       - uses: actions/setup-node@v7
         with:
           node-version: 22
@@ -112,6 +104,3 @@ jobs:
 
       - name: Check the API answers through CloudFront
         run: curl -fsS --retry 5 --retry-all-errors --retry-delay 3 "$SITE_URL/api/health"
-
-      - name: Wait for the new worker
-        run: aws ecs wait services-stable --cluster "$CLUSTER" --services "$SERVICE"
