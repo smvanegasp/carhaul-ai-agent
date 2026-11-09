@@ -190,7 +190,26 @@ browser (it's in the record). The page shows "Call ended" from the disconnect an
 | AWS CLI profile `carhaul` | ✅ IAM user `carhaul-deployer`, account 816940506502 (same as `gym`), default VPC present |
 | Twilio | ⏳ stage 9 |
 
+## UI refresh (branch `ui-refresh-typing-sound`, 2026-11-09)
+
+From Sergio's first real calls on the live site:
+
+- [x] Keyboard typing (~2 s) between "give me one second" and the price (`main.before_quote`,
+      `tools.get_quote` waits for it; checked in a scripted call: `get_quote` 4.6 s)
+- [x] One conversation view (chat + inline tool calls, drops and latency behind "Show
+      details") instead of chat + timeline; feedback form at the end of the conversation
+- [x] One scroll: desktop page = screen height, only the conversation scrolls; phone = one
+      column, page scroll only
+- [x] Dark navy theme + dark mode (tokens in `frontend/src/index.css`)
+- [ ] Sergio: deploy (`scripts/deploy.sh`) and try it; more feedback from his calls comes in
+      a new chat
+
 ## Ideas / later
+
+- **Voice picker:** a dropdown on the call page to choose Mia's voice, the top 2 from each of
+  ElevenLabs, Cartesia and Deepgram (Aura). The token request would carry the choice (room
+  metadata or participant attributes) and the worker would build that TTS per call. Compare
+  latency (TTS first audio) and cost per character in the same table.
 
 - `happy_path_ngc_3v` is flaky in CI (seen once on 2026-11-09: the 3rd vehicle not saved on turn 5); 10/10 locally on the branch and on main's prompt. Track its pass rate in the stage 7 simulations.
 

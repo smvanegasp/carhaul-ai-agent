@@ -1,6 +1,82 @@
 @import "tailwindcss";
 
+/*
+ * Colors are tokens (bg-page, bg-surface, text-ink, bg-brand...), set below for light and dark
+ * mode, so components never pick raw palette colors. Dark navy is the brand.
+ */
+@theme inline {
+  --color-page: var(--page);
+  --color-surface: var(--surface);
+  --color-raised: var(--raised);
+  --color-line: var(--line);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-brand: var(--brand);
+  --color-brand-hover: var(--brand-hover);
+  --color-brand-ink: var(--brand-ink);
+  --color-accent: var(--accent);
+  --color-caller: var(--caller);
+  --color-caller-ink: var(--caller-ink);
+  --color-ok: var(--ok);
+  --color-ok-soft: var(--ok-soft);
+  --color-warn: var(--warn);
+  --color-warn-soft: var(--warn-soft);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --color-code: var(--code);
+  --color-code-ink: var(--code-ink);
+}
+
+:root {
+  color-scheme: light dark;
+  --page: #eef2f8;
+  --surface: #ffffff;
+  --raised: #f4f7fc;
+  --line: #d6dfec;
+  --ink: #0b1b33;
+  --muted: #5a6a83;
+  --brand: #0f2a52;
+  --brand-hover: #1a3d72;
+  --brand-ink: #ffffff;
+  --accent: #2a63c9;
+  --caller: #0f2a52;
+  --caller-ink: #f2f6ff;
+  --ok: #0c7a54;
+  --ok-soft: #ddf3ea;
+  --warn: #8a5300;
+  --warn-soft: #fff3dc;
+  --danger: #c42f3a;
+  --danger-soft: #fde7e9;
+  --code: #0a1430;
+  --code-ink: #dbe5f7;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --page: #060c19;
+    --surface: #0c1528;
+    --raised: #111d36;
+    --line: #1e2c48;
+    --ink: #e5ecf8;
+    --muted: #8d9fbd;
+    --brand: #2f6fde;
+    --brand-hover: #4a84ea;
+    --brand-ink: #ffffff;
+    --accent: #7eaeff;
+    --caller: #1c3c74;
+    --caller-ink: #eaf1ff;
+    --ok: #3fcf92;
+    --ok-soft: #0e2c23;
+    --warn: #f2c467;
+    --warn-soft: #30240b;
+    --danger: #f05d67;
+    --danger-soft: #3a1418;
+    --code: #050a15;
+    --code-ink: #dbe5f7;
+  }
+}
+
 body {
-  @apply bg-stone-50 text-stone-900 antialiased;
+  @apply bg-page text-ink antialiased;
   font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
 }
