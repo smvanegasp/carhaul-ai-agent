@@ -6,23 +6,37 @@ import {
   useVoiceAssistant,
 } from "@livekit/components-react";
 import { Room, RoomEvent } from "livekit-client";
-import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 
 import { CallError, fetchCallToken, wakeMia } from "../lib/api";
 import { buildConversation } from "../lib/conversation";
-import { addEvent, EVENTS_TOPIC, parseEvent, type MiaEvent } from "../lib/events";
-import { formatClock, toTranscript, type TranscriptLine } from "../lib/transcript";
+import {
+  addEvent,
+  EVENTS_TOPIC,
+  parseEvent,
+  type MiaEvent,
+} from "../lib/events";
+import {
+  formatClock,
+  toTranscript,
+  type TranscriptLine,
+} from "../lib/transcript";
 import { Conversation } from "./Conversation";
 import { ErrorBoundary } from "./ErrorBoundary";
 import { FeedbackForm } from "./FeedbackForm";
 import { Insights } from "./Insights";
 import { wakeProgress } from "../lib/wake";
-import { ThemeToggle } from "./ThemeToggle";
 import { useWake, type Wake } from "./useWake";
 import { useVoiceChoice, VoicePicker } from "./VoicePicker";
 
 /** Mia hangs up at 6 minutes (agent/src/mia/main.py); the timer shows it. */
-const MAX_CALL_SECONDS = 6 * 60;
+export const MAX_CALL_SECONDS = 6 * 60;
 
 type Phase =
   | { kind: "idle" }
@@ -36,7 +50,8 @@ function micErrorMessage(err: unknown): string {
   if (name === "NotAllowedError" || name === "SecurityError") {
     return "Mia needs your microphone. Allow microphone access in your browser and call again.";
   }
-  if (name === "NotFoundError") return "No microphone found. Plug one in and call again.";
+  if (name === "NotFoundError")
+    return "No microphone found. Plug one in and call again.";
   return "Couldn't start the call. Please try again.";
 }
 
@@ -73,7 +88,11 @@ export function CallPage() {
         if (event) setEvents((prev) => addEvent(prev, event));
       });
       room.once(RoomEvent.Disconnected, () =>
-        setPhase({ kind: "ended", roomName: token.room_name, lines: lastLines.current }),
+        setPhase({
+          kind: "ended",
+          roomName: token.room_name,
+          lines: lastLines.current,
+        }),
       );
       await room.connect(token.server_url, token.participant_token);
       await room.localParticipant.setMicrophoneEnabled(true);
@@ -81,7 +100,8 @@ export function CallPage() {
       setPhase({ kind: "in-call", room, startedAt: Date.now() });
     } catch (err) {
       await room?.disconnect();
-      const message = err instanceof CallError ? err.message : micErrorMessage(err);
+      const message =
+        err instanceof CallError ? err.message : micErrorMessage(err);
       setPhase({ kind: "error", message });
     }
   }, [recheck, voices.selected]);
@@ -119,7 +139,10 @@ export function CallPage() {
     />
   ) : (
     <Conversation
-      items={buildConversation(phase.kind === "ended" ? phase.lines : [], events)}
+      items={buildConversation(
+        phase.kind === "ended" ? phase.lines : [],
+        events,
+      )}
       live={false}
       details={details}
       onDetails={setDetails}
@@ -132,40 +155,27 @@ export function CallPage() {
   );
 
   const page = (
-    <main className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-5 lg:h-dvh lg:overflow-hidden lg:py-6">
-      <header className="flex flex-col gap-1">
-        <div className="flex items-start justify-between gap-3">
-          <h1 className="font-display text-3xl tracking-tight">
-            Call Mia <span className="text-muted">· F&amp;F car shipping quotes</span>
-          </h1>
-          <ThemeToggle />
-        </div>
-        <p className="max-w-3xl text-sm text-muted">
-          Mia is a voice assistant for open car-shipping quotes. Tell her where your car is going
-          from and to, and its year, make and model. Calls last up to {MAX_CALL_SECONDS / 60}{" "}
-          minutes.
-        </p>
-        <p className="max-w-3xl text-xs text-muted">
-          <span className="font-semibold text-ink">Disclosure:</span> this is a demo. If you ask to
-          speak with a licensed representative, Mia transfers your call to Sergio, the developer of
-          this demo, on his personal phone.
-        </p>
-      </header>
-
+    <div className="flex flex-col gap-4 lg:min-h-0 lg:flex-1">
       <div className="flex flex-col gap-4 lg:grid lg:min-h-0 lg:flex-1 lg:grid-cols-[minmax(300px,380px)_1fr] lg:grid-rows-[auto_1fr]">
         <div className="lg:col-start-1 lg:row-start-1">{callCard}</div>
         <div className="flex flex-col lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:min-h-0">
-          <ErrorBoundary fallback={<Notice>The conversation view hit a display error.</Notice>}>
+          <ErrorBoundary
+            fallback={
+              <Notice>The conversation view hit a display error.</Notice>
+            }
+          >
             {conversation}
           </ErrorBoundary>
         </div>
-        <div className="lg:col-start-1 lg:row-start-2 lg:min-h-0 lg:overflow-y-auto lg:overscroll-contain">
-          <ErrorBoundary fallback={<Notice>The stats hit a display error.</Notice>}>
+        <div className="flex flex-col lg:col-start-1 lg:row-start-2 lg:min-h-0">
+          <ErrorBoundary
+            fallback={<Notice>The stats hit a display error.</Notice>}
+          >
             <Insights events={events} />
           </ErrorBoundary>
         </div>
       </div>
-    </main>
+    </div>
   );
 
   return inCall ? (
@@ -180,7 +190,9 @@ export function CallPage() {
 
 function Notice({ children }: { children: ReactNode }) {
   return (
-    <p className="rounded-2xl border border-line bg-surface p-4 text-sm text-muted">{children}</p>
+    <p className="rounded-2xl border border-line bg-surface p-4 text-sm text-muted">
+      {children}
+    </p>
   );
 }
 
@@ -223,13 +235,13 @@ function CallButtonCard({
       )}
       {phase.kind === "ended" && (
         <p className="text-sm text-muted">
-          Call ended. Thanks for talking to Mia! Scroll the conversation to look back at it.
+          Call ended. Thanks for talking to Mia! It's saved under Past calls.
         </p>
       )}
       {phase.kind === "idle" && ready && (
         <p className="text-sm text-muted">
-          Your browser will ask for the microphone. Headphones work best. Calls are kept as
-          transcripts to improve Mia.
+          Your browser will ask for the microphone. Headphones work best. Calls
+          are kept as transcripts to improve Mia.
         </p>
       )}
     </section>
@@ -271,8 +283,8 @@ function WakeNote({ wake, onRetry }: { wake: Wake; onRetry: () => void }) {
           />
         </div>
         <p className="text-muted">
-          Mia only runs when someone wants to call, so she takes about a minute to wake up. Keep
-          this page open.
+          Mia only runs when someone wants to call, so she takes about a minute
+          to wake up. Keep this page open.
         </p>
       </div>
     );
@@ -294,7 +306,9 @@ function WakeNote({ wake, onRetry }: { wake: Wake; onRetry: () => void }) {
 function InCallFallback({ room }: { room: Room }) {
   return (
     <section className="flex flex-col items-start gap-3 rounded-2xl border border-line bg-surface p-4">
-      <p className="text-sm">You're still on the call with Mia; this view hit a display error.</p>
+      <p className="text-sm">
+        You're still on the call with Mia; this view hit a display error.
+      </p>
       <HangUp room={room} />
     </section>
   );
@@ -324,7 +338,13 @@ const STATE_LABEL: Record<string, string> = {
   disconnected: "Disconnected",
 };
 
-function InCallControls({ room, startedAt }: { room: Room; startedAt: number }) {
+function InCallControls({
+  room,
+  startedAt,
+}: {
+  room: Room;
+  startedAt: number;
+}) {
   const { state } = useVoiceAssistant();
   const [now, setNow] = useState(Date.now());
   const [muted, setMuted] = useState(false);
@@ -355,7 +375,8 @@ function InCallControls({ room, startedAt }: { room: Room; startedAt: number }) 
           {STATE_LABEL[state] ?? state}
         </span>
         <span className="ml-auto font-mono text-sm text-muted tabular-nums">
-          {formatClock((now - startedAt) / 1000)} / {formatClock(MAX_CALL_SECONDS)}
+          {formatClock((now - startedAt) / 1000)} /{" "}
+          {formatClock(MAX_CALL_SECONDS)}
         </span>
       </div>
       <div className="flex gap-3">

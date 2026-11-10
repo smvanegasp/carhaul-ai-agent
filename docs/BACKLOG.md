@@ -10,7 +10,7 @@ One branch and one PR per stage. ✅ done · 🔜 next · ⏳ later.
 | 3 | Web calling locally: `/api/token`, call page, Deepgram + ElevenLabs, turn detector, interruptions. Optional: share the local app through ngrok so the teammate can try it before AWS | ✅ |
 | 4 | AWS deploy: Terraform (fit + on-demand ECS Fargate worker), Deploy workflow, SSM secrets, TESTING_GUIDE. **Teammate starts testing** | ✅ |
 | 5 | Live panel (`mia.events`), call record to DynamoDB, feedback form per call | ✅ |
-| 6 | Public dashboard: stats (averages/medians), call list and detail | ⏳ |
+| 6 | Public dashboard: call list and detail ✅ ("Past calls"); aggregate stats (averages/medians) next | 🔜 |
 | 7 | AI-vs-AI simulation: 8 personas × fragments, report by persona and path, nightly workflow | ⏳ |
 | 8 | Non-happy paths: changes + trash, error matrix, FAQs, off-topic guardrail | ⏳ |
 | 9 | Transfer to a licensed representative (Sergio's phone) through a Twilio SIP trunk ✅ (this PR); later a phone number to call Mia | 🔜 |
@@ -322,6 +322,25 @@ straight to his voicemail (answered in 1.7 s), so the caller ID is another verif
 Seen in that test: the first job process after a container restart crashed (exit code -11)
 right after joining, and LiveKit re-dispatched the call (31 s to the greeting). Not reproduced
 in 2 more calls; watch for it.
+
+## Past calls and the sidebar (branch `call-history`, on top of stage 9, 2026-11-09)
+
+Sergio's feedback: he can't see how previous calls went; tabs or a sidebar to switch views;
+after a call the stats panel's scrollbar grew and scrolled into empty space.
+
+- [x] `GET /api/calls` (latest 50, newest first) and `GET /api/calls/{room}` (record +
+      feedback); public on purpose, 600 reads per IP an hour, unknown rooms 404
+- [x] Sidebar on desktop (collapsible to icons, remembered), tabs on a phone; views in the URL
+      hash (`#/calls/<room>` links to one call). The call view stays mounted, so opening Past
+      calls during a call doesn't drop it (checked)
+- [x] Past calls: list (when, length, outcome, quote) and the call: the same conversation
+      (with "Show details": tool calls, JSON, drops, latency) and stats as a live call, plus
+      the caller's rating; records without events fall back to the transcript
+- [x] Scroll: the stats card now fills its column and only its contents scroll; measured in
+      Chrome at 1400x900 after a call: nothing overflows (before: 6 px of blank scroll)
+- [x] Checked in headless Chrome against the Docker stack: during and after a call, the
+      transfer test call with details, collapsed sidebar, phone list and detail, no errors
+- [ ] Aggregate stats (outcomes, drop-off stage, talk share, latency medians) as a third view
 
 ## Ideas / later
 

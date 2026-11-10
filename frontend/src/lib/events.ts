@@ -33,7 +33,13 @@ export interface TurnMetrics {
 export interface TurnEvent extends Base {
   type: "turn";
   role: "caller" | "mia";
-  kind: "said" | "greeting" | "filler" | "time_limit";
+  kind:
+    | "said"
+    | "greeting"
+    | "filler"
+    | "time_limit"
+    | "handoff"
+    | "transfer_failed";
   text: string;
   metrics: TurnMetrics;
   speaking_s: number | null;
@@ -59,7 +65,12 @@ export interface DroppedEvent extends Base {
 export interface OnFile {
   origin: string | null;
   destination: string | null;
-  vehicles: { quote_id: string; vehicle: string; estimate_by_type?: boolean; drivable?: boolean }[];
+  vehicles: {
+    quote_id: string;
+    vehicle: string;
+    estimate_by_type?: boolean;
+    drivable?: boolean;
+  }[];
   expected_vehicles: number | null;
   missing: string[];
 }
@@ -77,7 +88,8 @@ export interface EndEvent extends Base {
   stage: string;
 }
 
-export type MiaEvent = ConfigEvent | TurnEvent | ToolEvent | DroppedEvent | StateEvent | EndEvent;
+export type MiaEvent =
+  ConfigEvent | TurnEvent | ToolEvent | DroppedEvent | StateEvent | EndEvent;
 
 const TYPES = new Set(["config", "turn", "tool", "dropped", "state", "end"]);
 
@@ -131,7 +143,10 @@ export interface Panel {
   stage: string;
   quoteTotal: number | null;
   /** Median and last value per component, in ms. */
-  latency: Record<LatencyKey, { median: number | null; last: number | null; n: number }>;
+  latency: Record<
+    LatencyKey,
+    { median: number | null; last: number | null; n: number }
+  >;
   toolCalls: number;
   toolErrors: number;
   dropped: number;
@@ -193,7 +208,11 @@ export function toPanel(events: MiaEvent[]): Panel {
   }
   for (const { key } of LATENCY_PARTS) {
     const v = values[key];
-    panel.latency[key] = { median: median(v), last: v.at(-1) ?? null, n: v.length };
+    panel.latency[key] = {
+      median: median(v),
+      last: v.at(-1) ?? null,
+      n: v.length,
+    };
   }
   return panel;
 }
