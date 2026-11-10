@@ -14,6 +14,7 @@ from livekit.agents import (
     Agent,
     AgentSession,
     ChatContext,
+    ModelSettings,
     RunContext,
     function_tool,
     llm,
@@ -207,6 +208,11 @@ class Mia(Agent):
                 self.services.events.dropped(d["tool"], d["args"] or "", d["why"])
         if not runs_tool:
             spoken = guardrails.tidy_speech(text)
+            if not spoken and dropped and grounding.is_question(last_said):
+                # The caller asked something and the model only tried tools the guardrail
+                # dropped: ask again with no tools, so the question gets an answer.
+                spoken = guardrails.tidy_speech(await self._words_only(chat_ctx))
+                logger.info("dropped-only step on a question; answered: %r", spoken)
             if not spoken and dropped:
                 spoken = guardrails.fallback_line(state)
             spoken = guardrails.keep_going(spoken, state)
@@ -217,6 +223,20 @@ class Mia(Agent):
                 state.hang_up_after_speech = True
             if spoken:
                 yield spoken
+
+    async def _words_only(self, chat_ctx: llm.ChatContext) -> str:
+        """The model's reply with no tools on offer (tool_choice "none" makes GroqLLM send
+        none). Live check, 2026-11-10: STT heard "do you do a closed shipping?", the model
+        only called a tool the guardrail dropped, and the fallback line repeated the vehicle
+        question, so the FAQ went unanswered. One extra model step (~300 ms), only then."""
+        text = ""
+        settings = ModelSettings(tool_choice="none")
+        async for chunk in Agent.default.llm_node(self, chat_ctx, [], settings):
+            if isinstance(chunk, str):
+                text += chunk
+            elif isinstance(chunk, llm.ChatChunk) and chunk.delta:
+                text += chunk.delta.content or ""
+        return text
 
     async def tts_node(self, text: AsyncIterable[str], model_settings):
         """Numbers become words before any voice reads them (see speech.py)."""

@@ -1,0 +1,28 @@
+# Live call, 2026-11-10: the caller asked about enclosed shipping right after the read-back.
+# Mia answered and stopped; the caller waited, silence ended the call, and no quote was given.
+# Mia must answer, ask to confirm again, and quote on the yes.
+id: faq_during_read_back
+persona: G_C_V
+path: QHP
+ground_truth:
+  origin: Miami, Florida
+  destination: Chicago, Illinois
+  vehicles: [2021 Toyota 4Runner]
+turns:
+  - user: "Yeah. Let's do it."
+  - user: "From Miami, Florida to Chicago, Illinois"
+    expect:
+      on_file: {origin: "Miami, Florida", destination: "Chicago, Illinois"}
+  - user: "It's a 2021 Toyota 4Runner"
+    expect:
+      on_file: {vehicles: [2021 Toyota 4Runner]}
+      no_tools: [get_quote]
+  - user: "Do you do enclosed shipping?"
+    expect:
+      no_tools: [get_quote, request_human]
+      judge: >-
+        Says only open car shipping is quoted, and then asks the caller to confirm the trip
+        details (or whether to go ahead with the quote).
+  - user: "Yes, that's correct"
+    expect:
+      tools: [get_quote]

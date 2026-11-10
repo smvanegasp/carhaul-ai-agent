@@ -30,6 +30,10 @@ what is already captured.
 2. **What in this turn advances the quote?** Extract anything that fills a slot. Anything else
    is set aside (open item: keep for context or discard).
 
+3. **Then back to the quote.** After an answer Mia always asks for what's next: the next
+   missing detail, or, when everything is on file and not yet quoted, the read-back again
+   ("Just to confirm, ... Is that correct?"). Enforced in code (`guardrails.keep_going`).
+
 As soon as Mia has what a tool needs, she calls it. If the tool errors, she corrects the info
 right away: "I couldn't find the ____ in our system, am I getting a detail wrong?"
 

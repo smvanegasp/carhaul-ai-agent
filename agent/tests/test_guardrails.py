@@ -218,4 +218,16 @@ def test_keep_going_leaves_endings_and_complete_calls_alone():
     assert keep_going("Connecting you now.", s) == "Connecting you now."
     done = QuoteSession(origin=BOS, destination=SF)
     done.add_vehicle(year=2025, make="Honda", model="Civic", trim_id=1)
+    done.quote = {"total": 1291}
     assert keep_going("The quote includes up to 100 pounds.", done).endswith("pounds.")
+
+
+def test_keep_going_reads_back_when_all_is_on_file_but_not_quoted():
+    from mia.guardrails import keep_going
+
+    s = QuoteSession(origin=BOS, destination=SF)
+    s.add_vehicle(year=2025, make="Honda", model="Civic", trim_id=1)
+    out = keep_going("We only quote open car shipping.", s)
+    assert out == f"We only quote open car shipping. {read_back(s)}"
+    s.escalated = True  # a failed lookup: Mia is offering a person, not the quote
+    assert keep_going("A representative can help.", s) == "A representative can help."

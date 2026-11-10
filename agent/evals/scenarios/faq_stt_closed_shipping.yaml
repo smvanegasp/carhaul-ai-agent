@@ -1,0 +1,24 @@
+# Stage 8 live check (2026-11-10): STT heard "enclosed" as "a closed". The model's step was a
+# tool call the guardrail dropped, and the fallback line only repeated the vehicle question, so
+# the FAQ went unanswered. Mia must answer the question, then go back to the vehicle.
+id: faq_stt_closed_shipping
+persona: G_C_V
+path: QHP
+ground_truth:
+  origin: Boston, Massachusetts
+  destination: San Francisco, California
+  vehicles: [2025 Honda Civic]
+turns:
+  - user: "Yeah, sure"
+  - user: "From Boston, Massachusetts to San Francisco, California"
+    expect:
+      on_file: {origin: "Boston, Massachusetts", destination: "San Francisco, California"}
+  - user: "do you do a closed shipping?"
+    expect:
+      no_tools: [save_vehicle, get_quote, request_human]
+      judge: >-
+        Answers the question about closed or enclosed shipping (only open car shipping is
+        quoted) instead of ignoring it, and asks for the vehicle's year, make and model.
+  - user: "OK. It's a 2025 Honda Civic"
+    expect:
+      on_file: {vehicles: [2025 Honda Civic]}

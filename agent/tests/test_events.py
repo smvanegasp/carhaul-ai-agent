@@ -117,3 +117,14 @@ async def test_run_tool_reports_a_crash_too(services):
         await _run_tool(services, QuoteSession(), "get_quote", {}, tool())
     assert services.events.events[0]["ok"] is False
     assert services.events.events[0]["result"] is None
+
+
+def test_a_coded_line_in_the_chat_context_is_logged_once():
+    # Silence and time-limit lines are logged when triggered, then LiveKit adds them to the
+    # chat once spoken; the record showed "Are you still there?" twice (2026-11-10).
+    events = CallEvents()
+    events.turn("assistant", "Are you still there?", kind="silence")
+    events.turn("assistant", "Are you still there?", {"tts_node_ttfb": 0.2})
+    events.turn("assistant", "Are you still there?")  # Mia herself, later: a normal line
+    kinds = [e["kind"] for e in events.events if e["type"] == "turn"]
+    assert kinds == ["silence", "said"]

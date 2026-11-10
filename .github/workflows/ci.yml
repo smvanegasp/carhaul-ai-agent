@@ -22,6 +22,10 @@ jobs:
 
   # Mia's reference conversations against the real LLM (Groq), with fake CarHauler/geocoding.
   # Needs the GROQ_API_KEY repository secret; skipped (with a notice) without it.
+  # The model is not deterministic: a few scenarios miss about 1 run in 5 (BACKLOG, stage 8),
+  # which failed main after PR #22. A failed scenario is retried twice, so only one that
+  # fails 3 times in a row (a real regression, ~1% for a 1-in-5 flake) fails the build. Pass
+  # rates per scenario come from the stage 7 simulations, not from this job.
   scenarios:
     runs-on: ubuntu-latest
     env:
@@ -40,7 +44,7 @@ jobs:
       - if: env.GROQ_API_KEY != ''
         run: uv sync --frozen
       - if: env.GROQ_API_KEY != ''
-        run: uv run pytest -m llm -q
+        run: uv run pytest -m llm -q --reruns 2 --reruns-delay 2
 
   backend:
     runs-on: ubuntu-latest

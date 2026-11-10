@@ -187,11 +187,17 @@ def keep_going(spoken: str, state: QuoteSession) -> str:
     per-turn logic). gpt-oss often stops after the answer ("We only quote open car shipping.")
     and the caller is left waiting (stage 8 FAQ scenario, 2026-11-10): a line with no question
     while details are missing gets the next question. Never on a goodbye, during a transfer, or
-    once the call is ending."""
+    once the call is ending.
+
+    With everything on file but no quote yet, the next step is the read-back. Live call,
+    2026-11-10: the caller asked about enclosed shipping right after the read-back, Mia
+    answered without asking again, the caller waited, and silence ended the call before the
+    quote. Not after an escalation (a failed lookup: Mia is offering a person instead)."""
+    if not state.missing and (state.quote or state.escalated):
+        return spoken
     if (
         not spoken
         or "?" in spoken
-        or not state.missing
         or state.ended
         or state.hang_up_after_speech
         or state.transfer in ("pending", "connected")

@@ -367,3 +367,21 @@ _ON_TOPIC = re.compile(
 def is_on_topic(text: str) -> bool:
     """Does the caller's message mention shipping, the car, the price or the call itself?"""
     return bool(_ON_TOPIC.search(text))
+
+
+# Questions. STT usually adds the "?", but not always, so a question word at the start counts
+# too. Used when the guardrail drops the model's whole step: a question still gets an answer
+# (live check, 2026-11-10: "do you do a closed shipping?" got only the vehicle question).
+_QUESTION_START = re.compile(
+    r"^\W*(?:(?:and|so|ok|okay|oh|um|uh|well|also|but|before that|wait)\W+)*"
+    r"(?:do|does|did|can|could|is|are|was|will|would|should|how|what|whats|what's|when|"
+    r"where|why|which|who|any|have you|is there|are there)\b",
+    re.IGNORECASE,
+)
+
+
+def is_question(text: str) -> bool:
+    """Is the caller asking something ("do you do enclosed shipping?", "how long does it
+    take")? "Yeah, sure" and "a 2020 Honda" are not."""
+    text = text.strip()
+    return bool(text) and (text.endswith("?") or bool(_QUESTION_START.search(text)))

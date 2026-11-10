@@ -13,6 +13,8 @@ CITIES = {
     "sf": ("San Francisco", "CA", "California", "94103"),
     "new york": ("New York", "NY", "New York", "10001"),
     "portland": ("Portland", "OR", "Oregon", "97201"),
+    "miami": ("Miami", "FL", "Florida", "33130"),
+    "chicago": ("Chicago", "IL", "Illinois", "60601"),
 }
 
 

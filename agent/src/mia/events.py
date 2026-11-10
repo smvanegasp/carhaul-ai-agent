@@ -10,10 +10,12 @@ Types:
 
 - ``config``: the pipeline (STT, LLM, TTS, turn detector), once at the start.
 - ``turn``: one line of the conversation. ``role`` is ``caller`` or ``mia``; ``kind`` is
-  ``said`` (normal), ``greeting`` or ``filler`` (spoken from code, not the LLM). ``metrics`` in
-  ms: caller turns carry ``end_of_turn`` and ``stt``; Mia's ``llm_ttft``, ``tts_ttfb`` and
-  ``e2e`` (caller's end of speech to Mia's first audio, server side). ``speaking_s`` is how
-  long that person spoke; ``interrupted`` means the caller talked over Mia.
+  ``said`` (normal), or a line spoken from code, not the LLM (``greeting``, ``filler``,
+  ``silence``, ``time_limit``, ``handoff``, ``transfer_failed``; logged once, see ``turn``).
+  ``metrics`` in ms: caller turns carry ``end_of_turn`` and ``stt``; Mia's ``llm_ttft``,
+  ``tts_ttfb`` and ``e2e`` (caller's end of speech to Mia's first audio, server side).
+  ``speaking_s`` is how long that person spoke; ``interrupted`` means the caller talked over
+  Mia.
 - ``tool``: a tool call: ``name``, ``args``, ``result`` (the JSON the LLM got back), ``ok``
   and ``ms``.
 - ``dropped``: a tool call the guardrail dropped before it ran (``tool``, ``args``, ``why``).
@@ -64,6 +66,10 @@ class CallEvents:
         self.started = time.time()
         self.events: list[dict[str, Any]] = []
         self.latency = CallLatency()
+        # Coded lines that also reach the chat context (silence, time limit): LiveKit adds
+        # them as a normal assistant message once spoken, which would log them twice (seen
+        # in a live record, 2026-11-10: "Are you still there?" twice).
+        self._coded: list[str] = []
 
     def emit(self, type_: str, **data: Any) -> dict[str, Any]:
         event = {
@@ -100,6 +106,11 @@ class CallEvents:
         """One conversation line. ``role`` is LiveKit's: ``user`` or ``assistant``."""
         report = metrics or {}
         self.latency.on_message(role, report)
+        if role == "assistant" and kind != "said":
+            self._coded.append(text.strip())
+        elif role == "assistant" and text.strip() in self._coded:
+            self._coded.remove(text.strip())  # already logged when it was triggered
+            return
         names = _CALLER_METRICS if role == "user" else _MIA_METRICS
         ms = {short: _ms(report.get(key)) for key, short in names.items()}
         start, stop = report.get("started_speaking_at"), report.get("stopped_speaking_at")
