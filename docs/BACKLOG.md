@@ -12,7 +12,7 @@ One branch and one PR per stage. ✅ done · 🔜 next · ⏳ later.
 | 5 | Live panel (`mia.events`), call record to DynamoDB, feedback form per call | ✅ |
 | 6 | Public dashboard: Past calls (list + detail) and Stats (KPIs, funnel, trends) | ✅ |
 | 7 | AI-vs-AI simulation: 8 personas × fragments, report by persona and path, nightly workflow | ⏳ |
-| 8 | Non-happy paths: changes + trash, error matrix, FAQs, off-topic guardrail | ⏳ |
+| 8 | Non-happy paths: self-corrections + silence ✅; changes + trash, error matrix, FAQs, off-topic guardrail next | 🔜 |
 | 9 | Transfer to a licensed representative (Sergio's phone) through a Twilio SIP trunk ✅ (this PR); later a phone number to call Mia | 🔜 |
 
 ## Stage 1 (done 2026-11-08)
@@ -380,12 +380,22 @@ itself; make it a better experience.
 - [x] Checked in Chrome (real local data: the transfer test call is a requested transfer;
       synthetic set; phone width), no console errors
 
+## Stage 8, part 1: self-corrections and silence (branch `stage-8-corrections-silence`, 2026-11-10)
+
+- [x] Self-corrected years: `grounding.corrected_year` ("twenty ten... twenty twenty" -> 2020;
+      "a 2019 and a 2020" untouched), applied in `save_vehicle` from the caller's last message
+- [x] Scenario `self_correction_year` (Sergio's phrasing, no "no"): without the fix 0/5, with
+      it 10/10 (after grounding `total_vehicles`, which gpt-oss set to 2 in 1 of 5 runs);
+      happy paths still pass. With "no, twenty twenty" the model got it right on its own (5/5)
+- [x] Silence (`silence.py`): after the quote -> goodbye and hang up; before -> "are you still
+      there?", then goodbye and hang up. Live checks with `mia.smoke --wait`: both paths hung
+      up (the first try found the missing `reset_away_timer()`)
+- [x] Dispositions: a silent caller counts as "hung up"
+- [ ] Next in stage 8: changes after the quote (vehicle / route, the trash), the error matrix,
+      FAQs, off-topic guardrail
+
 ## Ideas / later
 
-- **Self-corrections:** "it's twenty ten... twenty twenty Toyota" was saved as 2010 (Sergio's
-  call, 2026-11-09): the last value the caller says should win (stage 8).
-- **Silence after "anything else?":** if the caller says nothing, Mia waits; LiveKit marks
-  the user away after 15 s. Say goodbye and hang up then (stage 8).
 
 - **Voice picker, next:** compare cost per character per provider, and the voices' latency
   in real calls (the call records keep `tts_node_ttfb` and the config event names the voice).
@@ -393,7 +403,6 @@ itself; make it a better experience.
 - `happy_path_ngc_3v` is flaky in CI (seen once on 2026-11-09: the 3rd vehicle not saved on turn 5); 10/10 locally on the branch and on main's prompt. Track its pass rate in the stage 7 simulations.
 
 - Agent image is 1.57 GB (onnxruntime, local turn model); slim it for ECS if pulls are slow.
-- Silent caller: LiveKit marks the user "away" after 15 s; Mia could ask "are you still there?" (stage 8).
 - Frontend bundle is 811 kB (LiveKit client); code-split when the dashboard arrives.
 
 - Compare `openai/gpt-oss-20b` vs `openai/gpt-oss-120b` with the simulation report.

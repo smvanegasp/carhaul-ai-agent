@@ -160,6 +160,19 @@ licensed representative right now. Is there anything else I can help you with?"
 - If the quote API keeps failing (seen: CarHauler 402 when the allowance ran out), Mia
   apologizes and offers a licensed representative; she never makes up a price.
 
+## When the caller goes quiet or corrects themselves (stage 8)
+
+- **Silence** (15 s with nobody talking; `silence.py`): after the quote, it means they're done:
+  "It sounds like you're all set. Thanks for calling F&F, goodbye!" and Mia hangs up. Before
+  the quote: "Are you still there?"; 15 s more of silence: "I can't hear you, so I'll end the
+  call for now. Feel free to call back anytime. Goodbye!" and she hangs up. Never during a
+  transfer. Counts as "hung up" in the dispositions.
+- **Self-corrections**: the last value wins. "It's a twenty ten, twenty twenty Toyota" saves
+  2020: a year followed by another with only correction words or fillers in between ("no",
+  "sorry", "I mean", "actually", "uh") is replaced by the later one. "A 2019 and a 2020" is two
+  cars, not a correction.
+- **Vehicle count**: only a count the caller said ("two cars") makes Mia ask for more cars.
+
 ## Testing design
 
 **Personas**: 3 attributes, 8 combinations (`NG_C_NV` … `G_P_V`):

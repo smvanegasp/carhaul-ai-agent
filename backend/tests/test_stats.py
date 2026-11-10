@@ -75,6 +75,7 @@ def test_milestones_and_mias_time():
         ({"transfer": "no_answer", "end_reason": "caller"}, "hung_up_on_hold"),
         ({"transfer": "pending", "end_reason": "caller"}, "hung_up_on_hold"),
         ({"end_reason": "caller"}, "hung_up"),
+        ({"end_reason": "silence"}, "hung_up"),  # stopped answering (silence.py)
         ({"end_reason": "mia"}, "not_interested"),
         ({"end_reason": "time_limit"}, "not_interested"),
     ],

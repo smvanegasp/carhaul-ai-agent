@@ -300,7 +300,11 @@ class Mia(Agent):
             "save_vehicle",
             args,
             tools.save_vehicle(
-                context.userdata, self.services, **args, said=caller_said(self.chat_ctx)
+                context.userdata,
+                self.services,
+                **args,
+                said=caller_said(self.chat_ctx),
+                last_said=caller_last_said(self.chat_ctx),
             ),
         )
 

@@ -33,7 +33,7 @@ from livekit.agents import (
 )
 from livekit.plugins import deepgram, silero
 
-from mia import catalog, idle, records, transfer, voices
+from mia import catalog, idle, records, silence, transfer, voices
 from mia.agent import Mia, make_llm, new_session
 from mia.carhauler import CarHaulerClient
 from mia.events import TOPIC, CallEvents
@@ -260,6 +260,34 @@ async def entrypoint(ctx: JobContext) -> None:
         if state.hang_up_after_speech and ev.new_state == "listening":
             state.hang_up_after_speech = False
             session.shutdown()
+
+    # The caller went quiet (silence.py): ask if they're there, or say goodbye and hang up.
+    away = {"prompts": 0}
+
+    @session.on("user_state_changed")
+    def _on_user_state(ev) -> None:
+        if ev.new_state == "speaking":
+            away["prompts"] = 0
+            return
+        if ev.new_state != "away":
+            return
+        action = silence.on_away(state, away["prompts"])
+        if action is None:
+            return
+        line, hang_up = action
+        away["prompts"] += 1
+        logger.info("caller silent; %s", "hanging up" if hang_up else "checking in")
+        events.turn("assistant", line, kind="silence")
+        if hang_up:
+            state.ended, state.end_reason = True, "silence"
+        handle = session.say(line, allow_interruptions=not hang_up)
+        if hang_up:
+            handle.add_done_callback(lambda _: session.shutdown())
+        else:
+            # The caller stays "away" until they speak, so LiveKit wouldn't count a second
+            # silence: back to "listening" once the line has played restarts the countdown
+            # (seen in the first live test, 2026-11-10: no goodbye after "are you still there?").
+            handle.add_done_callback(lambda _: session.reset_away_timer())
 
     @session.on("conversation_item_added")
     def _on_item(ev) -> None:
