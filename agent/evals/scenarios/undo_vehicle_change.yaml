@@ -1,0 +1,33 @@
+# Stage 8: the caller changes the car, then changes their mind back (the trash).
+id: undo_vehicle_change
+persona: NG_C_NV
+path: NHP
+ground_truth:
+  origin: Boston, Massachusetts
+  destination: San Francisco, California
+  vehicles: [2025 Honda Civic]
+turns:
+  - user: "Yeah, sure"
+    expect:
+      judge: Asks where the vehicle ships from, to, or both.
+  - user: "From Boston, Massachusetts to San Francisco, California"
+    expect:
+      on_file: {origin: "Boston, Massachusetts", destination: "San Francisco, California"}
+      judge: Asks for the year, make and model of the vehicle.
+  - user: "It's a 2025 Honda Civic"
+    expect:
+      on_file: {vehicles: [2025 Honda Civic]}
+      no_tools: [get_quote]
+      judge: Reads back the 2025 Honda Civic and the route, and asks the caller to confirm.
+  - user: "Yep"
+    expect:
+      tools: [get_quote]
+      says: ["$1,291"]
+  - user: "Actually, it's a 2020 Toyota 4Runner"
+    expect:
+      on_file: {vehicles: [2020 Toyota 4Runner]}
+  - user: "No wait, never mind, keep the Civic. It's the Civic."
+    expect:
+      on_file: {vehicles: [2025 Honda Civic]}
+      no_tools: [get_quote]
+      judge: Says the vehicle is the 2025 Honda Civic again and asks the caller to confirm.

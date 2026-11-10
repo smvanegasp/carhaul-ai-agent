@@ -326,3 +326,28 @@ def corrected_year(year: int | None, last_said: str) -> int | None:
         if first == current and first != second and all(w in _CORRECTION_WORDS for w in between):
             current = second
     return current
+
+
+# Removing a vehicle and undoing a change only run on the caller's own words (gpt-oss invents
+# tool calls; these change what's quoted).
+_REMOVE = re.compile(
+    r"\b(?:remove|take (?:off|out)|drop|delete|cancel|forget|scratch|without|leave out|"
+    r"don'?t need|do not need|not (?:shipping|sending|bringing)|no longer|only (?:the|one)|"
+    r"just (?:the|one))",
+    re.IGNORECASE,
+)
+_UNDO = re.compile(
+    r"\b(?:undo|go back|change (?:it|that) back|put (?:it|that) back|keep the|the (?:original|"
+    r"previous|old|first) one|was right|as (?:it was|before)|never ?mind|changed my mind)",
+    re.IGNORECASE,
+)
+
+
+def wants_removal(text: str) -> bool:
+    """ "Remove the Toyota", "I don't need the second car", "just the Honda"."""
+    return bool(_REMOVE.search(text))
+
+
+def wants_undo(text: str) -> bool:
+    """ "Actually, keep the Honda", "go back to the original", "never mind"."""
+    return bool(_UNDO.search(text))

@@ -160,6 +160,19 @@ licensed representative right now. Is there anything else I can help you with?"
 - If the quote API keeps failing (seen: CarHauler 402 when the allowance ran out), Mia
   apologizes and offers a licensed representative; she never makes up a price.
 
+## Changes (stage 8)
+
+| Caller says | Tool | Then |
+| --- | --- | --- |
+| "Actually it's going to New York, New York" | `save_origin_destination` | read back, re-quote on a yes |
+| "It's a 2020 Toyota 4Runner, not the Civic" / "make it a 2024" | `update_vehicle` (only what changed) | same |
+| "Remove the Toyota" / "just the Honda" | `remove_vehicle` | same; the only vehicle can't be removed (Mia asks what to ship instead) |
+| "Never mind, keep the Civic" | `undo_last_change` | same |
+| A change that could be any of several vehicles | (Mia asks which one) | |
+
+Each change sends the old version to the trash and gets a new quote ID; the old price is
+dropped, so Mia never repeats a price that no longer applies.
+
 ## When the caller goes quiet or corrects themselves (stage 8)
 
 - **Silence** (15 s with nobody talking; `silence.py`): after the quote, it means they're done:

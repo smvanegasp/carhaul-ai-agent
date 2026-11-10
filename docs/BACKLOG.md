@@ -12,7 +12,7 @@ One branch and one PR per stage. ✅ done · 🔜 next · ⏳ later.
 | 5 | Live panel (`mia.events`), call record to DynamoDB, feedback form per call | ✅ |
 | 6 | Public dashboard: Past calls (list + detail) and Stats (KPIs, funnel, trends) | ✅ |
 | 7 | AI-vs-AI simulation: 8 personas × fragments, report by persona and path, nightly workflow | ⏳ |
-| 8 | Non-happy paths: self-corrections + silence ✅; changes + trash, error matrix, FAQs, off-topic guardrail next | 🔜 |
+| 8 | Non-happy paths: self-corrections + silence ✅, changes + trash ✅; error matrix, FAQs, off-topic guardrail next | 🔜 |
 | 9 | Transfer to a licensed representative (Sergio's phone) through a Twilio SIP trunk ✅ (this PR); later a phone number to call Mia | 🔜 |
 
 ## Stage 1 (done 2026-11-08)
@@ -391,8 +391,26 @@ itself; make it a better experience.
       there?", then goodbye and hang up. Live checks with `mia.smoke --wait`: both paths hung
       up (the first try found the missing `reset_away_timer()`)
 - [x] Dispositions: a silent caller counts as "hung up"
-- [ ] Next in stage 8: changes after the quote (vehicle / route, the trash), the error matrix,
-      FAQs, off-topic guardrail
+- [x] Changes after the quote: part 2 below
+
+## Stage 8, part 2: changes and the trash (branch `stage-8-changes`, 2026-11-10)
+
+- [x] Tools `update_vehicle` (only what changed; a new make drops the old model),
+      `remove_vehicle` (not the only one: Mia asks what to ship instead), `undo_last_change`
+      (puts back the last vehicle or route change; undo can be undone). Route changes stay
+      `save_origin_destination`. Every change goes through the trash with a new quote ID and
+      drops the quote, so Mia reads back and quotes again on a yes
+- [x] Guardrails: update needs a detail the caller said; remove and undo need the caller's own
+      cue ("remove the Toyota", "just the Honda", "keep the Civic", "never mind")
+- [x] Scenarios (fake APIs), 5 runs each: change vehicle after the quote 5/5, change route 5/5,
+      remove one of two cars 5/5, change then undo 5/5; all 8 scenarios pass together. First
+      runs failed on the tests, not Mia: "New York" with no state (she asks, by design), a
+      judge wanting the new price "for the 4Runner" by name (now `says` the exact price), and
+      a missing `ground_truth`
+- [x] Live voice (Docker worker, real APIs): Civic quoted $1,191, "it's actually a twenty
+      twenty Toyota four Runner, not the Civic" → update_vehicle → read-back → $1,340 → goodbye
+- [ ] Next in stage 8: the error matrix (each tool error → what Mia says), FAQs, off-topic
+      guardrail
 
 ## Ideas / later
 

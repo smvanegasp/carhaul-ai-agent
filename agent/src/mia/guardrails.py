@@ -64,6 +64,22 @@ def check_call(
         # step to save what the caller just said (it sometimes skips save_vehicle).
         if not state.missing and not grounding.is_confirmation(last_said):
             return "caller has not confirmed"
+    elif name == "update_vehicle":
+        checks = [
+            (args.get("year"), grounding.year_said),
+            (args.get("make"), grounding.make_said),
+            (args.get("model"), grounding.model_said),
+            (args.get("vehicle_type"), grounding.vehicle_type_said),
+        ]
+        changed = any(value and said_fn(value, said) for value, said_fn in checks)
+        if not changed and args.get("drivable") is None:
+            return "no vehicle detail the caller said"
+    elif name == "remove_vehicle":
+        if not grounding.wants_removal(last_said):
+            return "caller did not ask to remove a vehicle"
+    elif name == "undo_last_change":
+        if not grounding.wants_undo(last_said):
+            return "caller did not ask to undo a change"
     elif name == "request_human":
         # It rings a real phone (stage 9): only on the caller's own request, or a yes to Mia's
         # offer, never on a call the model made up.

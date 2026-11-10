@@ -81,7 +81,7 @@ Fargate, not Lambda. Everything else follows the fit pattern.
 | `agent.py` | `Mia` (LiveKit `Agent`): tools, the output guardrail in `llm_node`, `GroqLLM` (strict schemas off), `new_session()` |
 | `prompt.py` | Instructions and greetings (from `docs/CONVERSATION_DESIGN.md`) |
 | `state.py` | `QuoteSession`: what's on file, quote IDs, trash, stage reached, dropped calls |
-| `tools.py` | Tool logic, LiveKit-free: every result has `on_file` and `next` (what Mia does now) |
+| `tools.py` | Tool logic, LiveKit-free: every result has `on_file` and `next` (what Mia does now). Changes: `update_vehicle`, `remove_vehicle`, `undo_last_change` |
 | `grounding.py` | Was this detail actually said by the caller? Vehicle count, yes detection |
 | `guardrails.py` | Drops invented/unconfirmed tool calls before they run; fallback lines; `tidy_speech` |
 | `geo.py`, `carhauler.py`, `vehicles.py`, `pricing.py` | City → ZIP, CarHauler API, year/make/model → trim, quotes and the spoken summary |
@@ -203,6 +203,11 @@ docker compose up        # api :8020, web :5190, DynamoDB Local :8030, agent wor
   remembered in the browser. Wake-up shows a **progress bar**: `/api/wake` reports a `step`
   from the ECS task (`server` while PROVISIONING/PENDING, `loading` once it runs) and the bar
   moves with time inside that step, never 100% before ready.
+- 2026-11-10 (stage 8, part 2): **Changes and the trash.** `update_vehicle`,
+  `remove_vehicle`, `undo_last_change` (route changes reuse `save_origin_destination`); each
+  change goes to the trash with a new quote ID and drops the quote. Remove and undo only run
+  on the caller's own cue (guardrails), since they change what's priced. 4 new scenarios, 5/5
+  each; live voice re-quote after a vehicle change worked with the real APIs.
 - 2026-11-10 (stage 8, first part): **Self-corrections and silence**, both from Sergio's calls.
   The year a caller corrects to wins, in code (`grounding.corrected_year` in `save_vehicle`):
   the scenario with his exact phrasing failed 5/5 without it (the model kept 2010), passes

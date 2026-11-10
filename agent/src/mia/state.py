@@ -146,6 +146,80 @@ class QuoteSession:
         self.destination = destination or self.destination
         self.advance(Stage.ROUTE)
 
+    # --- changes (stage 8): every one goes through the trash, so undo can restore it --------
+
+    def replace_vehicle(self, quote_id: str, **fields: Any) -> VehicleEntry:
+        """The caller changed a vehicle: the old entry goes to the trash, the new one takes its
+        place with a new quote ID."""
+        old = self.find_vehicle(quote_id)
+        assert old is not None
+        i = self.vehicles.index(old)
+        entry = VehicleEntry(quote_id=self.new_quote_id(), saved_turn=self.caller_turns, **fields)
+        self.vehicles[i] = entry
+        self.trash.append(
+            TrashItem(
+                "vehicle",
+                {"vehicle": asdict(old), "position": i, "replaced_by": entry.quote_id},
+                "vehicle updated",
+            )
+        )
+        self._invalidate_quote("vehicle updated")
+        return entry
+
+    def remove_vehicle(self, quote_id: str) -> VehicleEntry:
+        old = self.find_vehicle(quote_id)
+        assert old is not None
+        i = self.vehicles.index(old)
+        self.vehicles.remove(old)
+        self.trash.append(
+            TrashItem("vehicle", {"vehicle": asdict(old), "position": i}, "vehicle removed")
+        )
+        if self.expected_vehicles and self.expected_vehicles > len(self.vehicles):
+            self.expected_vehicles = len(self.vehicles) or None
+        self._invalidate_quote("vehicle removed")
+        return old
+
+    def undo_last_change(self) -> TrashItem | None:
+        """Put back what the last vehicle or route change replaced ("actually, keep the
+        Honda"). The current version goes to the trash in turn, so undo can be undone."""
+        for k in range(len(self.trash) - 1, -1, -1):
+            item = self.trash[k]
+            if item.kind not in ("vehicle", "route"):
+                continue
+            del self.trash[k]
+            if item.kind == "route":
+                current = {
+                    "origin": asdict(self.origin) if self.origin else None,
+                    "destination": asdict(self.destination) if self.destination else None,
+                }
+                self.origin = Place(**item.data["origin"]) if item.data["origin"] else None
+                self.destination = (
+                    Place(**item.data["destination"]) if item.data["destination"] else None
+                )
+                self.trash.append(TrashItem("route", current, "undone"))
+            else:
+                old = VehicleEntry(**item.data["vehicle"])
+                replaced = item.data.get("replaced_by")
+                now = self.find_vehicle(replaced) if replaced else None
+                if now is not None:
+                    i = self.vehicles.index(now)
+                    self.vehicles[i] = old
+                    self.trash.append(
+                        TrashItem(
+                            "vehicle",
+                            {"vehicle": asdict(now), "position": i, "replaced_by": old.quote_id},
+                            "undone",
+                        )
+                    )
+                else:
+                    i = min(item.data.get("position", len(self.vehicles)), len(self.vehicles))
+                    self.vehicles.insert(i, old)
+                    if self.expected_vehicles and self.expected_vehicles < len(self.vehicles):
+                        self.expected_vehicles = len(self.vehicles)
+            self._invalidate_quote("change undone")
+            return item
+        return None
+
     # --- progress ------------------------------------------------------------------------
 
     def advance(self, stage: Stage) -> None:
