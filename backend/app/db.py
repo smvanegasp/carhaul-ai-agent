@@ -99,6 +99,14 @@ def query(pk: str, sk_prefix: str = "") -> list[dict[str, Any]]:
     return [_from_dynamo(r) for r in rows]
 
 
+def latest(pk: str, limit: int) -> list[dict[str, Any]]:
+    """The last ``limit`` rows under ``pk`` by sort key, newest first."""
+    response = get_table().query(
+        KeyConditionExpression=Key("pk").eq(pk), ScanIndexForward=False, Limit=limit
+    )
+    return [_from_dynamo(r) for r in response["Items"]]
+
+
 def increment(key: str, ttl_seconds: int) -> int:
     """Atomically add 1 to a counter row and return the new value (rate limits)."""
     response = get_table().update_item(

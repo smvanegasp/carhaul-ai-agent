@@ -1,3 +1,5 @@
+import type { MiaEvent } from "./events";
+
 /** What POST /api/token returns (backend/app/livekit_token.py). */
 export interface CallToken {
   server_url: string;
@@ -21,15 +23,21 @@ export async function fetchCallToken(
       body: JSON.stringify({ voice: voice ?? null }),
     });
   } catch {
-    throw new CallError("Can't reach the server. Check your connection and try again.");
+    throw new CallError(
+      "Can't reach the server. Check your connection and try again.",
+    );
   }
   if (res.ok) return (await res.json()) as CallToken;
   // 429 (rate limit, daily cap) and 503 (not configured) carry a friendly detail.
   const detail = await res
     .json()
-    .then((b: { detail?: unknown }) => (typeof b.detail === "string" ? b.detail : null))
+    .then((b: { detail?: unknown }) =>
+      typeof b.detail === "string" ? b.detail : null,
+    )
     .catch(() => null);
-  throw new CallError(detail ?? `Mia can't take calls right now (error ${res.status}).`);
+  throw new CallError(
+    detail ?? `Mia can't take calls right now (error ${res.status}).`,
+  );
 }
 
 export interface FeedbackIn {
@@ -52,14 +60,20 @@ export async function sendFeedback(
       body: JSON.stringify(feedback),
     });
   } catch {
-    throw new CallError("Can't reach the server. Check your connection and try again.");
+    throw new CallError(
+      "Can't reach the server. Check your connection and try again.",
+    );
   }
   if (res.ok) return;
   const detail = await res
     .json()
-    .then((b: { detail?: unknown }) => (typeof b.detail === "string" ? b.detail : null))
+    .then((b: { detail?: unknown }) =>
+      typeof b.detail === "string" ? b.detail : null,
+    )
     .catch(() => null);
-  throw new CallError(detail ?? `Couldn't send your feedback (error ${res.status}).`);
+  throw new CallError(
+    detail ?? `Couldn't send your feedback (error ${res.status}).`,
+  );
 }
 
 /** What POST /api/wake returns (backend/app/worker.py). */
@@ -71,19 +85,27 @@ export interface WakeStatus {
 }
 
 /** Ask for Mia's voice worker (on AWS it only runs around calls; starting takes ~1 minute). */
-export async function wakeMia(fetchFn: typeof fetch = fetch): Promise<WakeStatus> {
+export async function wakeMia(
+  fetchFn: typeof fetch = fetch,
+): Promise<WakeStatus> {
   let res: Response;
   try {
     res = await fetchFn("/api/wake", { method: "POST" });
   } catch {
-    throw new CallError("Can't reach the server. Check your connection and try again.");
+    throw new CallError(
+      "Can't reach the server. Check your connection and try again.",
+    );
   }
   if (res.ok) return (await res.json()) as WakeStatus;
   const detail = await res
     .json()
-    .then((b: { detail?: unknown }) => (typeof b.detail === "string" ? b.detail : null))
+    .then((b: { detail?: unknown }) =>
+      typeof b.detail === "string" ? b.detail : null,
+    )
     .catch(() => null);
-  throw new CallError(detail ?? `Mia can't take calls right now (error ${res.status}).`);
+  throw new CallError(
+    detail ?? `Mia can't take calls right now (error ${res.status}).`,
+  );
 }
 
 /** A voice the caller can pick for Mia (backend/app/voices.py). */
@@ -96,11 +118,77 @@ export interface VoiceOption {
 }
 
 /** The voice choices; an empty list if they can't be loaded (Mia then uses her default). */
-export async function fetchVoices(fetchFn: typeof fetch = fetch): Promise<VoiceOption[]> {
+export async function fetchVoices(
+  fetchFn: typeof fetch = fetch,
+): Promise<VoiceOption[]> {
   try {
     const res = await fetchFn("/api/voices");
     return res.ok ? ((await res.json()) as VoiceOption[]) : [];
   } catch {
     return [];
   }
+}
+
+/** One row of GET /api/calls (agent/src/mia/records.py `summary`). */
+export interface CallSummary {
+  room: string;
+  started_at: string;
+  duration_s: number;
+  stage: string;
+  end_reason: string | null;
+  human_requested: boolean;
+  transfer?: string | null;
+  vehicles: number;
+  quote_total: number | null;
+  e2e_p50_ms: number | null;
+}
+
+/** GET /api/calls/{room}: the full record the worker saved, plus feedback. */
+export interface CallRecord extends Omit<
+  CallSummary,
+  "vehicles" | "quote_total" | "e2e_p50_ms"
+> {
+  events: MiaEvent[];
+  events_dropped?: boolean;
+  transcript: {
+    t: number;
+    role: "caller" | "mia";
+    kind: string;
+    text: string;
+  }[];
+  feedback: {
+    rating: number;
+    comment: string;
+    persona: string;
+    created_at: string;
+  }[];
+}
+
+async function getJson<T>(url: string, fetchFn: typeof fetch): Promise<T> {
+  let res: Response;
+  try {
+    res = await fetchFn(url);
+  } catch {
+    throw new CallError(
+      "Can't reach the server. Check your connection and try again.",
+    );
+  }
+  if (res.status === 404) throw new CallError("That call isn't saved (yet).");
+  if (!res.ok)
+    throw new CallError(`Couldn't load calls (error ${res.status}).`);
+  return (await res.json()) as T;
+}
+
+/** The latest calls, newest first. */
+export function fetchCalls(
+  fetchFn: typeof fetch = fetch,
+): Promise<CallSummary[]> {
+  return getJson("/api/calls?limit=50", fetchFn);
+}
+
+export function fetchCall(
+  room: string,
+  fetchFn: typeof fetch = fetch,
+): Promise<CallRecord> {
+  return getJson(`/api/calls/${encodeURIComponent(room)}`, fetchFn);
 }

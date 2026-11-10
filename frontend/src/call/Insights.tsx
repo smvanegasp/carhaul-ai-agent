@@ -1,4 +1,10 @@
-import { formatMs, LATENCY_PARTS, toPanel, type MiaEvent, type Panel } from "../lib/events";
+import {
+  formatMs,
+  LATENCY_PARTS,
+  toPanel,
+  type MiaEvent,
+  type Panel,
+} from "../lib/events";
 
 const STAGE_LABEL: Record<string, string> = {
   greeting: "Greeting",
@@ -9,33 +15,46 @@ const STAGE_LABEL: Record<string, string> = {
   transfer: "Transfer to a representative",
 };
 
-/** The call at a glance: pipeline, stage, tool calls, latency and what's on file. */
+/**
+ * The call at a glance: pipeline, stage, tool calls, latency and what's on file. On desktop the
+ * card fills its column and only its contents scroll, so a few extra pixels never leave a
+ * scrollbar over empty space (Sergio, 2026-11-09: the panel scrolled into nothing after a call).
+ */
 export function Insights({ events }: { events: MiaEvent[] }) {
   const panel = toPanel(events);
   return (
     <section
       aria-label="Under the hood"
-      className="flex flex-col gap-4 rounded-2xl border border-line bg-surface p-4"
+      className="flex flex-col overflow-hidden rounded-2xl border border-line bg-surface lg:min-h-0 lg:flex-1"
     >
-      <header className="flex flex-col gap-2">
-        <h2 className="font-semibold">Under the hood</h2>
-        {panel.config ? (
-          <ul className="flex flex-wrap gap-1.5 text-xs text-muted">
-            {[panel.config.stt, panel.config.llm, panel.config.tts, panel.config.turn_detector]
-              .filter(Boolean)
-              .map((part) => (
-                <li key={part} className="rounded-full bg-raised px-2 py-0.5">
-                  {part}
-                </li>
-              ))}
-          </ul>
-        ) : (
-          <p className="text-sm text-muted">Stats appear here once the call starts.</p>
-        )}
-      </header>
-      <Stats panel={panel} />
-      <Latency panel={panel} />
-      <OnFile panel={panel} />
+      <div className="flex flex-col gap-3 p-4 lg:min-h-0 lg:flex-1 lg:overflow-y-auto lg:overscroll-contain">
+        <header className="flex flex-col gap-2">
+          <h2 className="font-semibold">Under the hood</h2>
+          {panel.config ? (
+            <ul className="flex flex-wrap gap-1.5 text-xs text-muted">
+              {[
+                panel.config.stt,
+                panel.config.llm,
+                panel.config.tts,
+                panel.config.turn_detector,
+              ]
+                .filter(Boolean)
+                .map((part) => (
+                  <li key={part} className="rounded-full bg-raised px-2 py-0.5">
+                    {part}
+                  </li>
+                ))}
+            </ul>
+          ) : (
+            <p className="text-sm text-muted">
+              Stats appear here once the call starts.
+            </p>
+          )}
+        </header>
+        <Stats panel={panel} />
+        <Latency panel={panel} />
+        <OnFile panel={panel} />
+      </div>
     </section>
   );
 }
@@ -45,7 +64,10 @@ function Stats({ panel }: { panel: Panel }) {
     { label: "Stage", value: STAGE_LABEL[panel.stage] ?? panel.stage },
     {
       label: "Quote",
-      value: panel.quoteTotal != null ? `$${panel.quoteTotal.toLocaleString()}` : "–",
+      value:
+        panel.quoteTotal != null
+          ? `$${panel.quoteTotal.toLocaleString()}`
+          : "–",
     },
     {
       label: "Tool calls",
@@ -84,8 +106,13 @@ function Latency({ panel }: { panel: Panel }) {
           const { median, last } = panel.latency[p.key];
           const total = p.key === "e2e";
           return (
-            <li key={p.key} className="grid grid-cols-[7.5rem_1fr_auto] items-center gap-2 text-xs">
-              <span className={total ? "font-semibold" : "text-muted"}>{p.label}</span>
+            <li
+              key={p.key}
+              className="grid grid-cols-[7.5rem_1fr_auto] items-center gap-2 text-xs"
+            >
+              <span className={total ? "font-semibold" : "text-muted"}>
+                {p.label}
+              </span>
               <span className="h-1.5 overflow-hidden rounded-full bg-raised">
                 <span
                   className={`block h-full rounded-full ${total ? "bg-brand" : "bg-accent"}`}
