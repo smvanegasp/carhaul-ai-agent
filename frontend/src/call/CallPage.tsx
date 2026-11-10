@@ -16,6 +16,8 @@ import { Conversation } from "./Conversation";
 import { ErrorBoundary } from "./ErrorBoundary";
 import { FeedbackForm } from "./FeedbackForm";
 import { Insights } from "./Insights";
+import { wakeProgress } from "../lib/wake";
+import { ThemeToggle } from "./ThemeToggle";
 import { useWake, type Wake } from "./useWake";
 import { useVoiceChoice, VoicePicker } from "./VoicePicker";
 
@@ -132,9 +134,12 @@ export function CallPage() {
   const page = (
     <main className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-5 lg:h-dvh lg:overflow-hidden lg:py-6">
       <header className="flex flex-col gap-1">
-        <h1 className="text-2xl font-semibold tracking-tight">
-          Call Mia <span className="font-normal text-muted">· F&amp;F car shipping quotes</span>
-        </h1>
+        <div className="flex items-start justify-between gap-3">
+          <h1 className="font-display text-3xl tracking-tight">
+            Call Mia <span className="text-muted">· F&amp;F car shipping quotes</span>
+          </h1>
+          <ThemeToggle />
+        </div>
         <p className="max-w-3xl text-sm text-muted">
           Mia is a voice assistant for open car-shipping quotes. Tell her where your car is going
           from and to, and its year, make and model. Calls last up to {MAX_CALL_SECONDS / 60}{" "}
@@ -235,11 +240,36 @@ function WakeNote({ wake, onRetry }: { wake: Wake; onRetry: () => void }) {
   }, [wake.kind]);
 
   if (wake.kind === "starting") {
+    const elapsed = now - wake.since;
+    const { percent, label } = wakeProgress(elapsed, wake.step);
     return (
-      <p className="text-sm text-muted" aria-live="polite">
-        Mia only runs when someone wants to call, so she takes about a minute to wake up
-        {` (${Math.round((now - wake.since) / 1000)} s so far)`}. Keep this page open.
-      </p>
+      <div className="flex flex-col gap-2 text-sm">
+        <div className="flex items-baseline justify-between gap-2">
+          <span className="font-medium text-ink" aria-live="polite">
+            {label}…
+          </span>
+          <span className="font-mono text-xs text-muted tabular-nums">
+            {Math.round(elapsed / 1000)} s
+          </span>
+        </div>
+        <div
+          role="progressbar"
+          aria-label="Waking Mia up"
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-valuenow={percent}
+          className="h-2 overflow-hidden rounded-full bg-raised"
+        >
+          <div
+            className="h-full rounded-full bg-accent transition-[width] duration-1000 ease-linear"
+            style={{ width: `${percent}%` }}
+          />
+        </div>
+        <p className="text-muted">
+          Mia only runs when someone wants to call, so she takes about a minute to wake up. Keep
+          this page open.
+        </p>
+      </div>
     );
   }
   if (wake.kind === "unavailable") {

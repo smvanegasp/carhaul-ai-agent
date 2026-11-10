@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useState } from "react";
 
 import { CallError, wakeMia } from "../lib/api";
+import type { WakeStep } from "../lib/wake";
 
 /** Mia's voice worker, as the call page sees it (backend/app/worker.py). */
 export type Wake =
   | { kind: "checking" }
-  | { kind: "starting"; since: number }
+  | { kind: "starting"; since: number; step: WakeStep }
   | { kind: "ready" }
   | { kind: "unavailable"; message: string };
 
@@ -47,7 +48,7 @@ export function useWake() {
             message: "Mia is taking too long to wake up. Try again in a few minutes.",
           });
         }
-        setWake({ kind: "starting", since });
+        setWake({ kind: "starting", since, step: status.step ?? null });
         timer = setTimeout(tick, POLL_MS);
       } catch (err) {
         if (!cancelled) done({ kind: "unavailable", message: message(err) });

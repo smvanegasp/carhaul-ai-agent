@@ -102,7 +102,7 @@ Fargate, not Lambda. Everything else follows the fit pattern.
 | --- | --- |
 | `agent/` | uv project `mia-agent`, package `src/mia/` (see below). `evals/scenarios/*.yaml`: reference conversations |
 | `backend/` | uv project `carhaul-api`: FastAPI for Lambda (`app/`). `POST /api/token` (`livekit_token.py`, rate limited by `ratelimit.py`), `POST /api/calls/{room}/feedback` (`calls.py`), `POST /api/wake` (`worker.py`: starts the on-demand worker), DynamoDB in `db.py`. Later: call list and stats |
-| `frontend/` | React 19 + Vite + Tailwind v4 + LiveKit components. `src/call/`: `CallPage.tsx` (layout, call controls, wake), `Conversation.tsx` (chat + inline tool calls and latency behind "Show details", built by `lib/conversation.ts`), `Insights.tsx` (stage, stats, latency, on file), `FeedbackForm.tsx`, `useWake.ts`. Colors are theme tokens in `src/index.css` (light and dark). Later: dashboard |
+| `frontend/` | React 19 + Vite + Tailwind v4 + LiveKit components. `src/call/`: `CallPage.tsx` (layout, call controls, wake), `Conversation.tsx` (chat + inline tool calls and latency behind "Show details", built by `lib/conversation.ts`), `Insights.tsx` (stage, stats, latency, on file), `FeedbackForm.tsx`, `useWake.ts` (+ `lib/wake.ts`: the wake progress bar), `ThemeToggle.tsx`. Colors are theme tokens in `src/index.css` (light by default, dark on request). Later: dashboard |
 | `notebooks/` | Exploration only; kernel is `agent/.venv` (`uv sync --group notebooks`) |
 | `docs/` | BACKLOG, CONVERSATION_DESIGN, TESTING_GUIDE (stage 4) |
 | `infra/` | Terraform (profile `carhaul`, everything `carhaul-*`): DynamoDB, Lambda + HTTP API, S3 + CloudFront (custom domain optional), on-demand ECS Fargate worker task (`agent.tf`), GitHub OIDC deploy role, alarms. `bootstrap/`: the state bucket |
@@ -194,6 +194,13 @@ docker compose up        # api :8020, web :5190, DynamoDB Local :8030, agent wor
   only the conversation scrolls. **Navy theme with dark mode** through CSS-variable tokens on
   one navy scale (the first dark mode was too dark to inspect). Numbers are written out as
   words before TTS (`speech.py`) and a goodbye from Mia hangs up even without `end_call`.
+- 2026-11-09: **Palette, third pass** (Sergio: still too dark, "more professional, McKinsey
+  colors"): light consulting-style palette (white and cool grey, deep blue `#051C2C` ink,
+  electric blue `#2251FF` actions, cyan `#00A9F4` highlights, serif title). **Light by default
+  whatever the OS says** (the OS dark mode was what made it dark); dark mode is a toggle,
+  remembered in the browser. Wake-up shows a **progress bar**: `/api/wake` reports a `step`
+  from the ECS task (`server` while PROVISIONING/PENDING, `loading` once it runs) and the bar
+  moves with time inside that step, never 100% before ready.
 - 2026-11-09 (stage 4): **Local and AWS workers have different names**: the first scripted
   call on AWS was answered by the local Docker worker, because both registered as `mia` on the
   same LiveKit project. Now `MIA_AGENT_NAME` is `mia` only on AWS (task definition and Lambda);

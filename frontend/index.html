@@ -5,6 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <title>Call Mia · F&amp;F car shipping quotes</title>
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <script>
+      // Light by default; dark only if the caller chose it (ThemeToggle.tsx). Before the first
+      // paint, so there's no flash.
+      try {
+        if (localStorage.getItem("mia.theme") === "dark") {
+          document.documentElement.dataset.theme = "dark";
+        }
+      } catch {}
+    </script>
   </head>
   <body>
     <div id="root"></div>

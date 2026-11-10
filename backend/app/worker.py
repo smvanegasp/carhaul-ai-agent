@@ -4,7 +4,10 @@ On AWS the worker is a single ECS Fargate task that nobody keeps running (infra/
 call page calls this endpoint when it opens and again right before a call:
 
 - no worker running → start one (``ecs:RunTask``) and answer ``starting``
-- a worker starting (or not registered with LiveKit yet) → ``starting``
+- a worker starting (or not registered with LiveKit yet) → ``starting``, with a ``step`` for the
+  page's progress bar: ``server`` while ECS finds a machine and pulls the image (PROVISIONING,
+  PENDING; about the first half of the ~1 min start), ``loading`` once the container runs and
+  Mia loads her models and registers with LiveKit
 - a worker running and healthy → ``ready`` (its health check only passes once it's
   registered with LiveKit, so a call placed now gets Mia)
 
@@ -36,9 +39,13 @@ WAKES_PER_IP_PER_HOUR = 240  # the page polls every few seconds while Mia starts
 START_LOCK_SECONDS = 180  # a starting task shows up in ListTasks well before this
 
 
+Step = Literal["server", "loading"]
+
+
 class WakeStatus(BaseModel):
     state: Literal["ready", "starting", "unavailable"]
     detail: str = ""
+    step: Step | None = None  # only while starting
 
 
 def configured() -> bool:
@@ -58,14 +65,17 @@ def _family() -> str:
     return os.environ.get("AGENT_TASK_FAMILY", "carhaul-agent")
 
 
-def worker_state(ecs) -> Literal["ready", "starting", "off"]:
+def worker_state(ecs) -> Literal["ready", "server", "loading", "off"]:
+    """``server`` and ``loading`` are the two steps of ``starting`` (see the module docstring)."""
     arns = ecs.list_tasks(cluster=_cluster(), family=_family(), desiredStatus="RUNNING")["taskArns"]
     if not arns:
         return "off"
     tasks = ecs.describe_tasks(cluster=_cluster(), tasks=arns)["tasks"]
     if any(t.get("lastStatus") == "RUNNING" and t.get("healthStatus") == "HEALTHY" for t in tasks):
         return "ready"
-    return "starting"
+    if any(t.get("lastStatus") in ("ACTIVATING", "RUNNING") for t in tasks):
+        return "loading"
+    return "server"
 
 
 def _take_start_lock(now: int) -> bool:
@@ -114,10 +124,12 @@ def wake(request: Request) -> WakeStatus:
     ecs = ecs_client()
     try:
         state = worker_state(ecs)
+        if state == "ready":
+            return WakeStatus(state="ready")
         if state != "off":
-            return WakeStatus(state=state)
+            return WakeStatus(state="starting", step=state)
         if not _take_start_lock(now):
-            return WakeStatus(state="starting")
+            return WakeStatus(state="starting", step="server")
         starts_per_day = int(os.environ.get("WORKER_STARTS_PER_DAY") or 20)
         if ratelimit.hit("worker-starts", 86400) > starts_per_day:
             return WakeStatus(
@@ -125,7 +137,7 @@ def wake(request: Request) -> WakeStatus:
             )
         start(ecs)
         log.info("Started the voice worker")
-        return WakeStatus(state="starting")
+        return WakeStatus(state="starting", step="server")
     except ClientError:
         # The alarm on this line emails Sergio (infra/monitoring.tf).
         log.exception("Couldn't start the voice worker")
