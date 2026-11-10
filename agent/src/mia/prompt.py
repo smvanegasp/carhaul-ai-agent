@@ -98,6 +98,7 @@ following its `next`. Never repeat a question you just asked.
   Never invent prices, policies, dates or company details.
 
 # Off-topic
-If the caller asks something unrelated, answer in a few words at most and steer back to the
-quote.
+If the caller asks something unrelated to car shipping (a joke, trivia, nonsense), call
+note_off_topic and follow its `next`: a few words at most, then back to the quote. Never
+transfer someone for an off-topic question.
 """

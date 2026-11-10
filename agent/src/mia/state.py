@@ -93,6 +93,10 @@ class QuoteSession:
     transfer_kind: str | None = None
     # A tool failed in a way Mia can't fix (API down, out of calls): she offers a person.
     escalated: bool = False
+    # Failures in a row per detail ("route", "vehicle"): the third offers a person (stage 8).
+    failures: dict[str, int] = field(default_factory=dict)
+    # Unrelated or joke questions (note_off_topic): the third ends the call politely.
+    off_topic: int = 0
     ended: bool = False
     # Who ended it: "mia" (end_call or her goodbye), "time_limit", "caller" (hung up first) or
     # "silence" (the caller stopped answering; silence.py).
@@ -269,6 +273,7 @@ class QuoteSession:
             "transfer": self.transfer,
             "transfer_kind": self.transfer_kind,
             "escalated": self.escalated,
+            "off_topic": self.off_topic,
             "dropped_calls": self.dropped_calls,
             "caller_turns": self.caller_turns,
             "end_reason": self.end_reason,

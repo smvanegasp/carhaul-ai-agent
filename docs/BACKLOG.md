@@ -12,7 +12,7 @@ One branch and one PR per stage. ✅ done · 🔜 next · ⏳ later.
 | 5 | Live panel (`mia.events`), call record to DynamoDB, feedback form per call | ✅ |
 | 6 | Public dashboard: Past calls (list + detail) and Stats (KPIs, funnel, trends) | ✅ |
 | 7 | AI-vs-AI simulation: 8 personas × fragments, report by persona and path, nightly workflow | ⏳ |
-| 8 | Non-happy paths: self-corrections + silence ✅, changes + trash ✅; error matrix, FAQs, off-topic guardrail next | 🔜 |
+| 8 | Non-happy paths: self-corrections, silence, changes + trash, error matrix, FAQs, off-topic guardrail | ✅ (PR #22 open) |
 | 9 | Transfer to a licensed representative (Sergio's phone) through a Twilio SIP trunk ✅ (this PR); later a phone number to call Mia | 🔜 |
 
 ## Stage 1 (done 2026-11-08)
@@ -409,8 +409,35 @@ itself; make it a better experience.
       a missing `ground_truth`
 - [x] Live voice (Docker worker, real APIs): Civic quoted $1,191, "it's actually a twenty
       twenty Toyota four Runner, not the Civic" → update_vehicle → read-back → $1,340 → goodbye
-- [ ] Next in stage 8: the error matrix (each tool error → what Mia says), FAQs, off-topic
-      guardrail
+- [x] Error matrix, FAQs, off-topic: part 3 below
+
+## Stage 8, part 3: errors, FAQs, off-topic (same branch `stage-8-changes`, 2026-11-10)
+
+- [x] Error matrix (`tests/test_errors.py`, 16 tests): a detail we can't find (city, make,
+      model, year) → ask again; the **third failure in a row** on the same detail → offer a
+      licensed representative (`STILL_NOT_FOUND`, counts as escalated → forced transfer).
+      Service failures (Maps down, CarHauler 401/402/5xx/rate limit after retries) → apologize
+      and offer a representative at once; never a price. A bad ZIP at quote time → ask for the
+      city. Missing details ("a Honda") are questions, never failures
+- [x] Both cities are looked up before reporting a failure, so the one that worked is kept
+      ("From Atlantis to San Francisco": SF saved, Mia only re-asks the pickup city)
+- [x] `keep_going` guardrail: after answering a question Mia goes back to what's missing
+      (gpt-oss stopped after "We only quote open car shipping.")
+- [x] Off-topic: `note_off_topic` tool; twice → a few words and back to the quote; third →
+      "I can only help with car shipping quotes", goodbye, hang up (`end_reason` off_topic),
+      never a transfer. Guardrail: never counted on a turn about shipping, a car, a yes or a
+      count (it ends the call)
+- [x] Scenario runner: `fail_carhauler: [402, ...]` per turn (simulated outage) and
+      `ended: true`
+- [x] Scenarios, 5 runs each: `api_down_at_quote` 5/5, `city_not_found` 4/5 then 8/8,
+      `faq_mid_call` 4/5 (the misses: the payment answer left out "cash on delivery"),
+      `off_topic_three_strikes` 5/5 then 4/5 (the miss: the model didn't call note_off_topic
+      on the 3rd joke, so Mia kept steering back instead of ending; harmless)
+- [ ] Track those two in the stage 7 simulations (prompt or code if they stay above 1 in 10)
+- [ ] Seen in the final live check: STT heard "do you do a closed shipping?" (enclosed); the
+      model's step was dropped by the guardrail and the fallback line only repeated the
+      vehicle question, so the FAQ went unanswered. When a step has only dropped calls and the
+      caller asked a question, let the model answer instead of the fallback (next chat)
 
 ## Ideas / later
 

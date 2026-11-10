@@ -351,3 +351,19 @@ def wants_removal(text: str) -> bool:
 def wants_undo(text: str) -> bool:
     """ "Actually, keep the Honda", "go back to the original", "never mind"."""
     return bool(_UNDO.search(text))
+
+
+# note_off_topic ends the call on the third one, so a turn about shipping never counts, even
+# if the model calls it (gpt-oss invents tool calls).
+_ON_TOPIC = re.compile(
+    r"\b(?:ship|shipping|send|sending|move|moving|transport|car|cars|vehicle|vehicles|truck|"
+    r"suv|sedan|quote|price|cost|how much|enclosed|open|deliver|delivery|pick ?up|pay|payment|"
+    r"cash|card|deposit|discount|drivable|run|runs|trailer|carrier|insurance|days|long|when|"
+    r"representative|agent|person|human)",
+    re.IGNORECASE,
+)
+
+
+def is_on_topic(text: str) -> bool:
+    """Does the caller's message mention shipping, the car, the price or the call itself?"""
+    return bool(_ON_TOPIC.search(text))

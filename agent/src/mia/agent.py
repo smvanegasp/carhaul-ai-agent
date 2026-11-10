@@ -209,6 +209,7 @@ class Mia(Agent):
             spoken = guardrails.tidy_speech(text)
             if not spoken and dropped:
                 spoken = guardrails.fallback_line(state)
+            spoken = guardrails.keep_going(spoken, state)
             if spoken and guardrails.is_goodbye(spoken) and not state.ended:
                 # She's closing the call without end_call: hang up after this line plays.
                 logger.info("goodbye without end_call; hanging up after it")
@@ -419,6 +420,18 @@ class Mia(Agent):
             # Dial once "connecting you" has been spoken (same pattern as end_call).
             context.speech_handle.add_done_callback(lambda _: start())
         return result
+
+    @function_tool
+    async def note_off_topic(self, context: RunContext[QuoteSession]) -> str:
+        """The caller asked something unrelated to car shipping (a joke, trivia, nonsense).
+        Call it before answering, then follow its `next`."""
+        return await _run_tool(
+            self.services,
+            context.userdata,
+            "note_off_topic",
+            {},
+            tools.note_off_topic(context.userdata, self.services),
+        )
 
     @function_tool
     async def end_call(self, context: RunContext[QuoteSession]) -> str:
