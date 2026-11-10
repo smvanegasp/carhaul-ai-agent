@@ -253,9 +253,14 @@ async def save_vehicle(
     drivable: bool | None = True,
     total_vehicles: int | None = None,
     said: str | None = None,
+    last_said: str | None = None,
 ) -> Result:
-    """``said``: everything the caller said so far, for the grounding check (None skips it)."""
+    """``said``: everything the caller said so far, for the grounding check (None skips it).
+    ``last_said``: their latest message; a year they corrected in it ("twenty ten... twenty
+    twenty") becomes the one they settled on, whatever the model passed."""
     _note_vehicle_count(state, said)
+    if last_said:
+        year = grounding.corrected_year(year, last_said)
     # Models send null for "not mentioned": only an explicit False means it doesn't run.
     operational = drivable is not False
     if said is not None:  # grounding guardrail: drop any detail the caller never said
@@ -274,8 +279,11 @@ async def save_vehicle(
             vehicle_type = None
         if ignored and not (year or make or model or vehicle_type):
             return _err(state, "NOT_SAID_BY_CALLER", NOT_SAID, ignored=ignored)
+    # The count only if the caller said it ("two cars"): with "it's a twenty ten, twenty twenty
+    # 4Runner" gpt-oss passed total_vehicles=2 and Mia asked for a second car (stage 8 test).
     if total_vehicles and total_vehicles > 0:
-        state.expected_vehicles = total_vehicles
+        if said is None or grounding.vehicle_count_said(said) == total_vehicles:
+            state.expected_vehicles = total_vehicles
     try:
         v = await services.resolver.resolve(year=year, make=make, model=model)
     except VehicleError as exc:

@@ -39,7 +39,8 @@ export interface TurnEvent extends Base {
     | "filler"
     | "time_limit"
     | "handoff"
-    | "transfer_failed";
+    | "transfer_failed"
+    | "silence";
   text: string;
   metrics: TurnMetrics;
   speaking_s: number | null;

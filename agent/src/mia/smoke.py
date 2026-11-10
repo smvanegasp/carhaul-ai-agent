@@ -92,7 +92,9 @@ async def token_from_api(base: str, voice: str | None = None) -> tuple[str, str,
     return body["server_url"], body["participant_token"], body["room_name"]
 
 
-async def run(lines: list[str], api_base: str | None = None, voice: str | None = None) -> int:
+async def run(
+    lines: list[str], api_base: str | None = None, voice: str | None = None, wait: float = 25
+) -> int:
     clips = await asyncio.gather(*(synthesize(line) for line in lines))
     if api_base:
         url, jwt, room_name = await token_from_api(api_base, voice)
@@ -200,7 +202,7 @@ async def run(lines: list[str], api_base: str | None = None, voice: str | None =
             responses.append(time.monotonic() - spoke_until["t"])
             print(f"{stamp()} {DIM}response {responses[-1] * 1000:.0f} ms{RESET}")
         try:
-            await asyncio.wait_for(disconnected.wait(), 25)
+            await asyncio.wait_for(disconnected.wait(), wait)
             print(f"{stamp()} Mia hung up (room closed)")
         except TimeoutError:
             print(f"{stamp()} still connected after the last line (Mia didn't hang up)")
@@ -229,5 +231,12 @@ if __name__ == "__main__":
     parser.add_argument("--lines", nargs="+", default=DEFAULT_LINES)
     parser.add_argument("--api", help="app base URL, e.g. http://localhost:5190")
     parser.add_argument("--voice", help="Mia's voice key (mia/voices.py), e.g. cartesia-courtney")
+    parser.add_argument(
+        "--wait",
+        type=float,
+        default=25,
+        help="seconds to stay silent after the last line, waiting for Mia to hang up (a silent "
+        "caller: 45 is enough for 'are you still there?' and the goodbye)",
+    )
     args = parser.parse_args()
-    raise SystemExit(asyncio.run(run(args.lines, args.api, args.voice)))
+    raise SystemExit(asyncio.run(run(args.lines, args.api, args.voice, args.wait)))

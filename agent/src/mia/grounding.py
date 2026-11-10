@@ -253,3 +253,76 @@ def wants_person(text: str) -> bool:
 def offered_person(mia_said: str) -> bool:
     """Did Mia's last line offer to connect the caller with someone?"""
     return bool(_OFFER.search(mia_said))
+
+
+# Self-corrections ("it's a twenty ten... twenty twenty Toyota", Sergio's call, 2026-11-09: saved
+# as 2010). A year is corrected when the next year follows it with nothing but these words in
+# between, so "a 2019 and a 2020" (two cars) is not a correction.
+_CORRECTION_WORDS = {
+    "no",
+    "nope",
+    "sorry",
+    "i",
+    "mean",
+    "meant",
+    "actually",
+    "wait",
+    "uh",
+    "um",
+    "uhm",
+    "er",
+    "oh",
+    "it",
+    "s",
+    "its",
+    "is",
+    "a",
+    "an",
+    "make",
+    "that",
+    "scratch",
+    "correction",
+    "rather",
+    "not",
+    "my",
+    "bad",
+}
+
+
+def _years_in(text: str) -> list[tuple[int, int, int]]:
+    """(start, end, year) for each year said in ``text``, as digits or words ("twenty ten").
+    Bare two-digit forms ("ten", "20") are left out: too ambiguous to place."""
+    words = _words(text)
+    found: list[tuple[int, int, int]] = []
+    for year in range(1950, 2031):
+        for form in spoken_years(year):
+            parts = form.split()
+            if len(parts) < 2 and not (form.isdigit() and len(form) == 4):
+                continue
+            n = len(parts)
+            for i in range(len(words) - n + 1):
+                if words[i : i + n] == parts:
+                    found.append((i, i + n, year))
+    # Where forms overlap ("twenty twenty" inside "two thousand twenty"), keep the longest.
+    found.sort(key=lambda f: (f[0], -(f[1] - f[0])))
+    out: list[tuple[int, int, int]] = []
+    for f in found:
+        if out and f[0] < out[-1][1]:
+            continue
+        out.append(f)
+    return out
+
+
+def corrected_year(year: int | None, last_said: str) -> int | None:
+    """The year the caller settled on: if they said ``year`` and then corrected it ("twenty
+    ten... no, twenty twenty"), the later one; otherwise ``year`` unchanged."""
+    if year is None:
+        return None
+    words = _words(last_said)
+    mentions = _years_in(last_said)
+    current = year
+    for (_, end, first), (start, _, second) in zip(mentions, mentions[1:], strict=False):
+        between = words[end:start]
+        if first == current and first != second and all(w in _CORRECTION_WORDS for w in between):
+            current = second
+    return current

@@ -346,3 +346,38 @@ async def test_a_failure_mia_cant_fix_makes_the_next_transfer_forced(state, serv
     await tools.request_human(state, services, asked=False)
     assert state.transfer_kind == "forced"
     assert state.to_record()["transfer_kind"] == "forced"
+
+
+async def test_save_vehicle_keeps_the_year_the_caller_corrected_to(state, services):
+    said = "It's a twenty ten... twenty twenty Toyota 4Runner"
+    r = await tools.save_vehicle(
+        state, services, year=2010, make="Toyota", model="4Runner", said=said, last_said=said
+    )
+    assert r["ok"] and state.vehicles[0].year == 2020
+
+
+async def test_a_vehicle_count_the_caller_never_said_is_ignored(state, services):
+    said = "It's a twenty ten, twenty twenty Toyota 4Runner"
+    await tools.save_vehicle(
+        state,
+        services,
+        year=2010,
+        make="Toyota",
+        model="4Runner",
+        total_vehicles=2,
+        said=said,
+        last_said=said,
+    )
+    assert state.expected_vehicles is None and state.vehicles[0].year == 2020
+    said2 = "I have two cars, the first is a 2020 Toyota 4Runner"
+    await tools.save_vehicle(
+        state,
+        services,
+        year=2020,
+        make="Toyota",
+        model="4Runner",
+        total_vehicles=2,
+        said=said2,
+        last_said=said2,
+    )
+    assert state.expected_vehicles == 2

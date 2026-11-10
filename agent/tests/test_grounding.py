@@ -192,3 +192,23 @@ def test_offered_person():
         "Would you like me to connect you with a licensed representative?"
     )
     assert not grounding.offered_person("What's the year, make and model?")
+
+
+@pytest.mark.parametrize(
+    ("year", "said", "settled"),
+    [
+        # Sergio's call (2026-11-09): saved as 2010.
+        (2010, "It's a twenty ten... twenty twenty Toyota", 2020),
+        (2010, "twenty ten, no sorry, twenty twenty Corolla", 2020),
+        (2010, "twenty ten uh I mean two thousand twenty one", 2021),
+        (1998, "nineteen ninety eight actually nineteen ninety nine", 1999),
+        (2018, "2018 2020", 2020),
+        # Not corrections: two cars, or one year.
+        (2019, "a 2019 and a 2020", 2019),
+        (2020, "a 2019 and a 2020", 2020),
+        (2019, "2019 Honda Civic", 2019),
+        (None, "twenty ten twenty twenty", None),
+    ],
+)
+def test_corrected_year(year, said, settled):
+    assert grounding.corrected_year(year, said) == settled

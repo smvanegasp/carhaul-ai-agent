@@ -1,0 +1,25 @@
+# Stage 8, non-happy path: the caller corrects themselves mid-sentence. Sergio's call
+# (2026-11-09): "it's a twenty ten... twenty twenty Toyota" was saved as 2010. The last value
+# the caller settles on wins (grounding.corrected_year, applied in save_vehicle).
+id: self_correction_year
+persona: NG_C_V
+path: NHP
+ground_truth:
+  origin: Boston, Massachusetts
+  destination: San Francisco, California
+  vehicles: [2020 Toyota 4Runner]
+turns:
+  - user: "Yeah, sure"
+    expect:
+      judge: Asks where the vehicle ships from, to, or both.
+  - user: "From Boston, Massachusetts to San Francisco, California"
+    expect:
+      on_file: {origin: "Boston, Massachusetts", destination: "San Francisco, California"}
+      judge: Asks for the year, make and model of the vehicle.
+  - user: "It's a twenty ten, twenty twenty Toyota 4Runner"
+    expect:
+      on_file: {vehicles: [2020 Toyota 4Runner]}
+      no_tools: [get_quote]
+      judge: >-
+        Reads back a 2020 Toyota 4Runner (not 2010) shipping from Boston, Massachusetts to San
+        Francisco, California and asks the caller to confirm.

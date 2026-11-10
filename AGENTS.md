@@ -91,6 +91,7 @@ Fargate, not Lambda. Everything else follows the fit pattern.
 | `records.py` | The call record and its DynamoDB write (keys documented there; shared table with the backend) |
 | `idle.py` | On AWS the worker exits after 10 idle minutes (no call, no wake) or 2 hours, so it only costs money around calls |
 | `transfer.py` | Transfer to a licensed representative: Mia dials Sergio's phone into the call through the Twilio SIP trunk, introduces the caller and leaves; daily cap, ring/talk limits |
+| `silence.py` | What Mia does when the caller goes quiet: "are you still there?", or a goodbye and hang-up |
 | `voices.py` | The 6 American voices callers can pick (2 each: Cartesia, ElevenLabs, Deepgram; Cartesia Skylar first and default), each with a description; keys and descriptions match `backend/app/voices.py` |
 | `speech.py` | Numbers written out as words before any voice reads them (`Mia.tts_node`) |
 | `catalog.py` | CarHauler catalog snapshot on disk (a week), so worker restarts don't spend API calls |
@@ -202,6 +203,13 @@ docker compose up        # api :8020, web :5190, DynamoDB Local :8030, agent wor
   remembered in the browser. Wake-up shows a **progress bar**: `/api/wake` reports a `step`
   from the ECS task (`server` while PROVISIONING/PENDING, `loading` once it runs) and the bar
   moves with time inside that step, never 100% before ready.
+- 2026-11-10 (stage 8, first part): **Self-corrections and silence**, both from Sergio's calls.
+  The year a caller corrects to wins, in code (`grounding.corrected_year` in `save_vehicle`):
+  the scenario with his exact phrasing failed 5/5 without it (the model kept 2010), passes
+  10/10 with it. The same test showed gpt-oss inventing `total_vehicles=2`, so the count is now
+  grounded too. Silence: LiveKit's "away" (15 s) -> `silence.py`; the caller stays "away"
+  until they speak, so `reset_away_timer()` after "are you still there?" is what lets a second
+  silence end the call.
 - 2026-11-10: **Dispositions, all-time stats, credits.** Sergio: calls come in bursts, so no
   date ranges or trends over time; add voice dispositions (organic transfer = yes to Mia's
   offer, requested = asked for a person, forced = a tool failed and Mia handed over; hung up

@@ -71,7 +71,7 @@ def facts_from_record(record: dict[str, Any]) -> dict[str, Any]:
     quoted = record.get("quote") is not None or "get_quote" in tools_ok
     # The call's disposition. Transfers that connected say why (older records don't: a
     # transfer after a quote was the offer, before it the caller asked).
-    caller_left = record.get("end_reason") == "caller"
+    caller_left = record.get("end_reason") in ("caller", "silence")
     if transferred:
         kind = record.get("transfer_kind") or ("organic" if quoted else "requested")
         disposition = f"{kind}_transfer"

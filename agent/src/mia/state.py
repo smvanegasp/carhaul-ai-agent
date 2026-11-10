@@ -94,7 +94,8 @@ class QuoteSession:
     # A tool failed in a way Mia can't fix (API down, out of calls): she offers a person.
     escalated: bool = False
     ended: bool = False
-    # Who ended it: "mia" (end_call or her goodbye), "time_limit" or "caller" (hung up first).
+    # Who ended it: "mia" (end_call or her goodbye), "time_limit", "caller" (hung up first) or
+    # "silence" (the caller stopped answering; silence.py).
     end_reason: str | None = None
     # Mia said goodbye without calling end_call: hang up once that line has been spoken.
     hang_up_after_speech: bool = False

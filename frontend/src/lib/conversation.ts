@@ -8,7 +8,13 @@
  * missing after a reconnect), the turn events themselves become the lines.
  */
 
-import type { DroppedEvent, MiaEvent, ToolEvent, TurnEvent, TurnMetrics } from "./events";
+import type {
+  DroppedEvent,
+  MiaEvent,
+  ToolEvent,
+  TurnEvent,
+  TurnMetrics,
+} from "./events";
 import type { TranscriptLine } from "./transcript";
 
 export type ConversationItem =
@@ -33,6 +39,7 @@ const NOTES: Record<string, string> = {
   time_limit: "time limit (from code)",
   handoff: "handoff to the representative (from code)",
   transfer_failed: "transfer not answered (from code)",
+  silence: "the caller went quiet (from code)",
 };
 
 function eventTime(e: MiaEvent): number {
@@ -50,7 +57,10 @@ function lineStart(t: TurnEvent): number {
   return eventTime(t) - spoke - waited;
 }
 
-export function buildConversation(lines: TranscriptLine[], events: MiaEvent[]): ConversationItem[] {
+export function buildConversation(
+  lines: TranscriptLine[],
+  events: MiaEvent[],
+): ConversationItem[] {
   const turns = events.filter((e): e is TurnEvent => e.type === "turn");
   const items: ConversationItem[] =
     lines.length > 0
@@ -72,7 +82,8 @@ export function buildConversation(lines: TranscriptLine[], events: MiaEvent[]): 
     const at2 = lines.length > 0 ? at : lineStart(t);
     let match: (ConversationItem & { kind: "line" }) | undefined;
     for (const item of items) {
-      if (item.kind !== "line" || item.who !== who || claimed.has(item.id)) continue;
+      if (item.kind !== "line" || item.who !== who || claimed.has(item.id))
+        continue;
       if (item.at <= Math.max(at, at2) + 1000) match = item; // latest line started before it
     }
     if (!match) continue;
@@ -84,9 +95,19 @@ export function buildConversation(lines: TranscriptLine[], events: MiaEvent[]): 
 
   for (const e of events) {
     if (e.type === "tool")
-      items.push({ kind: "tool", id: `ev-${e.seq}`, at: eventTime(e), event: e });
+      items.push({
+        kind: "tool",
+        id: `ev-${e.seq}`,
+        at: eventTime(e),
+        event: e,
+      });
     if (e.type === "dropped") {
-      items.push({ kind: "dropped", id: `ev-${e.seq}`, at: eventTime(e), event: e });
+      items.push({
+        kind: "dropped",
+        id: `ev-${e.seq}`,
+        at: eventTime(e),
+        event: e,
+      });
     }
   }
   return items.sort((a, b) => a.at - b.at);
