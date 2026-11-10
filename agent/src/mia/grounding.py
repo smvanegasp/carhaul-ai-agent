@@ -228,3 +228,28 @@ def is_confirmation(text: str) -> bool:
     if any(f" {w} " in joined for w in _NO):
         return False
     return any(f" {phrase} " in joined for phrase in _YES)
+
+
+# Asking for a person. Since stage 9 request_human rings a real phone, so it only runs when the
+# caller asked for one, or said yes right after Mia offered (guardrails.check_call).
+_PERSON = re.compile(
+    r"\b(?:human|person|people|someone|somebody|agent|representative|rep|operator|manager|"
+    r"sergio|real (?:person|human)|live (?:person|agent)|transfer me|connect me)\b",
+    re.IGNORECASE,
+)
+_OFFER = re.compile(r"\b(?:connect|transfer|representative|put you through)\b", re.IGNORECASE)
+_DECLINE = re.compile(r"\b(?:no|nope|don't|dont|do not|not now)\b", re.IGNORECASE)
+_ACCEPT = re.compile(r"\b(?:yes|yeah|sure|please)\b", re.IGNORECASE)
+
+
+def wants_person(text: str) -> bool:
+    """Is the caller asking to talk to a person ("can I talk to a human?", "agent please")?
+    "No, I don't want an agent" is not."""
+    if _DECLINE.search(text) and not _ACCEPT.search(text):
+        return False
+    return bool(_PERSON.search(text))
+
+
+def offered_person(mia_said: str) -> bool:
+    """Did Mia's last line offer to connect the caller with someone?"""
+    return bool(_OFFER.search(mia_said))

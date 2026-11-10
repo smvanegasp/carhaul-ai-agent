@@ -7,13 +7,13 @@ One branch and one PR per stage. ✅ done · 🔜 next · ⏳ later.
 | 0 | Scaffold: agent/backend/frontend projects, `geo.py` moved into the agent, CI, Dependabot, docs | ✅ |
 | 1 | CarHauler client (retries, 401/402, caching), vehicle resolution (fuzzy YMM → trim), pricing and spoken summary | ✅ |
 | 2 | Agent core in text: prompt, `QuoteSession` state, tools, guardrails, LiveKit `AgentSession` + Groq; 3 happy-path scenario tests | ✅ |
-| 3 | Web calling locally: `/api/token`, call page, Deepgram + ElevenLabs, turn detector, interruptions. Optional: share the local app through ngrok so the teammate can try it before AWS | 🔜 PR #7 open |
-| 4 | AWS deploy: Terraform (fit + on-demand ECS Fargate worker), Deploy workflow, SSM secrets, TESTING_GUIDE. **Teammate starts testing** | 🔜 PR #9 open: plan, then deploy |
-| 5 | Live panel (`mia.events`), call record to DynamoDB, feedback form per call | 🔜 PR open (on top of #7) |
+| 3 | Web calling locally: `/api/token`, call page, Deepgram + ElevenLabs, turn detector, interruptions. Optional: share the local app through ngrok so the teammate can try it before AWS | ✅ |
+| 4 | AWS deploy: Terraform (fit + on-demand ECS Fargate worker), Deploy workflow, SSM secrets, TESTING_GUIDE. **Teammate starts testing** | ✅ |
+| 5 | Live panel (`mia.events`), call record to DynamoDB, feedback form per call | ✅ |
 | 6 | Public dashboard: stats (averages/medians), call list and detail | ⏳ |
 | 7 | AI-vs-AI simulation: 8 personas × fragments, report by persona and path, nightly workflow | ⏳ |
 | 8 | Non-happy paths: changes + trash, error matrix, FAQs, off-topic guardrail | ⏳ |
-| 9 | Phone line: Twilio number → LiveKit SIP, transfer to Sergio's phone | ⏳ |
+| 9 | Transfer to a licensed representative (Sergio's phone) through a Twilio SIP trunk ✅ (this PR); later a phone number to call Mia | 🔜 |
 
 ## Stage 1 (done 2026-11-08)
 
@@ -286,6 +286,42 @@ professional (McKinsey-like colors).
       no console errors
 - [ ] Sergio: `scripts/deploy.sh` (code only; the Lambda gets the new `step`) and look at the
       wake-up on AWS, where the steps are real
+
+## Stage 9: transfer to a licensed representative (branch `stage-9-transfer`, 2026-11-09)
+
+Sergio's feedback: transfers should ring his real phone, as cheaply as possible; Mia shouldn't
+say "Sergio, who built this" (sounds arrogant) but "a licensed representative who can assist
+you further"; the page should disclose that transfers go to him.
+
+How we chose the carrier (2026-11-09): LiveKit's own numbers are inbound only for now, so the
+call out needs a SIP trunk; LiveKit's free plan includes 1,000 third-party SIP minutes. Twilio
+(upgraded, $20 prepaid credit, ~1 cent a minute, **no Twilio number**: caller ID is a verified
+number) won over a $0 push-and-join-link (no real ring) and VoIP.ms. Twilio blocked trunk
+creation until the account passed Trust Hub (KYC). Calling Sergio *from his own number* went
+straight to his voicemail (answered in 1.7 s), so the caller ID is another verified number.
+
+- [x] `scripts/setup_twilio_trunk.py`: trunk `carhaul-mia` (`*.pstn.twilio.com`), credential
+      list, verified caller ID, `.env` values; idempotent, prints no secrets
+- [x] `mia/transfer.py`: settings, inline trunk per call (no LiveKit trunk ID; the SDK's
+      `outbound_trunk_config=` helper is broken in livekit-api 1.x), dial tone for the caller,
+      30 s ringing, 10 min on the phone, 5 transfers a day (DynamoDB counter), handoff line
+- [x] `request_human` starts the transfer after Mia's "connecting you" line; guardrail: only
+      when the caller asked for a person or said yes right after Mia's offer (it rings a real
+      phone, and gpt-oss invents tool calls)
+- [x] Mia leaves after introducing the caller; the room now ends when either of them hangs up
+      (`delete_room_on_close=False` + the worker deletes it); no answer → Mia apologizes
+- [x] "a licensed representative who can assist you further" everywhere Mia speaks; a test
+      checks she never names Sergio. Disclosure under the page title
+- [x] Secrets in `set_aws_secrets.py` and the ECS task; task role gets `dynamodb:UpdateItem`.
+      `terraform plan`: task definition replaced, 2 policies updated
+- [x] Live test with the local worker (scripted caller: "can I talk to a real person?"): Mia's
+      line, Sergio's phone answered after 5.4 s, handoff line, Mia left, room closed when the
+      caller left, record `transfer: connected`
+- [ ] Sergio: `set_aws_secrets.py`, `terraform apply`, `scripts/deploy.sh`; one transfer on AWS
+
+Seen in that test: the first job process after a container restart crashed (exit code -11)
+right after joining, and LiveKit re-dispatched the call (31 s to the greeting). Not reproduced
+in 2 more calls; watch for it.
 
 ## Ideas / later
 

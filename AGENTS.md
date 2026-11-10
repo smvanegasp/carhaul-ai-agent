@@ -90,6 +90,7 @@ Fargate, not Lambda. Everything else follows the fit pattern.
 | `events.py` | `CallEvents`: turns with latency, tool calls with JSON, guardrail drops, state; the live panel's stream (`mia.events`) and the record's content |
 | `records.py` | The call record and its DynamoDB write (keys documented there; shared table with the backend) |
 | `idle.py` | On AWS the worker exits after 10 idle minutes (no call, no wake) or 2 hours, so it only costs money around calls |
+| `transfer.py` | Transfer to a licensed representative: Mia dials Sergio's phone into the call through the Twilio SIP trunk, introduces the caller and leaves; daily cap, ring/talk limits |
 | `voices.py` | The 6 American voices callers can pick (2 each: Cartesia, ElevenLabs, Deepgram; Cartesia Skylar first and default), each with a description; keys and descriptions match `backend/app/voices.py` |
 | `speech.py` | Numbers written out as words before any voice reads them (`Mia.tts_node`) |
 | `catalog.py` | CarHauler catalog snapshot on disk (a week), so worker restarts don't spend API calls |
@@ -201,6 +202,14 @@ docker compose up        # api :8020, web :5190, DynamoDB Local :8030, agent wor
   remembered in the browser. Wake-up shows a **progress bar**: `/api/wake` reports a `step`
   from the ECS task (`server` while PROVISIONING/PENDING, `loading` once it runs) and the bar
   moves with time inside that step, never 100% before ready.
+- 2026-11-09 (stage 9): **Transfer to a licensed representative.** Mia never says "Sergio,
+  who built this" (Sergio: sounds arrogant); the page discloses that transfers ring his phone.
+  The browser caller isn't SIP, so Mia **dials Sergio into the room** (Twilio Elastic SIP trunk,
+  trunk details inline per call) and leaves after a handoff line; the room ends when either
+  person hangs up. Twilio upgraded ($20 prepaid, ~1 cent a minute) with **no Twilio number**:
+  caller ID is a verified number that is *not* the one called (calling Sergio from his own
+  number went to voicemail). Guardrail: `request_human` runs only on the caller's own request
+  or a yes to Mia's offer, because it rings a real phone. 5 transfers a day, 30 s ring, 10 min.
 - 2026-11-09 (stage 4): **Local and AWS workers have different names**: the first scripted
   call on AWS was answered by the local Docker worker, because both registered as `mia` on the
   same LiveKit project. Now `MIA_AGENT_NAME` is `mia` only on AWS (task definition and Lambda);

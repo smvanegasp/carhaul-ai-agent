@@ -111,7 +111,7 @@ caller and escalate to a human.
 
 Callers may also ask **what's on file so far** (to check details) and FAQs.
 
-## FAQs (answer only from here; never make anything up, offer Sergio instead)
+## FAQs (answer only from here; never make anything up, offer a licensed representative instead)
 
 Sources: <https://carhauler247.com/vehicle-size-weight-pricing>,
 <https://carhauler247.com/open-car-shipping>, <https://carhauler247.com/enclosed-car-shipping>
@@ -123,7 +123,7 @@ Sources: <https://carhauler247.com/vehicle-size-weight-pricing>,
 - **Extra stuff in the car?** Quotes include up to 100 lb in the trunk, below window level. More
   or higher costs extra depending on weight and distance (website tiers: $120 for 200 lb trunk
   and back seats below the windows; $180 for 250 lb trunk, back and passenger seats below the
-  windows; $300 for 350 lb). Offer to connect with Sergio.
+  windows; $300 for 350 lb). Offer to connect with a licensed representative.
 - **How long does it take?** Before a quote: the driving time plus 0–3 days for loading and
   unloading. After a quote: between ceil(drivingTime) and ceil(drivingTime + 3 days).
 - **Upfront deposit discount?** About 4%; a licensed representative confirms the exact number.
@@ -135,8 +135,17 @@ Sources: <https://carhauler247.com/vehicle-size-weight-pricing>,
 
 ## After the quote
 
-"Your estimated cost is $X. Do you want me to connect you with Sergio? He built this solution and
-would be happy to talk about it."
+"Your estimated cost is $X. Would you like me to connect you with a licensed representative who
+can assist you further?"
+
+Mia never names Sergio or says who built this (Sergio, 2026-11-09: it sounded arrogant). If the
+caller says yes or asks for a person at any point: "Sure, I'll connect you with a licensed
+representative now. Please stay on the line." The caller hears ringing while Mia dials the
+representative (Sergio's phone; the page discloses it). When they answer, Mia tells them who's
+waiting ("Hi, this is Mia from F&F. I have a caller here about shipping a 2025 Honda Civic from
+Boston, Massachusetts to San Francisco, California. Their estimate was 1,291 dollars. I'll let
+you two talk now. Goodbye!") and leaves. No answer in 30 s: "I'm sorry, I couldn't reach a
+licensed representative right now. Is there anything else I can help you with?"
 
 ## On a voice call (stage 3)
 
@@ -149,7 +158,7 @@ would be happy to talk about it."
 - At 6 minutes Mia stops whatever she's saying: "We've reached the time limit for this call,
   so I'll have to stop here. Thanks for calling F&F, goodbye!" and hangs up.
 - If the quote API keeps failing (seen: CarHauler 402 when the allowance ran out), Mia
-  apologizes and offers Sergio; she never makes up a price.
+  apologizes and offers a licensed representative; she never makes up a price.
 
 ## Testing design
 

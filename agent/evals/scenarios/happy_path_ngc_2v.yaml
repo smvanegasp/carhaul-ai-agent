@@ -29,4 +29,4 @@ turns:
     expect:
       tools: [get_quote]
       says: ["$2,311", "$1,291 for the Honda", "$1,020 for the Toyota", "licensed representative"]
-      judge: Gives the total and per-car prices and offers to connect the caller with Sergio.
+      judge: Gives the total and per-car prices and offers to connect the caller with a licensed representative (and doesn't name Sergio).

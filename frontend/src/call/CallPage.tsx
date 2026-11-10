@@ -145,6 +145,11 @@ export function CallPage() {
           from and to, and its year, make and model. Calls last up to {MAX_CALL_SECONDS / 60}{" "}
           minutes.
         </p>
+        <p className="max-w-3xl text-xs text-muted">
+          <span className="font-semibold text-ink">Disclosure:</span> this is a demo. If you ask to
+          speak with a licensed representative, Mia transfers your call to Sergio, the developer of
+          this demo, on his personal phone.
+        </p>
       </header>
 
       <div className="flex flex-col gap-4 lg:grid lg:min-h-0 lg:flex-1 lg:grid-cols-[minmax(300px,380px)_1fr] lg:grid-rows-[auto_1fr]">

@@ -280,10 +280,30 @@ async def test_a_stuck_sound_never_holds_the_price(state, services, monkeypatch)
 # --- people --------------------------------------------------------------------------------
 
 
-async def test_request_human(state, services):
+async def test_request_human_without_a_phone_line_is_only_noted(state, services):
     r = await tools.request_human(state, services, reason="asked for a human")
     assert state.human_requested and state.stage == Stage.TRANSFER
-    assert r["transferred"] is False
+    assert r["transferring"] is False and state.transfer is None
+    assert "licensed representative" in r["next"]
+
+
+async def test_request_human_with_a_phone_line_starts_a_transfer(state, services):
+    # The dial itself starts in agent.py once Mia's line is spoken, never inside the tool.
+    started = []
+    services.transfer = lambda: started.append(True)
+    r = await tools.request_human(state, services, reason="asked for a human")
+    assert r["transferring"] is True and state.transfer == "pending" and started == []
+    assert "licensed representative" in r["next"]
+    again = await tools.request_human(state, services)
+    assert again["transferring"] is True and "already" in again["next"]
+
+
+async def test_nothing_mia_says_names_sergio(state, services):
+    await _route(state, services)
+    await tools.save_vehicle(state, services, year=2025, make="Honda", model="Civic")
+    quoted = await tools.get_quote(state, services)
+    assert "Sergio" not in quoted["next"] and "licensed representative" in quoted["next"]
+    assert "Sergio" not in tools.ESCALATE
 
 
 async def test_end_call_marks_ended_but_leaves_hang_up_to_the_agent(state, services):

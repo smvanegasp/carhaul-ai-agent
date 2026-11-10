@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import pytest
 
+from mia import grounding
 from mia.grounding import (
     city_said,
     make_said,
@@ -163,3 +164,31 @@ def test_is_confirmation(text, ok):
     from mia.grounding import is_confirmation
 
     assert is_confirmation(text) is ok
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "Can I talk to a human?",
+        "agent please",
+        "I'd like to speak to a representative",
+        "Can you connect me with someone?",
+        "Yes, put me through to a real person",
+    ],
+)
+def test_wants_person(text):
+    assert grounding.wants_person(text)
+
+
+@pytest.mark.parametrize(
+    "text", ["No thanks", "I don't need an agent", "It's a 2020 Toyota", "Boston to Miami"]
+)
+def test_does_not_want_person(text):
+    assert not grounding.wants_person(text)
+
+
+def test_offered_person():
+    assert grounding.offered_person(
+        "Would you like me to connect you with a licensed representative?"
+    )
+    assert not grounding.offered_person("What's the year, make and model?")

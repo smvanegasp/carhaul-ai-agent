@@ -69,6 +69,7 @@ def summary(record: dict[str, Any]) -> dict[str, Any]:
         "stage": record["stage"],
         "end_reason": record["end_reason"],
         "human_requested": record["human_requested"],
+        "transfer": record.get("transfer"),
         "vehicles": len(record["vehicles"]),
         "quote_total": quote.get("total"),
         "e2e_p50_ms": (record["latency"].get("e2e_latency") or {}).get("p50_ms"),

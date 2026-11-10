@@ -12,7 +12,7 @@ of the pipeline took. A public dashboard shows how calls go overall.
 
 | Part | Choice |
 | --- | --- |
-| Real-time audio | LiveKit Cloud (WebRTC; SIP for phone calls later) |
+| Real-time audio | LiveKit Cloud (WebRTC); SIP out through a Twilio trunk to transfer callers to a person |
 | Speech-to-text | Deepgram nova-3 |
 | LLM | Groq, `openai/gpt-oss-20b` |
 | Text-to-speech | The caller picks one of 6 American voices: Cartesia sonic-3 (Skylar, the first choice), ElevenLabs flash v2.5 or Deepgram Aura-2, two each |
@@ -45,7 +45,9 @@ LiveKit Cloud ◄──► agent worker: Deepgram → Groq (+ guardrails, tools)
 
 Each call gets its own room. Mia greets first, says "give me one second" while the quote is
 computed, hangs up after her goodbye (the room is deleted, which ends the call in the browser)
-and stops at 6 minutes. Calls are rate limited per IP and per day: every call costs money.
+and stops at 6 minutes. If the caller asks for a person, Mia dials a licensed representative's
+phone into the same room (Twilio Elastic SIP trunk), introduces the caller and leaves; a
+guardrail makes sure only the caller's own request can trigger that real phone call. Calls are rate limited per IP and per day: every call costs money.
 
 **On AWS** (Terraform in `infra/`), built to cost about $1 a month: CloudFront serves the web
 app from S3 and forwards `/api` to FastAPI on Lambda. The voice worker is an **on-demand** ECS

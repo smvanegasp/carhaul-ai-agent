@@ -6,7 +6,7 @@ const STAGE_LABEL: Record<string, string> = {
   vehicles: "Vehicles",
   confirm: "Confirming",
   quoted: "Quoted",
-  transfer: "Transfer to Sergio",
+  transfer: "Transfer to a representative",
 };
 
 /** The call at a glance: pipeline, stage, tool calls, latency and what's on file. */
