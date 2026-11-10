@@ -80,6 +80,8 @@ def _ok(state: QuoteSession, next_step: str, **data: Any) -> Result:
 
 
 def _err(state: QuoteSession, code: str, next_step: str, **data: Any) -> Result:
+    if next_step == ESCALATE:
+        state.escalated = True  # a transfer after this is a "forced" one
     return {"ok": False, "error_code": code, **data, "on_file": state.snapshot(), "next": next_step}
 
 
@@ -428,11 +430,24 @@ async def _quote(state: QuoteSession, services: Services) -> Result:
 # --- people ------------------------------------------------------------------------------
 
 
-async def request_human(state: QuoteSession, services: Services, *, reason: str = "") -> Result:
+def transfer_kind(state: QuoteSession, *, asked: bool) -> str:
+    """The transfer's disposition: "forced" after a tool failure Mia couldn't fix, "requested"
+    when the caller asked for a person unprompted, "organic" when they said yes to Mia's offer
+    (normally after the quote: the happy path)."""
+    if state.escalated:
+        return "forced"
+    return "requested" if asked else "organic"
+
+
+async def request_human(
+    state: QuoteSession, services: Services, *, reason: str = "", asked: bool = True
+) -> Result:
     """Connect the caller with a licensed representative: a phone transfer on voice calls
-    with a trunk (transfer.py), otherwise just noted."""
+    with a trunk (transfer.py), otherwise just noted. ``asked``: the caller asked on their own
+    (False: they said yes to Mia's offer)."""
     state.human_requested = True
     state.human_request_reason = reason or None
+    state.transfer_kind = state.transfer_kind or transfer_kind(state, asked=asked)
     state.advance(Stage.TRANSFER)
     if state.transfer in ("pending", "connected"):
         return _ok(state, "You're already connecting them. Say nothing else.", transferring=True)

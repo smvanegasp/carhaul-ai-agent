@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import { BELINDA, CARHAULER, Ext, REPO, SERGIO } from "./credits";
+
 const SEEN_KEY = "mia.intro.seen";
 export const AUTO_CLOSE_MS = 15_000;
 
@@ -117,11 +119,19 @@ export function IntroDialog({
               took; Past calls and Stats show every call.
             </li>
           </ul>
-          <div className="rounded-xl bg-raised p-3 text-sm text-ink">
-            <span className="font-semibold">Disclosure:</span> this is a demo
-            built by Sergio. If you ask to speak with a licensed representative,
-            Mia transfers your call to Sergio's personal phone. Calls are saved
-            as transcripts to improve Mia.
+          <div className="flex flex-col gap-2 rounded-xl bg-raised p-3 text-sm text-ink">
+            <p>
+              <span className="font-semibold">Disclosure:</span> Mia is an
+              academic, non-commercial project developed by{" "}
+              <Ext href={SERGIO}>Sergio Vanegas</Ext> and{" "}
+              <Ext href={BELINDA}>Belinda Hu</Ext>. Prices come from the public
+              API of <Ext href={CARHAULER}>CarHauler247</Ext>.
+            </p>
+            <p>
+              If you ask to speak with a licensed representative, Mia transfers
+              your call to Sergio's phone. Calls are saved as transcripts to
+              improve Mia. The code is on <Ext href={REPO}>GitHub</Ext>.
+            </p>
           </div>
           <div className="flex items-center justify-between gap-3">
             <span className="text-xs text-muted" aria-live="off">

@@ -7,6 +7,11 @@ zone, for whatever date range they pick), so the API only has to say, per call:
   ``vehicles`` (at least one), ``quoted`` (a price was given), ``transfer`` (a licensed
   representative picked up: the qualified lead). Milestones, not the furthest stage: a caller
   can give the car before the cities, or ask for a person before any quote.
+- ``disposition``: how the call ended (Sergio's lead-qualification dispositions):
+  ``organic_transfer`` (yes to Mia's offer, the happy path), ``requested_transfer`` (asked for
+  a person), ``forced_transfer`` (a tool failed and Mia handed over), ``hung_up_on_hold``
+  (left while the transfer rang), ``hung_up`` (left before the end), ``not_interested``
+  (finished without a transfer).
 - ``mia_s``: the time Mia handled the call, i.e. time a person didn't have to spend. A
   transferred call counts only until the handoff.
 - ``test``: scripted calls (``mia.smoke``, rooms ``smoke-*``), hidden by default.
@@ -26,7 +31,7 @@ from app import db, ratelimit
 
 router = APIRouter(tags=["stats"])
 
-STATS_V = 1
+STATS_V = 2
 BACKFILL_PER_REQUEST = 50
 MAX_CALLS = 2000
 STATS_PER_IP_PER_HOUR = 300
@@ -42,6 +47,9 @@ class CallFacts(BaseModel):
     vehicles: bool
     quoted: bool
     transfer: bool
+    # hung_up, not_interested, hung_up_on_hold, organic_transfer, requested_transfer or
+    # forced_transfer (see facts_from_record).
+    disposition: str
     e2e_p50_ms: float | None = None
 
 
@@ -60,11 +68,25 @@ def facts_from_record(record: dict[str, Any]) -> dict[str, Any]:
         ]
         if handoff:
             mia_s = float(max(handoff))
+    quoted = record.get("quote") is not None or "get_quote" in tools_ok
+    # The call's disposition. Transfers that connected say why (older records don't: a
+    # transfer after a quote was the offer, before it the caller asked).
+    caller_left = record.get("end_reason") == "caller"
+    if transferred:
+        kind = record.get("transfer_kind") or ("organic" if quoted else "requested")
+        disposition = f"{kind}_transfer"
+    elif record.get("transfer") in ("pending", "no_answer") and caller_left:
+        disposition = "hung_up_on_hold"
+    elif caller_left:
+        disposition = "hung_up"
+    else:
+        disposition = "not_interested"
     return {
         "route": bool(record.get("origin") and record.get("destination")),
         "vehicles": bool(record.get("vehicles")) or "save_vehicle" in tools_ok,
-        "quoted": record.get("quote") is not None or "get_quote" in tools_ok,
+        "quoted": quoted,
         "transfer": transferred,
+        "disposition": disposition,
         "mia_s": round(mia_s, 1),
         "stats_v": STATS_V,
     }
@@ -107,6 +129,7 @@ def stats(request: Request, include_tests: bool = False) -> list[CallFacts]:
                 vehicles=bool(row.get("vehicles")),
                 quoted=bool(row.get("quoted")),
                 transfer=bool(row.get("transfer")),
+                disposition=row.get("disposition") or "not_interested",
                 e2e_p50_ms=row.get("e2e_p50_ms"),
             )
         )
