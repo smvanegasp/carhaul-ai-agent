@@ -1,28 +1,16 @@
-import {
-  useEffect,
-  useLayoutEffect,
-  useMemo,
-  useRef,
-  useState,
-  type ReactNode,
-} from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 
 import { CallError } from "../lib/api";
 import {
-  bucketSize,
-  buckets,
+  dispositions,
   formatSpan,
   funnel,
-  inRange,
   kpis,
-  MILESTONES,
   pct,
-  RANGES,
   story,
-  type Bucket,
   type CallFacts,
+  type DispositionCount,
   type FunnelStep,
-  type Range,
 } from "../lib/stats";
 
 /** Funnel order -> the ordinal ramp (index.css), the last step (transfers) most prominent. */
@@ -54,15 +42,14 @@ async function fetchStats(includeTests: boolean): Promise<CallFacts[]> {
 }
 
 /**
- * Stats: what Mia's calls add up to. It leads with the KPI that matters (transfers: qualified
- * leads), then the time Mia handled, the funnel from call to transfer, and how each step
- * moves over time. One filter row scopes everything below it.
+ * Stats: what Mia's calls add up to, all time (calls come in bursts, so date ranges and trends
+ * would mostly be empty). It leads with the KPI that matters (transfers: qualified leads),
+ * then the time Mia handled, how calls ended (the dispositions) and the funnel from call to
+ * transfer.
  */
 export function StatsPage({ active }: { active: boolean }) {
-  const [range, setRange] = useState<Range>("30d");
   const [includeTests, setIncludeTests] = useState(false);
   const [load, setLoad] = useState<Load>({ kind: "loading" });
-  const [table, setTable] = useState(false);
 
   useEffect(() => {
     if (!active) return;
@@ -87,38 +74,20 @@ export function StatsPage({ active }: { active: boolean }) {
 
   const view = useMemo(() => {
     if (load.kind !== "ok") return null;
-    const rows = inRange(load.rows, range);
-    const k = kpis(rows);
-    const steps = funnel(rows);
-    const days = buckets(rows, range);
-    return { rows, k, steps, days, text: story(k, steps) };
-  }, [load, range]);
+    const k = kpis(load.rows);
+    const steps = funnel(load.rows);
+    return {
+      k,
+      steps,
+      outcomes: dispositions(load.rows),
+      text: story(k, steps),
+    };
+  }, [load]);
 
   return (
     <div className="flex flex-col gap-4 pb-2 lg:min-h-0 lg:flex-1 lg:overflow-y-auto lg:overscroll-contain lg:pr-1">
-      <div className="flex flex-wrap items-center gap-3">
-        <div
-          role="radiogroup"
-          aria-label="Date range"
-          className="flex gap-1 rounded-full bg-raised p-1"
-        >
-          {RANGES.map((r) => (
-            <button
-              key={r.key}
-              type="button"
-              role="radio"
-              aria-checked={range === r.key}
-              onClick={() => setRange(r.key)}
-              className={`rounded-full px-3 py-1.5 text-sm font-medium transition focus-visible:ring-2 focus-visible:ring-accent focus-visible:outline-none ${
-                range === r.key
-                  ? "bg-surface text-ink shadow-sm"
-                  : "text-muted hover:text-ink"
-              }`}
-            >
-              {r.label}
-            </button>
-          ))}
-        </div>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <p className="text-sm text-muted">All calls since Mia went live.</p>
         <label className="flex cursor-pointer items-center gap-2 text-sm text-muted">
           <input
             type="checkbox"
@@ -139,40 +108,25 @@ export function StatsPage({ active }: { active: boolean }) {
         </Card>
       )}
       {view && (
-        <div
-          className={`flex flex-col gap-4 transition-opacity ${load.kind === "ok" ? "" : "opacity-60"}`}
-        >
+        <div className="flex flex-col gap-4">
           <p className="max-w-4xl text-base leading-relaxed text-ink">
             {view.text}
           </p>
           <KpiRow k={view.k} />
-          <Section
-            title="Funnel"
-            note="Each step's share of calls, and conversion from the step before."
-          >
-            <Funnel steps={view.steps} />
-          </Section>
-          <Section
-            title="Over time"
-            note={`Per ${bucketSize(view.days)}, in your time zone.`}
-            action={
-              <button
-                type="button"
-                onClick={() => setTable(!table)}
-                className="text-sm text-brand underline-offset-2 hover:underline"
-              >
-                {table ? "Show charts" : "Show as table"}
-              </button>
-            }
-          >
-            {view.days.length === 0 ? (
-              <p className="text-sm text-muted">No calls in this period yet.</p>
-            ) : table ? (
-              <TrendTable days={view.days} unit={bucketSize(view.days)} />
-            ) : (
-              <Trends days={view.days} unit={bucketSize(view.days)} />
-            )}
-          </Section>
+          <div className="grid gap-4 xl:grid-cols-2">
+            <Section
+              title="How calls ended"
+              note="Voice dispositions. Transfers are qualified leads."
+            >
+              <Dispositions outcomes={view.outcomes} />
+            </Section>
+            <Section
+              title="Funnel"
+              note="Each step's share of calls, and conversion from the step before."
+            >
+              <Funnel steps={view.steps} />
+            </Section>
+          </div>
         </div>
       )}
     </div>
@@ -351,463 +305,57 @@ function Funnel({ steps }: { steps: FunnelStep[] }) {
 
 // --- trends -------------------------------------------------------------------------------
 
-function useWidth<T extends HTMLElement>() {
-  const ref = useRef<T>(null);
-  const [width, setWidth] = useState(0);
-  useLayoutEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    const ro = new ResizeObserver(([e]) => setWidth(e.contentRect.width));
-    ro.observe(el);
-    setWidth(el.getBoundingClientRect().width);
-    return () => ro.disconnect();
-  }, []);
-  return [ref, width] as const;
-}
+// --- dispositions -------------------------------------------------------------------------
 
-function dayLabel(ms: number, unit: "day" | "week"): string {
-  const d = new Date(ms).toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-  });
-  return unit === "week" ? `Week of ${d}` : d;
-}
-
-const PAD = { left: 34, right: 8, top: 8, bottom: 22 };
-
-function Trends({ days, unit }: { days: Bucket[]; unit: "day" | "week" }) {
+/**
+ * Ranked bars, one per disposition, in two groups. Emphasis rather than six colors: the
+ * qualified leads (transfers) in the accent blue, the rest in a neutral gray.
+ */
+function Dispositions({ outcomes }: { outcomes: DispositionCount[] }) {
+  const groups = [
+    { title: "Qualified leads", rows: outcomes.filter((o) => o.lead) },
+    { title: "Not qualified", rows: outcomes.filter((o) => !o.lead) },
+  ];
   return (
-    <div className="flex flex-col gap-5">
-      <CallsChart days={days} unit={unit} />
-      <div>
-        <h3 className="text-sm font-medium text-ink">
-          Share of calls reaching each step
-        </h3>
-        <div className="mt-2 grid gap-4 sm:grid-cols-2">
-          {MILESTONES.slice(1).map((m, i) => (
-            <RateChart
-              key={m.key}
-              days={days}
-              unit={unit}
-              step={m.key as Exclude<typeof m.key, "calls">}
-              label={m.label}
-              color={STEP_COLOR[i + 1]}
-            />
-          ))}
+    <div className="flex flex-col gap-4">
+      {groups.map((g) => (
+        <div key={g.title} className="flex flex-col gap-2">
+          <h3 className="text-xs font-medium tracking-wide text-muted uppercase">
+            {g.title} ·{" "}
+            <span className="text-ink">
+              {g.rows.reduce((n, r) => n + r.count, 0)}
+            </span>
+          </h3>
+          <ul className="flex flex-col gap-2">
+            {g.rows.map((o) => (
+              <li
+                key={o.key}
+                title={o.help}
+                className="grid grid-cols-[1fr_auto] items-center gap-x-3 gap-y-1 sm:grid-cols-[minmax(8rem,11rem)_1fr_6rem]"
+              >
+                <span className="flex flex-col">
+                  <span className="text-sm text-ink">{o.label}</span>
+                  <span className="text-xs text-muted">{o.help}</span>
+                </span>
+                <span className="order-last col-span-2 h-3 sm:order-none sm:col-span-1">
+                  <span
+                    className="block h-3 rounded-r-[4px] transition-[width] duration-500"
+                    style={{
+                      width: `${Math.max((o.share ?? 0) * 100, o.count ? 1.5 : 0)}%`,
+                      background: o.lead ? "var(--viz-4)" : "var(--muted)",
+                      opacity: o.lead ? 1 : 0.55,
+                    }}
+                  />
+                </span>
+                <span className="text-right text-sm whitespace-nowrap text-ink">
+                  <span className="font-semibold">{o.count}</span>{" "}
+                  <span className="text-muted">· {pct(o.share)}</span>
+                </span>
+              </li>
+            ))}
+          </ul>
         </div>
-      </div>
-    </div>
-  );
-}
-
-/** Shared x layout: one slot per bucket. */
-function xs(n: number, width: number) {
-  const inner = Math.max(0, width - PAD.left - PAD.right);
-  const slot = n ? inner / n : 0;
-  return { slot, center: (i: number) => PAD.left + slot * i + slot / 2 };
-}
-
-function XAxis({
-  days,
-  unit,
-  width,
-  height,
-}: {
-  days: Bucket[];
-  unit: "day" | "week";
-  width: number;
-  height: number;
-}) {
-  const { center } = xs(days.length, width);
-  const ticks =
-    days.length <= 3
-      ? days.map((_, i) => i)
-      : [0, Math.floor((days.length - 1) / 2), days.length - 1];
-  return (
-    <g className="fill-[var(--muted)] text-[11px]">
-      {ticks.map((i) => (
-        <text
-          key={i}
-          x={
-            i === 0 && ticks.length > 1
-              ? PAD.left
-              : i === days.length - 1 && i > 0
-                ? width - PAD.right
-                : center(i)
-          }
-          y={height - 6}
-          textAnchor={
-            i === 0 && ticks.length > 1
-              ? "start"
-              : i === days.length - 1 && i > 0
-                ? "end"
-                : "middle"
-          }
-        >
-          {dayLabel(days[i].start, unit).replace("Week of ", "")}
-        </text>
       ))}
-    </g>
-  );
-}
-
-function Hover({
-  days,
-  width,
-  height,
-  index,
-  onIndex,
-}: {
-  days: Bucket[];
-  width: number;
-  height: number;
-  index: number | null;
-  onIndex: (i: number | null) => void;
-}) {
-  const { slot, center } = xs(days.length, width);
-  return (
-    <>
-      {index != null && (
-        <line
-          x1={center(index)}
-          x2={center(index)}
-          y1={PAD.top}
-          y2={height - PAD.bottom}
-          className="stroke-[var(--muted)]"
-          strokeWidth={1}
-          strokeDasharray="2 3"
-        />
-      )}
-      <rect
-        x={PAD.left}
-        y={0}
-        width={Math.max(0, width - PAD.left - PAD.right)}
-        height={height}
-        fill="transparent"
-        onPointerMove={(e) => {
-          const box = (
-            e.currentTarget.ownerSVGElement as SVGSVGElement
-          ).getBoundingClientRect();
-          const i = Math.floor((e.clientX - box.left - PAD.left) / (slot || 1));
-          onIndex(Math.max(0, Math.min(days.length - 1, i)));
-        }}
-        onPointerLeave={() => onIndex(null)}
-      />
-    </>
-  );
-}
-
-function Tip({
-  x,
-  width,
-  children,
-}: {
-  x: number;
-  width: number;
-  children: ReactNode;
-}) {
-  const left = Math.min(Math.max(x - 80, 0), Math.max(0, width - 170));
-  return (
-    <div
-      role="tooltip"
-      className="pointer-events-none absolute top-0 z-10 w-[170px] rounded-lg border border-line bg-surface px-3 py-2 text-xs text-muted shadow-md"
-      style={{ left }}
-    >
-      {children}
-    </div>
-  );
-}
-
-function CallsChart({ days, unit }: { days: Bucket[]; unit: "day" | "week" }) {
-  const [ref, width] = useWidth<HTMLDivElement>();
-  const [index, setIndex] = useState<number | null>(null);
-  const height = 170;
-  const max = Math.max(1, ...days.map((d) => d.calls));
-  const top = Math.max(2, Math.ceil(max / 2) * 2);
-  const y = (v: number) =>
-    PAD.top + (1 - v / top) * (height - PAD.top - PAD.bottom);
-  const { slot, center } = xs(days.length, width);
-  const barW = Math.max(2, Math.min(28, slot - 2));
-  const d = index != null ? days[index] : null;
-  return (
-    <div>
-      <h3 className="text-sm font-medium text-ink">
-        Calls and transfers per {unit}
-      </h3>
-      <div ref={ref} className="relative mt-2">
-        {width > 0 && (
-          <svg
-            width={width}
-            height={height}
-            role="img"
-            aria-label={`Calls per ${unit}`}
-          >
-            {[0, top / 2, top].map((v) => (
-              <g key={v}>
-                <line
-                  x1={PAD.left}
-                  x2={width - PAD.right}
-                  y1={y(v)}
-                  y2={y(v)}
-                  className="stroke-[var(--viz-grid)]"
-                />
-                <text
-                  x={PAD.left - 6}
-                  y={y(v) + 4}
-                  textAnchor="end"
-                  className="fill-[var(--muted)] text-[11px]"
-                >
-                  {v}
-                </text>
-              </g>
-            ))}
-            {days.map((b, i) => (
-              <g
-                key={b.start}
-                opacity={index == null || index === i ? 1 : 0.55}
-              >
-                {b.calls > 0 && (
-                  <path
-                    d={roundedTop(
-                      center(i) - barW / 2,
-                      y(b.calls),
-                      barW,
-                      y(0) - y(b.calls),
-                    )}
-                    fill="var(--viz-2)"
-                  />
-                )}
-                {b.transfer > 0 && (
-                  <path
-                    d={roundedTop(
-                      center(i) - barW / 2,
-                      y(b.transfer),
-                      barW,
-                      y(0) - y(b.transfer),
-                    )}
-                    fill="var(--viz-5)"
-                    stroke="var(--surface)"
-                    strokeWidth={2}
-                    paintOrder="stroke"
-                  />
-                )}
-              </g>
-            ))}
-            <XAxis days={days} unit={unit} width={width} height={height} />
-            <Hover
-              days={days}
-              width={width}
-              height={height}
-              index={index}
-              onIndex={setIndex}
-            />
-          </svg>
-        )}
-        {d && index != null && (
-          <Tip x={center(index)} width={width}>
-            <div className="mb-1 text-ink">{dayLabel(d.start, unit)}</div>
-            <Row color="var(--viz-2)" value={d.calls} label="calls" />
-            <Row color="var(--viz-5)" value={d.transfer} label="transfers" />
-            <div className="mt-1">Mia: {formatSpan(d.miaSeconds)}</div>
-          </Tip>
-        )}
-      </div>
-      <div className="mt-1 flex gap-4 text-xs text-muted">
-        <Legend color="var(--viz-2)" label="Calls" />
-        <Legend color="var(--viz-5)" label="Transfers" />
-      </div>
-    </div>
-  );
-}
-
-function roundedTop(x: number, y: number, w: number, h: number): string {
-  const r = Math.min(4, w / 2, h);
-  return `M${x},${y + h} V${y + r} Q${x},${y} ${x + r},${y} H${x + w - r} Q${x + w},${y} ${x + w},${y + r} V${y + h} Z`;
-}
-
-function Row({
-  color,
-  value,
-  label,
-}: {
-  color: string;
-  value: number;
-  label: string;
-}) {
-  return (
-    <div className="flex items-center gap-2">
-      <span className="h-0.5 w-3 rounded" style={{ background: color }} />
-      <span className="font-semibold text-ink">{value}</span> {label}
-    </div>
-  );
-}
-
-function Legend({ color, label }: { color: string; label: string }) {
-  return (
-    <span className="flex items-center gap-1.5">
-      <span className="size-2.5 rounded-[2px]" style={{ background: color }} />
-      {label}
-    </span>
-  );
-}
-
-function RateChart({
-  days,
-  unit,
-  step,
-  label,
-  color,
-}: {
-  days: Bucket[];
-  unit: "day" | "week";
-  step: "route" | "vehicles" | "quoted" | "transfer";
-  label: string;
-  color: string;
-}) {
-  const [ref, width] = useWidth<HTMLDivElement>();
-  const [index, setIndex] = useState<number | null>(null);
-  const height = 130;
-  const y = (v: number) => PAD.top + (1 - v) * (height - PAD.top - PAD.bottom);
-  const { center } = xs(days.length, width);
-  const points = days.map((b, i) =>
-    b.calls ? { x: center(i), y: y(b[step] / b.calls), i } : null,
-  );
-  // Days without calls break the line (no rate to draw), they don't drop it to zero.
-  const segments: { x: number; y: number; i: number }[][] = [];
-  for (const p of points) {
-    if (!p) segments.push([]);
-    else (segments.at(-1) ?? segments[segments.push([]) - 1]).push(p);
-  }
-  const d = index != null ? days[index] : null;
-  const total = days.reduce((s, b) => s + b.calls, 0);
-  const hits = days.reduce((s, b) => s + b[step], 0);
-  return (
-    <div ref={ref} className="relative">
-      <div className="flex items-baseline justify-between text-xs">
-        <span className="text-ink">{label}</span>
-        <span className="text-muted">
-          <span className="font-semibold text-ink">
-            {pct(total ? hits / total : null)}
-          </span>{" "}
-          overall
-        </span>
-      </div>
-      {width > 0 && (
-        <svg
-          width={width}
-          height={height}
-          role="img"
-          aria-label={`${label}, share of calls per ${unit}`}
-        >
-          {[0, 0.5, 1].map((v) => (
-            <g key={v}>
-              <line
-                x1={PAD.left}
-                x2={width - PAD.right}
-                y1={y(v)}
-                y2={y(v)}
-                className="stroke-[var(--viz-grid)]"
-              />
-              <text
-                x={PAD.left - 6}
-                y={y(v) + 4}
-                textAnchor="end"
-                className="fill-[var(--muted)] text-[11px]"
-              >
-                {v * 100}%
-              </text>
-            </g>
-          ))}
-          {segments.map((seg, k) =>
-            seg.length > 1 ? (
-              <polyline
-                key={k}
-                points={seg.map((p) => `${p.x},${p.y}`).join(" ")}
-                fill="none"
-                stroke={color}
-                strokeWidth={2}
-                strokeLinejoin="round"
-                strokeLinecap="round"
-              />
-            ) : null,
-          )}
-          {points.map((p) =>
-            p ? (
-              <circle
-                key={p.i}
-                cx={p.x}
-                cy={p.y}
-                r={index === p.i ? 5 : 3.5}
-                fill={color}
-                stroke="var(--surface)"
-                strokeWidth={2}
-              />
-            ) : null,
-          )}
-          <XAxis days={days} unit={unit} width={width} height={height} />
-          <Hover
-            days={days}
-            width={width}
-            height={height}
-            index={index}
-            onIndex={setIndex}
-          />
-        </svg>
-      )}
-      {d && index != null && (
-        <Tip x={center(index)} width={width}>
-          <div className="mb-1 text-ink">{dayLabel(d.start, unit)}</div>
-          {d.calls ? (
-            <div>
-              <span className="font-semibold text-ink">
-                {pct(d[step] / d.calls)}
-              </span>{" "}
-              ({d[step]} of {d.calls} calls)
-            </div>
-          ) : (
-            <div>No calls</div>
-          )}
-        </Tip>
-      )}
-    </div>
-  );
-}
-
-function TrendTable({ days, unit }: { days: Bucket[]; unit: "day" | "week" }) {
-  return (
-    <div className="overflow-x-auto">
-      <table className="w-full text-left text-sm">
-        <thead className="text-xs text-muted">
-          <tr>
-            <th className="py-1.5 pr-4 font-medium">
-              {unit === "week" ? "Week of" : "Day"}
-            </th>
-            {MILESTONES.map((m) => (
-              <th key={m.key} className="py-1.5 pr-4 text-right font-medium">
-                {m.short}
-              </th>
-            ))}
-            <th className="py-1.5 text-right font-medium">Mia's time</th>
-          </tr>
-        </thead>
-        <tbody className="tabular-nums">
-          {[...days].reverse().map((b) => (
-            <tr key={b.start} className="border-t border-line">
-              <td className="py-1.5 pr-4 text-ink">
-                {dayLabel(b.start, "day")}
-              </td>
-              {MILESTONES.map((m) => (
-                <td key={m.key} className="py-1.5 pr-4 text-right text-ink">
-                  {m.key === "calls" ? b.calls : b[m.key]}
-                </td>
-              ))}
-              <td className="py-1.5 text-right text-ink">
-                {b.miaSeconds ? formatSpan(b.miaSeconds) : "–"}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
     </div>
   );
 }

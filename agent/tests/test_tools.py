@@ -323,3 +323,26 @@ async def test_quote_requires_the_callers_yes(state, services):
     assert state.quote is None
     r = await tools.get_quote(state, services, last_said="Yep")
     assert r["ok"]
+
+
+@pytest.mark.parametrize(
+    ("escalated", "asked", "kind"),
+    [
+        (False, False, "organic"),
+        (False, True, "requested"),
+        (True, False, "forced"),
+        (True, True, "forced"),
+    ],
+)
+async def test_transfer_kind(state, services, escalated, asked, kind):
+    state.escalated = escalated
+    await tools.request_human(state, services, asked=asked)
+    assert state.transfer_kind == kind
+
+
+async def test_a_failure_mia_cant_fix_makes_the_next_transfer_forced(state, services):
+    r = tools._err(state, "API_DOWN", tools.ESCALATE)
+    assert r["ok"] is False and state.escalated
+    await tools.request_human(state, services, asked=False)
+    assert state.transfer_kind == "forced"
+    assert state.to_record()["transfer_kind"] == "forced"

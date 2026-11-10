@@ -368,6 +368,18 @@ itself; make it a better experience.
       the test browser), tooltips, dark mode, phone, popup auto-close; no console errors
 - [ ] Sergio: deploy (`scripts/deploy.sh`; no Terraform or secrets) and look at real numbers
 
+## Dispositions, all-time stats, credits (branch `dispositions-and-credits`, 2026-11-10)
+
+- [x] Stats: all time only; the over-time charts and table are gone (calls come in bursts)
+- [x] Dispositions (`stats_v` 2, all rows recomputed once): organic / requested / forced
+      transfer (qualified leads), hung up on hold, hung up, not interested. The worker records
+      `transfer_kind` and `escalated`; old records are inferred. Shown as two groups of ranked
+      bars (leads in blue, the rest gray)
+- [x] Credits: Sergio Vanegas and Belinda Hu (LinkedIn), CarHauler247 public API, academic and
+      non-commercial, GitHub repo; in the About popup and the sidebar footer
+- [x] Checked in Chrome (real local data: the transfer test call is a requested transfer;
+      synthetic set; phone width), no console errors
+
 ## Ideas / later
 
 - **Self-corrections:** "it's twenty ten... twenty twenty Toyota" was saved as 2010 (Sergio's

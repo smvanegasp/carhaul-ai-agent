@@ -61,7 +61,7 @@ def build(room: str, state: QuoteSession, events: CallEvents, **extra: Any) -> d
 
 # The Stats view's per-call facts; must match backend/app/stats.py (facts_from_record), which
 # fills them in for rows saved before they existed. tests/test_records.py checks both agree.
-STATS_V = 1
+STATS_V = 2
 
 
 def stats_facts(record: dict[str, Any]) -> dict[str, Any]:
@@ -79,11 +79,25 @@ def stats_facts(record: dict[str, Any]) -> dict[str, Any]:
         ]
         if handoff:
             mia_s = float(max(handoff))
+    quoted = record.get("quote") is not None or "get_quote" in tools_ok
+    # The call's disposition. Transfers that connected say why (older records don't: a
+    # transfer after a quote was the offer, before it the caller asked).
+    caller_left = record.get("end_reason") == "caller"
+    if transferred:
+        kind = record.get("transfer_kind") or ("organic" if quoted else "requested")
+        disposition = f"{kind}_transfer"
+    elif record.get("transfer") in ("pending", "no_answer") and caller_left:
+        disposition = "hung_up_on_hold"
+    elif caller_left:
+        disposition = "hung_up"
+    else:
+        disposition = "not_interested"
     return {
         "route": bool(record.get("origin") and record.get("destination")),
         "vehicles": bool(record.get("vehicles")) or "save_vehicle" in tools_ok,
-        "quoted": record.get("quote") is not None or "get_quote" in tools_ok,
+        "quoted": quoted,
         "transfer": transferred,
+        "disposition": disposition,
         "mia_s": round(mia_s, 1),
         "stats_v": STATS_V,
     }

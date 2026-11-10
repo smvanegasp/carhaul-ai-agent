@@ -50,18 +50,41 @@ def _old_call(room, started_at, record):
 
 
 def test_milestones_and_mias_time():
-    assert stats.facts_from_record(QUOTED) | {"stats_v": 0} == {
+    facts = stats.facts_from_record(QUOTED)
+    assert {k: facts[k] for k in ("route", "vehicles", "quoted", "transfer", "mia_s")} == {
         "route": True,
         "vehicles": True,
         "quoted": True,
         "transfer": False,
         "mia_s": 95.0,
-        "stats_v": 0,
     }
     transferred = stats.facts_from_record(TRANSFERRED)
     # A transfer is a lead even without a quote; Mia's time stops at the handoff.
     assert transferred["transfer"] and not transferred["quoted"]
     assert transferred["mia_s"] == 41.5
+
+
+@pytest.mark.parametrize(
+    ("changes", "disposition"),
+    [
+        ({"transfer": "connected", "transfer_kind": "organic"}, "organic_transfer"),
+        ({"transfer": "connected", "transfer_kind": "requested"}, "requested_transfer"),
+        ({"transfer": "connected", "transfer_kind": "forced"}, "forced_transfer"),
+        # Older records have no kind: after a quote it was the offer.
+        ({"transfer": "connected"}, "organic_transfer"),
+        ({"transfer": "no_answer", "end_reason": "caller"}, "hung_up_on_hold"),
+        ({"transfer": "pending", "end_reason": "caller"}, "hung_up_on_hold"),
+        ({"end_reason": "caller"}, "hung_up"),
+        ({"end_reason": "mia"}, "not_interested"),
+        ({"end_reason": "time_limit"}, "not_interested"),
+    ],
+)
+def test_dispositions(changes, disposition):
+    assert stats.facts_from_record({**QUOTED, **changes})["disposition"] == disposition
+
+
+def test_an_old_transfer_before_any_quote_was_requested():
+    assert stats.facts_from_record(TRANSFERRED)["disposition"] == "requested_transfer"
 
 
 def test_old_calls_are_backfilled_once(client):

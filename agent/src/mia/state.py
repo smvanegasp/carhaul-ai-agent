@@ -87,6 +87,12 @@ class QuoteSession:
     # Phone transfer (transfer.py): "pending", "connected", "no_answer", "limit" (daily cap) or
     # None (not tried; e.g. text chat, or no trunk configured).
     transfer: str | None = None
+    # Why it was transferred (the disposition): "organic" (said yes to Mia's offer, the happy
+    # path), "requested" (asked for a person unprompted) or "forced" (a tool failed and Mia
+    # offered a representative). Set by request_human.
+    transfer_kind: str | None = None
+    # A tool failed in a way Mia can't fix (API down, out of calls): she offers a person.
+    escalated: bool = False
     ended: bool = False
     # Who ended it: "mia" (end_call or her goodbye), "time_limit" or "caller" (hung up first).
     end_reason: str | None = None
@@ -186,6 +192,8 @@ class QuoteSession:
             "quote": self.quote,
             "human_requested": self.human_requested,
             "transfer": self.transfer,
+            "transfer_kind": self.transfer_kind,
+            "escalated": self.escalated,
             "dropped_calls": self.dropped_calls,
             "caller_turns": self.caller_turns,
             "end_reason": self.end_reason,

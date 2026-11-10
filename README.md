@@ -1,5 +1,9 @@
 # Mia: a voice AI agent for car-shipping quotes
 
+An academic, non-commercial project by [Sergio Vanegas](https://www.linkedin.com/in/sergio-vanegas/)
+and [Belinda Hu](https://www.linkedin.com/in/belinda-hu/). Prices come from the public API of
+[CarHauler247](https://carhauler247.com/).
+
 Call Mia from your browser, tell her where your car is going and what it is, and she gives you
 an open car-shipping quote from the [CarHauler247](https://carhauler247.com/) API. While you
 talk, a live panel shows the transcript, every tool call (with its JSON) and how long each part

@@ -18,34 +18,77 @@ export interface CallFacts {
   vehicles: boolean;
   quoted: boolean;
   transfer: boolean;
+  disposition: Disposition;
   e2e_p50_ms: number | null;
 }
 
-export type Range = "7d" | "30d" | "all";
+export type Disposition =
+  | "organic_transfer"
+  | "requested_transfer"
+  | "forced_transfer"
+  | "hung_up_on_hold"
+  | "hung_up"
+  | "not_interested";
 
-export const RANGES: { key: Range; label: string }[] = [
-  { key: "7d", label: "Last 7 days" },
-  { key: "30d", label: "Last 30 days" },
-  { key: "all", label: "All time" },
+/** Sergio's voice dispositions: the first three are qualified leads (a transfer). */
+export const DISPOSITIONS: {
+  key: Disposition;
+  label: string;
+  help: string;
+  lead: boolean;
+}[] = [
+  {
+    key: "organic_transfer",
+    label: "Organic transfer",
+    help: "Said yes to Mia's offer after the quote (the happy path)",
+    lead: true,
+  },
+  {
+    key: "requested_transfer",
+    label: "Requested transfer",
+    help: "Asked for a person on their own",
+    lead: true,
+  },
+  {
+    key: "forced_transfer",
+    label: "Forced transfer",
+    help: "Something failed (an API) and Mia handed the call over",
+    lead: true,
+  },
+  {
+    key: "hung_up_on_hold",
+    label: "Hung up on hold",
+    help: "Left while the transfer was ringing",
+    lead: false,
+  },
+  {
+    key: "hung_up",
+    label: "Hung up",
+    help: "Left before the call was finished",
+    lead: false,
+  },
+  {
+    key: "not_interested",
+    label: "Not interested",
+    help: "Finished the call without a transfer",
+    lead: false,
+  },
 ];
 
-const DAY_MS = 86_400_000;
-
-export function inRange(
-  rows: CallFacts[],
-  range: Range,
-  now = Date.now(),
-): CallFacts[] {
-  if (range === "all") return rows;
-  const days = range === "7d" ? 7 : 30;
-  const since = startOfDay(now - (days - 1) * DAY_MS);
-  return rows.filter((r) => Date.parse(r.started_at) >= since);
+export interface DispositionCount {
+  key: Disposition;
+  label: string;
+  help: string;
+  lead: boolean;
+  count: number;
+  share: number | null;
 }
 
-function startOfDay(ms: number): number {
-  const d = new Date(ms);
-  d.setHours(0, 0, 0, 0);
-  return d.getTime();
+export function dispositions(rows: CallFacts[]): DispositionCount[] {
+  return DISPOSITIONS.map((d) => {
+    const count = rows.filter((r) => r.disposition === d.key).length;
+    return { ...d, count, share: ratio(count, rows.length) };
+  });
 }
 
 function median(values: number[]): number | null {
@@ -128,67 +171,6 @@ export function funnel(rows: CallFacts[]): FunnelStep[] {
   });
 }
 
-export interface Bucket {
-  /** Local start of the day (or week), epoch ms. */
-  start: number;
-  calls: number;
-  route: number;
-  vehicles: number;
-  quoted: number;
-  transfer: number;
-  miaSeconds: number;
-}
-
-/**
- * Calls per day (per week once the range spans more than 45 days), with no gaps: days without
- * calls are zeros, so the trend's spacing is honest.
- */
-export function buckets(
-  rows: CallFacts[],
-  range: Range,
-  now = Date.now(),
-): Bucket[] {
-  if (rows.length === 0) return [];
-  const times = rows.map((r) => Date.parse(r.started_at));
-  const first =
-    range === "all"
-      ? startOfDay(Math.min(...times))
-      : startOfDay(now - ((range === "7d" ? 7 : 30) - 1) * DAY_MS);
-  const last = startOfDay(Math.max(now, ...times));
-  const span = Math.round((last - first) / DAY_MS) + 1;
-  const size = span > 45 ? 7 : 1;
-  const out: Bucket[] = [];
-  for (let d = 0; d < span; d += size) {
-    const start = startOfDay(first + d * DAY_MS + DAY_MS / 2); // safe across DST changes
-    out.push({
-      start,
-      calls: 0,
-      route: 0,
-      vehicles: 0,
-      quoted: 0,
-      transfer: 0,
-      miaSeconds: 0,
-    });
-  }
-  rows.forEach((r, i) => {
-    // Whole days since the first bucket (rounded: a DST day is 23 or 25 hours long).
-    const day = Math.round((startOfDay(times[i]) - first) / DAY_MS);
-    const b =
-      out[Math.min(out.length - 1, Math.max(0, Math.floor(day / size)))];
-    b.calls += 1;
-    b.miaSeconds += r.mia_s;
-    for (const m of ["route", "vehicles", "quoted", "transfer"] as const)
-      if (r[m]) b[m] += 1;
-  });
-  return out;
-}
-
-export function bucketSize(list: Bucket[]): "day" | "week" {
-  return list.length > 1 && list[1].start - list[0].start > 2 * DAY_MS
-    ? "week"
-    : "day";
-}
-
 /** 4320 -> "1 h 12 min"; 95 -> "1 min 35 s". */
 export function formatSpan(seconds: number): string {
   const s = Math.round(seconds);
@@ -206,7 +188,7 @@ export function pct(value: number | null): string {
 
 /** One or two sentences that say what the numbers mean. */
 export function story(k: Kpis, steps: FunnelStep[]): string {
-  if (k.calls === 0) return "No calls in this period yet.";
+  if (k.calls === 0) return "No calls yet.";
   const calls = `${k.calls} call${k.calls === 1 ? "" : "s"}`;
   const leads = `${k.transfers} qualified lead${k.transfers === 1 ? "" : "s"}`;
   let text =

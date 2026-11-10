@@ -251,7 +251,7 @@ function CallButtonCard({
           </p>
           <p>
             Your browser will ask for the microphone; headphones work best.
-            Asking for a person transfers you to the developer's phone.
+            Asking for a person transfers you to Sergio's phone.
           </p>
         </div>
       )}

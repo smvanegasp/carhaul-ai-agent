@@ -202,6 +202,13 @@ docker compose up        # api :8020, web :5190, DynamoDB Local :8030, agent wor
   remembered in the browser. Wake-up shows a **progress bar**: `/api/wake` reports a `step`
   from the ECS task (`server` while PROVISIONING/PENDING, `loading` once it runs) and the bar
   moves with time inside that step, never 100% before ready.
+- 2026-11-10: **Dispositions, all-time stats, credits.** Sergio: calls come in bursts, so no
+  date ranges or trends over time; add voice dispositions (organic transfer = yes to Mia's
+  offer, requested = asked for a person, forced = a tool failed and Mia handed over; hung up
+  on hold, hung up, not interested). The worker records `transfer_kind` (and `escalated`, set
+  when a tool tells Mia to offer a person); older records are inferred (after a quote:
+  organic). The About popup and sidebar credit Sergio Vanegas and Belinda Hu (LinkedIn),
+  CarHauler247's public API, "academic, non-commercial", and link the repo.
 - 2026-11-10 (stage 6): **Stats tell a story.** Sergio: transfers are the KPI (a
   representative picked up = a qualified lead); time handled by Mia (until the handoff) is time
   the business gets back; a funnel call → cities → vehicles → quote → transfer, over time.

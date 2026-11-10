@@ -3,6 +3,7 @@ import { useState, type ReactNode } from "react";
 import { CallPage, MAX_CALL_SECONDS } from "./call/CallPage";
 import { ThemeToggle } from "./call/ThemeToggle";
 import { PastCalls } from "./history/PastCalls";
+import { BELINDA, CARHAULER, Ext, REPO, SERGIO } from "./credits";
 import { IntroDialog, useIntro } from "./IntroDialog";
 import { useRoute, type Route } from "./lib/route";
 import { StatsPage } from "./stats/StatsPage";
@@ -89,6 +90,14 @@ export function App() {
             onGo={() => go(v.route)}
           />
         ))}
+        {!collapsed && (
+          <p className="mt-auto px-2.5 text-xs leading-relaxed text-muted">
+            An academic project by <Ext href={SERGIO}>Sergio Vanegas</Ext> and{" "}
+            <Ext href={BELINDA}>Belinda Hu</Ext>. Prices from{" "}
+            <Ext href={CARHAULER}>CarHauler247</Ext>.{" "}
+            <Ext href={REPO}>Code on GitHub</Ext>.
+          </p>
+        )}
       </nav>
 
       <main className="mx-auto flex w-full max-w-7xl min-w-0 flex-1 flex-col gap-4 px-4 py-5 lg:min-h-0 lg:py-6">

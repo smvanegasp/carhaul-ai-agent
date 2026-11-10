@@ -20,7 +20,7 @@ from livekit.agents import (
 )
 from livekit.plugins import groq
 
-from mia import guardrails, speech, tools
+from mia import grounding, guardrails, speech, tools
 from mia.prompt import INSTRUCTIONS, pick_greeting
 from mia.state import QuoteSession
 from mia.tools import Services
@@ -327,12 +327,15 @@ class Mia(Agent):
         """
         state = context.userdata
         was_pending = state.transfer in ("pending", "connected")
+        # A yes right after Mia's offer is an organic transfer; anything else, they asked.
+        last, offer = caller_last_said(self.chat_ctx), mia_last_said(self.chat_ctx)
+        accepted = grounding.offered_person(offer) and grounding.is_confirmation(last)
         result = await _run_tool(
             self.services,
             state,
             "request_human",
             {"reason": reason},
-            tools.request_human(state, self.services, reason=reason),
+            tools.request_human(state, self.services, reason=reason, asked=not accepted),
         )
         start = self.services.transfer
         if start and state.transfer == "pending" and not was_pending:
