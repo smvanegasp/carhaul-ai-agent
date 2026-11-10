@@ -371,6 +371,23 @@ def _estimate_note(fields: dict[str, Any]) -> str:
     )
 
 
+# "No wait, never mind, keep the Civic": gpt-oss called undo_last_change and save_vehicle in
+# the same step (stage 8 scenario, 2026-11-10), so the Civic came back twice. The guardrail
+# checks both before either runs, so the duplicate is caught here, once the undo has run.
+ALREADY_ON_FILE = (
+    "That vehicle is already on file, so nothing was added. If they have two of the same, "
+    "ask how many vehicles in total. "
+)
+
+
+def _already_on_file(state: QuoteSession, fields: dict[str, Any]) -> bool:
+    """The same vehicle is on file and the caller never said they ship more than we have."""
+    same = ("year", "make", "model", "trim_id", "vehicle_type")
+    if len(state.vehicles) < (state.expected_vehicles or 1):
+        return False
+    return any(all(getattr(v, k) == fields.get(k) for k in same) for v in state.vehicles)
+
+
 async def save_vehicle(
     state: QuoteSession,
     services: Services,
@@ -412,6 +429,8 @@ async def save_vehicle(
     if error:
         return error
     assert fields is not None
+    if _already_on_file(state, _entry_fields(fields)):
+        return _ok(state, ALREADY_ON_FILE + _next_question(state), saved=None)
     entry = state.add_vehicle(**_entry_fields(fields))
     saved: dict[str, Any] = {"quote_id": entry.quote_id, "vehicle": entry.label}
     if fields.get("_estimate"):

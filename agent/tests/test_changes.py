@@ -162,3 +162,25 @@ def test_update_needs_a_detail_the_caller_said():
 def test_cues():
     assert grounding.wants_removal("forget the Toyota") and not grounding.wants_removal("yes")
     assert grounding.wants_undo("change it back") and not grounding.wants_undo("correct")
+
+
+async def test_undo_and_save_of_the_same_car_keeps_one(state, services):
+    # gpt-oss ran undo_last_change and save_vehicle(Civic) in one step after "never mind, keep
+    # the Civic" (scenario undo_vehicle_change, 2026-11-10): the Civic was on file twice.
+    said = await _quoted(state, services, CIVIC) + " Actually it's a 2020 Toyota 4Runner"
+    await tools.update_vehicle(
+        state, services, year=2020, make="Toyota", model="4Runner", said=said
+    )
+    await tools.undo_last_change(state, services)
+    r = await tools.save_vehicle(state, services, year=2025, make="Honda", model="Civic", said=said)
+    assert r["ok"] and r["saved"] is None
+    assert [v.label for v in state.vehicles] == ["2025 Honda Civic"]
+
+
+async def test_two_of_the_same_car_when_the_caller_said_two(state, services):
+    said = "Boston, Massachusetts to San Francisco, California. Two cars, both 2025 Honda Civics"
+    await tools.save_vehicle(
+        state, services, year=2025, make="Honda", model="Civic", total_vehicles=2, said=said
+    )
+    await tools.save_vehicle(state, services, year=2025, make="Honda", model="Civic", said=said)
+    assert [v.label for v in state.vehicles] == ["2025 Honda Civic", "2025 Honda Civic"]

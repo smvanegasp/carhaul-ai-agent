@@ -212,3 +212,21 @@ def test_offered_person():
 )
 def test_corrected_year(year, said, settled):
     assert grounding.corrected_year(year, said) == settled
+
+
+@pytest.mark.parametrize(
+    "text, asked",
+    [
+        ("do you do a closed shipping?", True),
+        ("Before that, do you do enclosed shipping?", True),
+        ("how long does it take", True),
+        ("OK. And what about insurance", True),
+        ("It's a Civic?", True),
+        ("Yeah, sure", False),
+        ("It's a twenty twenty Honda.", False),
+        ("From Boston to San Francisco", False),
+        ("", False),
+    ],
+)
+def test_is_question(text, asked):
+    assert grounding.is_question(text) is asked

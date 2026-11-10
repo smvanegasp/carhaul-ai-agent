@@ -30,4 +30,6 @@ turns:
     expect:
       on_file: {vehicles: [2025 Honda Civic]}
       no_tools: [get_quote]
-      judge: Says the vehicle is the 2025 Honda Civic again and asks the caller to confirm.
+      judge: >-
+        Names the 2025 Honda Civic as the vehicle (the word "again" is not needed) and asks
+        the caller to confirm.
