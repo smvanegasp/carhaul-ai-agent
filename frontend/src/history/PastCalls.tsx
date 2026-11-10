@@ -47,6 +47,14 @@ export function PastCalls({
   active: boolean;
 }) {
   const [list, setList] = useState<Load<CallSummary[]>>({ kind: "loading" });
+  const [showTests, setShowTests] = useState(false);
+  const shown: Load<CallSummary[]> =
+    list.kind === "ok" && !showTests
+      ? {
+          kind: "ok",
+          data: list.data.filter((c) => !c.room.startsWith("smoke-")),
+        }
+      : list;
 
   useEffect(() => {
     if (!active) return;
@@ -70,10 +78,21 @@ export function PastCalls({
       >
         <header className="border-b border-line px-4 py-3">
           <h2 className="font-semibold">Past calls</h2>
-          <p className="text-xs text-muted">The latest 50, newest first.</p>
+          <div className="flex items-center justify-between gap-2 text-xs text-muted">
+            <span>The latest 50, newest first.</span>
+            <label className="flex cursor-pointer items-center gap-1.5">
+              <input
+                type="checkbox"
+                checked={showTests}
+                onChange={(e) => setShowTests(e.target.checked)}
+                className="size-3.5 accent-[var(--brand)]"
+              />
+              Test calls
+            </label>
+          </div>
         </header>
         <div className="lg:min-h-0 lg:flex-1 lg:overflow-y-auto lg:overscroll-contain">
-          <CallList list={list} selected={room} onOpen={onOpen} />
+          <CallList list={shown} selected={room} onOpen={onOpen} />
         </div>
       </section>
 
@@ -184,14 +203,21 @@ function CallDetail({ room, onBack }: { room: string; onBack: () => void }) {
 
   useEffect(() => {
     let cancelled = false;
-    fetchCall(room)
-      .then((data) => !cancelled && setRecord({ kind: "ok", data }))
-      .catch(
-        (err) =>
-          !cancelled && setRecord({ kind: "error", message: message(err) }),
-      );
+    let timer: ReturnType<typeof setTimeout>;
+    // Right after a call the worker may still be saving it ("See this call" links here):
+    // try a few more times before saying it isn't saved.
+    const attempt = (left: number) =>
+      fetchCall(room)
+        .then((data) => !cancelled && setRecord({ kind: "ok", data }))
+        .catch((err) => {
+          if (cancelled) return;
+          if (left > 0) timer = setTimeout(() => attempt(left - 1), 2500);
+          else setRecord({ kind: "error", message: message(err) });
+        });
+    void attempt(4);
     return () => {
       cancelled = true;
+      clearTimeout(timer);
     };
   }, [room]);
 

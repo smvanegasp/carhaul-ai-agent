@@ -3,7 +3,9 @@ import { useState, type ReactNode } from "react";
 import { CallPage, MAX_CALL_SECONDS } from "./call/CallPage";
 import { ThemeToggle } from "./call/ThemeToggle";
 import { PastCalls } from "./history/PastCalls";
+import { IntroDialog, useIntro } from "./IntroDialog";
 import { useRoute, type Route } from "./lib/route";
+import { StatsPage } from "./stats/StatsPage";
 
 const COLLAPSED_KEY = "mia.sidebar.collapsed";
 
@@ -15,12 +17,24 @@ function rememberedCollapsed(): boolean {
   }
 }
 
-const VIEWS: { route: Route; label: string; icon: ReactNode }[] = [
-  { route: { view: "call" }, label: "Call Mia", icon: <PhoneIcon /> },
+const VIEWS: { route: Route; label: string; tab: string; icon: ReactNode }[] = [
+  {
+    route: { view: "call" },
+    label: "Call Mia",
+    tab: "Call",
+    icon: <PhoneIcon />,
+  },
   {
     route: { view: "calls", room: null },
     label: "Past calls",
+    tab: "Past calls",
     icon: <ListIcon />,
+  },
+  {
+    route: { view: "stats" },
+    label: "Stats",
+    tab: "Stats",
+    icon: <ChartIcon />,
   },
 ];
 
@@ -33,6 +47,7 @@ const VIEWS: { route: Route; label: string; icon: ReactNode }[] = [
 export function App() {
   const [route, go] = useRoute();
   const [collapsed, setCollapsed] = useState(rememberedCollapsed);
+  const intro = useIntro();
 
   const toggle = () => {
     setCollapsed(!collapsed);
@@ -77,25 +92,27 @@ export function App() {
       </nav>
 
       <main className="mx-auto flex w-full max-w-7xl min-w-0 flex-1 flex-col gap-4 px-4 py-5 lg:min-h-0 lg:py-6">
-        <header className="flex flex-col gap-1">
-          <div className="flex items-start justify-between gap-3">
+        <header className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+          <div className="min-w-0">
             <h1 className="font-display text-3xl tracking-tight">
-              Call Mia{" "}
+              Mia{" "}
               <span className="text-muted">· F&amp;F car shipping quotes</span>
             </h1>
+            <p className="text-sm text-muted">
+              An AI voice assistant for open car-shipping quotes. Calls last up
+              to {MAX_CALL_SECONDS / 60} minutes.
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={intro.show}
+              className="rounded-full border border-line bg-surface px-3 py-1 text-xs text-muted transition hover:text-ink focus-visible:ring-2 focus-visible:ring-accent focus-visible:outline-none"
+            >
+              About &amp; disclosure
+            </button>
             <ThemeToggle />
           </div>
-          <p className="max-w-3xl text-sm text-muted">
-            Mia is a voice assistant for open car-shipping quotes. Tell her
-            where your car is going from and to, and its year, make and model.
-            Calls last up to {MAX_CALL_SECONDS / 60} minutes.
-          </p>
-          <p className="max-w-3xl text-xs text-muted">
-            <span className="font-semibold text-ink">Disclosure:</span> this is
-            a demo. If you ask to speak with a licensed representative, Mia
-            transfers your call to Sergio, the developer of this demo, on his
-            personal phone.
-          </p>
         </header>
 
         <div
@@ -117,7 +134,7 @@ export function App() {
                 }`}
               >
                 {v.icon}
-                {v.label}
+                {v.tab}
               </button>
             );
           })}
@@ -133,7 +150,11 @@ export function App() {
             onOpen={(room) => go({ view: "calls", room })}
           />
         </div>
+        <div className={route.view === "stats" ? "contents" : "hidden"}>
+          <StatsPage active={route.view === "stats"} />
+        </div>
       </main>
+      <IntroDialog open={intro.open} auto={intro.auto} onClose={intro.close} />
     </div>
   );
 }
@@ -196,6 +217,22 @@ function ListIcon() {
       strokeLinecap="round"
     >
       <path d="M8 6h13M8 12h13M8 18h13M3.5 6h.01M3.5 12h.01M3.5 18h.01" />
+    </svg>
+  );
+}
+
+function ChartIcon() {
+  return (
+    <svg
+      aria-hidden
+      viewBox="0 0 24 24"
+      className="size-5 shrink-0"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.8}
+      strokeLinecap="round"
+    >
+      <path d="M4 20V10M10 20V4M16 20v-7M21 20H3" />
     </svg>
   );
 }

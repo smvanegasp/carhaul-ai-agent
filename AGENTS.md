@@ -102,8 +102,8 @@ Fargate, not Lambda. Everything else follows the fit pattern.
 | Path | What |
 | --- | --- |
 | `agent/` | uv project `mia-agent`, package `src/mia/` (see below). `evals/scenarios/*.yaml`: reference conversations |
-| `backend/` | uv project `carhaul-api`: FastAPI for Lambda (`app/`). `POST /api/token` (`livekit_token.py`, rate limited by `ratelimit.py`), `POST /api/calls/{room}/feedback` (`calls.py`), `POST /api/wake` (`worker.py`: starts the on-demand worker), `GET /api/calls` and `GET /api/calls/{room}` (public, rate limited), DynamoDB in `db.py`. Later: aggregate stats |
-| `frontend/` | React 19 + Vite + Tailwind v4 + LiveKit components. `App.tsx`: the shell (collapsible sidebar on desktop, tabs on a phone; views in the URL hash, `lib/route.ts`; the call view stays mounted so switching views never drops a call). `src/history/PastCalls.tsx`: past calls (list + the same conversation/stats views from the saved record). `src/call/`: `CallPage.tsx` (layout, call controls, wake), `Conversation.tsx` (chat + inline tool calls and latency behind "Show details", built by `lib/conversation.ts`), `Insights.tsx` (stage, stats, latency, on file), `FeedbackForm.tsx`, `useWake.ts` (+ `lib/wake.ts`: the wake progress bar), `ThemeToggle.tsx`. Colors are theme tokens in `src/index.css` (light by default, dark on request). Later: dashboard |
+| `backend/` | uv project `carhaul-api`: FastAPI for Lambda (`app/`). `POST /api/token` (`livekit_token.py`, rate limited by `ratelimit.py`), `POST /api/calls/{room}/feedback` (`calls.py`), `POST /api/wake` (`worker.py`: starts the on-demand worker), `GET /api/calls` and `GET /api/calls/{room}` (public, rate limited), `GET /api/stats` (`stats.py`: per-call milestones and Mia's time, backfilled once from records), DynamoDB in `db.py` |
+| `frontend/` | React 19 + Vite + Tailwind v4 + LiveKit components. `App.tsx`: the shell (collapsible sidebar on desktop, tabs on a phone; views in the URL hash, `lib/route.ts`; the call view stays mounted so switching views never drops a call). `src/history/PastCalls.tsx`: past calls (list + the same conversation/stats views from the saved record). `src/stats/StatsPage.tsx` + `lib/stats.ts`: KPIs, funnel, trends. `IntroDialog.tsx`: what this is + the disclosure, once a session. `src/call/`: `CallPage.tsx` (layout, call controls, wake), `Conversation.tsx` (chat + inline tool calls and latency behind "Show details", built by `lib/conversation.ts`), `Insights.tsx` (stage, stats, latency, on file), `FeedbackForm.tsx`, `useWake.ts` (+ `lib/wake.ts`: the wake progress bar), `ThemeToggle.tsx`. Colors are theme tokens in `src/index.css` (light by default, dark on request). Later: dashboard |
 | `notebooks/` | Exploration only; kernel is `agent/.venv` (`uv sync --group notebooks`) |
 | `docs/` | BACKLOG, CONVERSATION_DESIGN, TESTING_GUIDE (stage 4) |
 | `infra/` | Terraform (profile `carhaul`, everything `carhaul-*`): DynamoDB, Lambda + HTTP API, S3 + CloudFront (custom domain optional), on-demand ECS Fargate worker task (`agent.tf`), GitHub OIDC deploy role, alarms. `bootstrap/`: the state bucket |
@@ -202,6 +202,15 @@ docker compose up        # api :8020, web :5190, DynamoDB Local :8030, agent wor
   remembered in the browser. Wake-up shows a **progress bar**: `/api/wake` reports a `step`
   from the ECS task (`server` while PROVISIONING/PENDING, `loading` once it runs) and the bar
   moves with time inside that step, never 100% before ready.
+- 2026-11-10 (stage 6): **Stats tell a story.** Sergio: transfers are the KPI (a
+  representative picked up = a qualified lead); time handled by Mia (until the handoff) is time
+  the business gets back; a funnel call → cities → vehicles → quote → transfer, over time.
+  Milestones per call, not the furthest stage (callers skip around). The API returns one row
+  of facts per call; the browser computes KPIs, funnel and days in the viewer's time zone.
+  Scripted `smoke-*` calls are hidden by default. Charts are hand-made SVG (no library), one
+  ordinal blue ramp validated with the dataviz validator in both modes. **Dark mode is
+  graphite**, not navy (Sergio disliked it twice; light mode stays). **Intro popup** with the
+  disclosure, once per session, auto-closes after 15 s; "About & disclosure" reopens it.
 - 2026-11-09 (stage 9): **Transfer to a licensed representative.** Mia never says "Sergio,
   who built this" (Sergio: sounds arrogant); the page discloses that transfers ring his phone.
   The browser caller isn't SIP, so Mia **dials Sergio into the room** (Twilio Elastic SIP trunk,

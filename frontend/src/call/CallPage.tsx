@@ -235,14 +235,25 @@ function CallButtonCard({
       )}
       {phase.kind === "ended" && (
         <p className="text-sm text-muted">
-          Call ended. Thanks for talking to Mia! It's saved under Past calls.
+          Call ended. Thanks for talking to Mia!{" "}
+          <a
+            href={`#/calls/${phase.roomName}`}
+            className="font-medium text-brand underline-offset-2 hover:underline"
+          >
+            See this call in Past calls
+          </a>
         </p>
       )}
       {phase.kind === "idle" && ready && (
-        <p className="text-sm text-muted">
-          Your browser will ask for the microphone. Headphones work best. Calls
-          are kept as transcripts to improve Mia.
-        </p>
+        <div className="flex flex-col gap-2 text-sm text-muted">
+          <p className="rounded-xl bg-raised px-3 py-2 text-ink">
+            Try: “I need to ship my 2020 Toyota Camry from Boston to Miami.”
+          </p>
+          <p>
+            Your browser will ask for the microphone; headphones work best.
+            Asking for a person transfers you to the developer's phone.
+          </p>
+        </div>
       )}
     </section>
   );

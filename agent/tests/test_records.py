@@ -90,3 +90,26 @@ def test_save_never_raises(table, monkeypatch):
     records._table.cache_clear()
     state, events = _call()
     assert records.save(records.build(ROOM, state, events)) is False
+
+
+def test_stats_facts_match_the_backend():
+    """records.stats_facts and backend/app/stats.py facts_from_record must agree (the backend
+    backfills old rows with its copy). Compare their source, minus names and docstrings."""
+    import ast
+    from pathlib import Path
+
+    from mia import records
+
+    backend = Path(__file__).resolve().parents[2] / "backend" / "app" / "stats.py"
+
+    def body(source: str, name: str) -> str:
+        fn = next(n for n in ast.parse(source).body if getattr(n, "name", None) == name)
+        fn.body = fn.body[1:] if isinstance(fn.body[0], ast.Expr) else fn.body  # docstring
+        fn.name, fn.args, fn.returns = "f", ast.arguments([], [], None, [], [], None, []), None
+        return ast.dump(fn)
+
+    import inspect
+
+    assert body(inspect.getsource(records), "stats_facts") == body(
+        backend.read_text(encoding="utf-8"), "facts_from_record"
+    )
