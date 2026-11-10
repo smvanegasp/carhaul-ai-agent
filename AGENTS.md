@@ -90,7 +90,7 @@ Fargate, not Lambda. Everything else follows the fit pattern.
 | `events.py` | `CallEvents`: turns with latency, tool calls with JSON, guardrail drops, state; the live panel's stream (`mia.events`) and the record's content |
 | `records.py` | The call record and its DynamoDB write (keys documented there; shared table with the backend) |
 | `idle.py` | On AWS the worker exits after 10 idle minutes (no call, no wake) or 2 hours, so it only costs money around calls |
-| `voices.py` | The 6 voices callers can pick (2 each: ElevenLabs, Cartesia, Deepgram), at a slightly slower pace; keys match `backend/app/voices.py` |
+| `voices.py` | The 6 American voices callers can pick (2 each: Cartesia, ElevenLabs, Deepgram; Cartesia Skylar first and default), each with a description; keys and descriptions match `backend/app/voices.py` |
 | `speech.py` | Numbers written out as words before any voice reads them (`Mia.tts_node`) |
 | `catalog.py` | CarHauler catalog snapshot on disk (a week), so worker restarts don't spend API calls |
 | `latency.py` | Per-turn latency from `ChatMessage.metrics` (end of turn, LLM TTFT, TTS TTFB, e2e) |
@@ -179,6 +179,12 @@ docker compose up        # api :8020, web :5190, DynamoDB Local :8030, agent wor
 - 2026-11-09: **Voice picker**: callers choose Mia's voice from 6 (top 2 of ElevenLabs,
   Cartesia, Deepgram). The choice rides in the agent dispatch metadata, so no extra API or
   state; the API only accepts known keys. All voices run at speed 0.92 and get numbers as words.
+- 2026-11-09: **Voices, second pass** (Sergio's feedback): American voices only (each tagged
+  American in its provider's catalog: Cartesia Skylar and Morgan, ElevenLabs Sarah and Jessica,
+  Deepgram Thalia and Athena), back to each provider's **normal pace** (0.92 felt too slow),
+  **Cartesia Skylar first** (the page starts with it and doesn't label it "default"), and a
+  one-line description per voice under the dropdown. `ELEVENLABS_VOICE_ID` is no longer used
+  (that voice's accent couldn't be confirmed); it stays in SSM, harmless.
 - 2026-11-09 (UI): After Sergio's first calls: a **keyboard-typing sound** (LiveKit's built-in
   `KEYBOARD_TYPING` clip on a background track, 2 s) plays between "give me one second" and the
   price; `get_quote` waits for it (max 8 s). The chat and the panel's timeline showed the same

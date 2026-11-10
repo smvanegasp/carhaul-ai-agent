@@ -11,8 +11,8 @@ from mia import voices
 BACKEND_VOICES = Path(__file__).resolve().parents[2] / "backend" / "app" / "voices.py"
 
 
-def _backend_list() -> tuple[list[str], str]:
-    """The keys and default in backend/app/voices.py (read, not imported: another project)."""
+def _backend_list() -> tuple[list[tuple[str, str, str]], str]:
+    """The voices and default in backend/app/voices.py (read, not imported: another project)."""
     tree = ast.parse(BACKEND_VOICES.read_text(encoding="utf-8"))
     values = {
         node.targets[0].id: ast.literal_eval(node.value)
@@ -21,13 +21,22 @@ def _backend_list() -> tuple[list[str], str]:
         and isinstance(node.targets[0], ast.Name)
         and node.targets[0].id in ("VOICES", "DEFAULT")
     }
-    return [key for key, _label in values["VOICES"]], values["DEFAULT"]
+    return values["VOICES"], values["DEFAULT"]
 
 
 def test_the_api_offers_exactly_the_voices_the_worker_knows():
-    keys, default = _backend_list()
-    assert keys == list(voices.VOICES)
+    backend, default = _backend_list()
+    assert backend == [(v.key, v.label, v.description) for v in voices.VOICES.values()]
     assert default == voices.DEFAULT
+
+
+def test_the_page_starts_with_the_default_voice():
+    assert next(iter(voices.VOICES)) == voices.DEFAULT == "cartesia-skylar"
+
+
+def test_every_voice_is_american_and_described():
+    for v in voices.VOICES.values():
+        assert v.description.startswith("American"), v.key
 
 
 def test_two_voices_per_provider():
@@ -39,7 +48,7 @@ def test_two_voices_per_provider():
     }
 
 
-@pytest.mark.parametrize("key", [None, "", "nope", "elevenlabs-mia"])
+@pytest.mark.parametrize("key", [None, "", "nope", "elevenlabs-mia", "cartesia-courtney"])
 def test_unknown_or_missing_voice_gets_the_default(key):
     assert voices.pick(key).key == voices.DEFAULT
 
@@ -48,7 +57,6 @@ def test_unknown_or_missing_voice_gets_the_default(key):
 def keys(monkeypatch):
     for name in (
         "ELEVENLABS_API_KEY",
-        "ELEVENLABS_VOICE_ID",
         "CARTESIA_API_KEY",
         "DEEPGRAM_API_KEY",
     ):
@@ -58,10 +66,12 @@ def keys(monkeypatch):
 @pytest.mark.parametrize(
     ("key", "cls"),
     [
-        ("elevenlabs-mia", elevenlabs.TTS),
+        ("elevenlabs-sarah", elevenlabs.TTS),
         ("elevenlabs-jessica", elevenlabs.TTS),
-        ("cartesia-courtney", cartesia.TTS),
+        ("cartesia-skylar", cartesia.TTS),
+        ("cartesia-morgan", cartesia.TTS),
         ("deepgram-thalia", deepgram.TTS),
+        ("deepgram-athena", deepgram.TTS),
     ],
 )
 def test_each_voice_builds_its_providers_tts(keys, key, cls):

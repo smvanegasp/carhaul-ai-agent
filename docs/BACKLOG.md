@@ -239,6 +239,37 @@ ninety-one dollars. Would you like me to connect you with Sergio?", 3 runs each,
 | Deepgram · Thalia | 212 ms | 436, 181, 212 | 7.1 s |
 | Deepgram · Andromeda | 184 ms | 176, 207, 184 | 7.1 s |
 
+## Voices, second pass (branch `voices-american`, 2026-11-09)
+
+Sergio's feedback: voices too slow, American voices only, Cartesia first, say what each voice is.
+
+- [x] 6 American voices, picked from the providers' catalogs (accent metadata / descriptions):
+      Cartesia Skylar (first, the default) and Morgan; ElevenLabs Sarah and Jessica (premade,
+      work on the free plan); Deepgram Thalia and Athena. Out: ElevenLabs "Mia" (accent unknown),
+      Cartesia Courtney and Jessica (no accent listed), Deepgram Andromeda (casual)
+- [x] Normal pace again (no speed setting)
+- [x] A one-line description under the dropdown (accent, style, provider model); the page
+      starts on the first voice and doesn't call it "default"; a remembered old key falls back
+      to Skylar
+- [x] Checked in headless Chrome with a fake mic against the Docker stack: description shown,
+      the call greets in Skylar's voice, no console errors
+- [ ] Sergio: `scripts/deploy.sh` and try them
+
+Same line as before, 3 runs each, 2026-11-09. Audio length shows the pace (lower = faster);
+the old voices took 6.1-7.1 s at speed 0.92:
+
+| Voice | TTFB p50 | Runs (ms) | Audio length |
+| --- | --- | --- | --- |
+| Cartesia · Skylar | 288 ms | 307, 288, 148 | 5.7 s |
+| Cartesia · Morgan | 282 ms | 282, 356, 155 | 7.3 s |
+| ElevenLabs · Sarah | 192 ms | 340, 192, 188 | 5.9 s |
+| ElevenLabs · Jessica | 207 ms | 207, 208, 189 | 5.9 s |
+| Deepgram · Thalia | 218 ms | 376, 194, 218 | 6.3 s |
+| Deepgram · Athena | 225 ms | 225, 208, 255 | 6.3 s |
+
+Cartesia Iris (also American, customer care) was 7.3 s too, so that slower pace is how those
+Cartesia voices talk, not a setting; Skylar is the quickest of the six.
+
 ## Ideas / later
 
 - **Self-corrections:** "it's twenty ten... twenty twenty Toyota" was saved as 2010 (Sergio's

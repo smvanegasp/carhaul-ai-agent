@@ -88,6 +88,8 @@ export async function wakeMia(fetchFn: typeof fetch = fetch): Promise<WakeStatus
 export interface VoiceOption {
   key: string;
   label: string;
+  /** Accent, style and provider model, shown under the dropdown. */
+  description: string;
   default: boolean;
 }
 
