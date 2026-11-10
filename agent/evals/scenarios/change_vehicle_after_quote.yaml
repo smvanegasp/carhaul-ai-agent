@@ -1,0 +1,38 @@
+# Stage 8: after hearing the price the caller says they got the car wrong. The old vehicle
+# goes to the trash, the quote is dropped, Mia reads back and quotes again on a yes.
+id: change_vehicle_after_quote
+persona: NG_C_NV
+path: NHP
+ground_truth:
+  origin: Boston, Massachusetts
+  destination: San Francisco, California
+  vehicles: [2020 Toyota 4Runner]
+turns:
+  - user: "Yeah, sure"
+    expect:
+      judge: Asks where the vehicle ships from, to, or both.
+  - user: "From Boston, Massachusetts to San Francisco, California"
+    expect:
+      on_file: {origin: "Boston, Massachusetts", destination: "San Francisco, California"}
+      judge: Asks for the year, make and model of the vehicle.
+  - user: "It's a 2025 Honda Civic"
+    expect:
+      on_file: {vehicles: [2025 Honda Civic]}
+      no_tools: [get_quote]
+      judge: Reads back the 2025 Honda Civic and the route, and asks the caller to confirm.
+  - user: "Yep"
+    expect:
+      tools: [get_quote]
+      says: ["$1,291"]
+  - user: "Oh wait, sorry, it's actually a 2020 Toyota 4Runner, not the Civic"
+    expect:
+      tools: [update_vehicle]
+      no_tools: [get_quote]
+      on_file: {vehicles: [2020 Toyota 4Runner]}
+      judge: >-
+        Reads back the 2020 Toyota 4Runner (not the Civic) and the route, and asks the caller
+        to confirm.
+  - user: "Yes, that's right"
+    expect:
+      tools: [get_quote]
+      says: ["$1,020"]  # the fake API's price for the 2020 4Runner

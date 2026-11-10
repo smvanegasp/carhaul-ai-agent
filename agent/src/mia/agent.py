@@ -209,6 +209,7 @@ class Mia(Agent):
             spoken = guardrails.tidy_speech(text)
             if not spoken and dropped:
                 spoken = guardrails.fallback_line(state)
+            spoken = guardrails.keep_going(spoken, state)
             if spoken and guardrails.is_goodbye(spoken) and not state.ended:
                 # She's closing the call without end_call: hang up after this line plays.
                 logger.info("goodbye without end_call; hanging up after it")
@@ -309,6 +310,79 @@ class Mia(Agent):
         )
 
     @function_tool
+    async def update_vehicle(
+        self,
+        context: RunContext[QuoteSession],
+        quote_id: str | None = None,
+        year: int | None = None,
+        make: str | None = None,
+        model: str | None = None,
+        vehicle_type: str | None = None,
+        drivable: bool | None = None,
+    ) -> str:
+        """Change a vehicle already on file ("actually it's a 2021", "it's a 4Runner, not a
+        Civic"). Pass only what the caller changed.
+
+        Args:
+            quote_id: The vehicle's quote_id from on_file. Omit if there's only one vehicle.
+            year: New model year, only if the caller said it.
+            make: New brand, only if the caller said it.
+            model: New model, only if the caller said it.
+            vehicle_type: Only if they don't know the model: sedan, SUV, pickup, van...
+            drivable: False if they now say it doesn't run, True if they say it does.
+        """
+        args = {
+            "quote_id": quote_id,
+            "year": year,
+            "make": make,
+            "model": model,
+            "vehicle_type": vehicle_type,
+            "drivable": drivable,
+        }
+        return await _run_tool(
+            self.services,
+            context.userdata,
+            "update_vehicle",
+            args,
+            tools.update_vehicle(
+                context.userdata,
+                self.services,
+                **args,
+                said=caller_said(self.chat_ctx),
+                last_said=caller_last_said(self.chat_ctx),
+            ),
+        )
+
+    @function_tool
+    async def remove_vehicle(
+        self, context: RunContext[QuoteSession], quote_id: str | None = None
+    ) -> str:
+        """Remove a vehicle the caller is no longer shipping.
+
+        Args:
+            quote_id: The vehicle's quote_id from on_file.
+        """
+        return await _run_tool(
+            self.services,
+            context.userdata,
+            "remove_vehicle",
+            {"quote_id": quote_id},
+            tools.remove_vehicle(context.userdata, self.services, quote_id=quote_id),
+        )
+
+    @function_tool
+    async def undo_last_change(self, context: RunContext[QuoteSession]) -> str:
+        """Put back what the last vehicle or route change replaced, when the caller changes
+        their mind back ("actually, keep the Honda")."""
+        return await _run_tool(
+            self.services,
+            context.userdata,
+            "undo_last_change",
+            {},
+            tools.undo_last_change(context.userdata, self.services),
+        )
+
+    @function_tool
     async def get_quote(self, context: RunContext[QuoteSession]) -> str:
         """Get the price for every vehicle on file. Only after the caller confirmed the details."""
         return await _run_tool(
@@ -346,6 +420,18 @@ class Mia(Agent):
             # Dial once "connecting you" has been spoken (same pattern as end_call).
             context.speech_handle.add_done_callback(lambda _: start())
         return result
+
+    @function_tool
+    async def note_off_topic(self, context: RunContext[QuoteSession]) -> str:
+        """The caller asked something unrelated to car shipping (a joke, trivia, nonsense).
+        Call it before answering, then follow its `next`."""
+        return await _run_tool(
+            self.services,
+            context.userdata,
+            "note_off_topic",
+            {},
+            tools.note_off_topic(context.userdata, self.services),
+        )
 
     @function_tool
     async def end_call(self, context: RunContext[QuoteSession]) -> str:

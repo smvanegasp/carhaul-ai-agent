@@ -1,0 +1,43 @@
+# Stage 8 questions path: FAQs in the middle of the quote. Mia answers only from the FAQ, then
+# goes back to what's missing.
+id: faq_mid_call
+persona: G_C_V
+path: QHP
+ground_truth:
+  origin: Boston, Massachusetts
+  destination: San Francisco, California
+  vehicles: [2025 Honda Civic]
+turns:
+  - user: "Yeah, sure"
+    expect:
+      judge: Asks where the vehicle ships from, to, or both.
+  - user: "From Boston, Massachusetts to San Francisco, California"
+    expect:
+      on_file: {origin: "Boston, Massachusetts", destination: "San Francisco, California"}
+      judge: Asks for the year, make and model of the vehicle.
+  - user: "Before that, do you do enclosed shipping?"
+    expect:
+      no_tools: [get_quote, request_human]
+      judge: >-
+        Says only open car shipping is quoted (no enclosed), and asks for the vehicle's year,
+        make and model.
+  - user: "OK. And how long does it usually take?"
+    expect:
+      judge: >-
+        Says it's about the driving time plus zero to three days for loading and unloading
+        (or that it depends on the route), without inventing a fixed number of days, and goes
+        back to asking about the vehicle.
+  - user: "It's a 2025 Honda Civic"
+    expect:
+      on_file: {vehicles: [2025 Honda Civic]}
+      no_tools: [get_quote]
+  - user: "Yes, correct"
+    expect:
+      tools: [get_quote]
+      says: ["$1,291"]
+  - user: "Can I pay with a credit card?"
+    expect:
+      no_tools: [request_human]
+      judge: >-
+        Says the quote is for cash on delivery and a credit card may add about 3 percent, and
+        invents no other fees or policies (offering a representative is fine).

@@ -178,3 +178,44 @@ def test_mias_goodbye_is_detected(speech):
 )
 def test_other_lines_are_not_goodbyes(speech):
     assert not guardrails.is_goodbye(speech)
+
+
+@pytest.mark.parametrize(
+    ("last", "allowed"),
+    [
+        ("What's the capital of France?", True),
+        ("Tell me a joke about cats", True),
+        ("What's your favorite pizza topping?", True),
+        ("How much does it cost to ship a car?", False),  # about the quote
+        ("Do you do enclosed transport?", False),
+        ("Yeah, sure", False),
+        ("I have two cars", False),
+        ("", False),
+    ],
+)
+def test_off_topic_only_counts_unrelated_questions(last, allowed):
+    # The third one ends the call, so a turn about shipping must never count.
+    reason = check_call("note_off_topic", "{}", QuoteSession(), last, last)
+    assert (reason is None) == allowed
+
+
+def test_after_an_answer_mia_asks_whats_missing():
+    from mia.guardrails import keep_going
+
+    s = QuoteSession(origin=BOS, destination=SF)
+    assert keep_going("We only quote open car shipping.", s) == (
+        "We only quote open car shipping. What's the year, make and model of the car?"
+    )
+    assert keep_going("Got it. What's the car?", s) == "Got it. What's the car?"  # has one
+
+
+def test_keep_going_leaves_endings_and_complete_calls_alone():
+    from mia.guardrails import keep_going
+
+    s = QuoteSession(origin=BOS, destination=SF)
+    assert keep_going("Thanks for calling F&F, goodbye!", s).endswith("goodbye!")
+    s.transfer = "pending"
+    assert keep_going("Connecting you now.", s) == "Connecting you now."
+    done = QuoteSession(origin=BOS, destination=SF)
+    done.add_vehicle(year=2025, make="Honda", model="Civic", trim_id=1)
+    assert keep_going("The quote includes up to 100 pounds.", done).endswith("pounds.")

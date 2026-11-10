@@ -160,6 +160,36 @@ licensed representative right now. Is there anything else I can help you with?"
 - If the quote API keeps failing (seen: CarHauler 402 when the allowance ran out), Mia
   apologizes and offers a licensed representative; she never makes up a price.
 
+## Changes (stage 8)
+
+| Caller says | Tool | Then |
+| --- | --- | --- |
+| "Actually it's going to New York, New York" | `save_origin_destination` | read back, re-quote on a yes |
+| "It's a 2020 Toyota 4Runner, not the Civic" / "make it a 2024" | `update_vehicle` (only what changed) | same |
+| "Remove the Toyota" / "just the Honda" | `remove_vehicle` | same; the only vehicle can't be removed (Mia asks what to ship instead) |
+| "Never mind, keep the Civic" | `undo_last_change` | same |
+| A change that could be any of several vehicles | (Mia asks which one) | |
+
+Each change sends the old version to the trash and gets a new quote ID; the old price is
+dropped, so Mia never repeats a price that no longer applies.
+
+## Errors (stage 8): what Mia does
+
+| Error | Mia |
+| --- | --- |
+| City not found / state mismatch / no ZIP | Says she couldn't find it and asks again (the other city is kept) |
+| Make, model or year not found | Says she couldn't find it, offers close matches if any, asks again |
+| The same detail fails a 3rd time in a row | Apologizes and offers a licensed representative (forced transfer) |
+| Detail missing ("a Honda") | Asks for it (never counted as a failure) |
+| Google Maps down, CarHauler 401/402/5xx/rate limited (after retries) | Apologizes, gives no price, offers a licensed representative (forced transfer) |
+| Invalid ZIP at quote time | Asks for that city again |
+
+## Off-topic (stage 8)
+
+Unrelated or joke questions (`note_off_topic`): a few words at most and back to the quote;
+the third one: "I can only help with car shipping quotes", a goodbye and Mia hangs up. Never
+a transfer for off-topic questions. A turn about shipping never counts.
+
 ## When the caller goes quiet or corrects themselves (stage 8)
 
 - **Silence** (15 s with nobody talking; `silence.py`): after the quote, it means they're done:

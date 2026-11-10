@@ -1,0 +1,29 @@
+# Stage 8 adversarial path: unrelated or joke questions. Mia answers in a few words and steers
+# back; the third time she ends the call politely, never with a transfer.
+id: off_topic_three_strikes
+persona: NG_P_V
+path: AP
+ground_truth:
+  origin: null
+  destination: null
+  vehicles: []
+turns:
+  - user: "Yeah, sure"
+    expect:
+      judge: Asks where the vehicle ships from, to, or both.
+  - user: "What's the capital of France?"
+    expect:
+      tools: [note_off_topic]
+      no_tools: [request_human]
+      judge: Answers very briefly or declines, and steers back to the car shipping quote.
+  - user: "Tell me a joke about cats"
+    expect:
+      tools: [note_off_topic]
+      no_tools: [request_human]
+      judge: Keeps it very short and steers back to the car shipping quote.
+  - user: "What's your favorite pizza topping?"
+    expect:
+      tools: [note_off_topic]
+      no_tools: [request_human]
+      ended: true
+      judge: Says it can only help with car shipping quotes and says goodbye.

@@ -326,3 +326,44 @@ def corrected_year(year: int | None, last_said: str) -> int | None:
         if first == current and first != second and all(w in _CORRECTION_WORDS for w in between):
             current = second
     return current
+
+
+# Removing a vehicle and undoing a change only run on the caller's own words (gpt-oss invents
+# tool calls; these change what's quoted).
+_REMOVE = re.compile(
+    r"\b(?:remove|take (?:off|out)|drop|delete|cancel|forget|scratch|without|leave out|"
+    r"don'?t need|do not need|not (?:shipping|sending|bringing)|no longer|only (?:the|one)|"
+    r"just (?:the|one))",
+    re.IGNORECASE,
+)
+_UNDO = re.compile(
+    r"\b(?:undo|go back|change (?:it|that) back|put (?:it|that) back|keep the|the (?:original|"
+    r"previous|old|first) one|was right|as (?:it was|before)|never ?mind|changed my mind)",
+    re.IGNORECASE,
+)
+
+
+def wants_removal(text: str) -> bool:
+    """ "Remove the Toyota", "I don't need the second car", "just the Honda"."""
+    return bool(_REMOVE.search(text))
+
+
+def wants_undo(text: str) -> bool:
+    """ "Actually, keep the Honda", "go back to the original", "never mind"."""
+    return bool(_UNDO.search(text))
+
+
+# note_off_topic ends the call on the third one, so a turn about shipping never counts, even
+# if the model calls it (gpt-oss invents tool calls).
+_ON_TOPIC = re.compile(
+    r"\b(?:ship|shipping|send|sending|move|moving|transport|car|cars|vehicle|vehicles|truck|"
+    r"suv|sedan|quote|price|cost|how much|enclosed|open|deliver|delivery|pick ?up|pay|payment|"
+    r"cash|card|deposit|discount|drivable|run|runs|trailer|carrier|insurance|days|long|when|"
+    r"representative|agent|person|human)",
+    re.IGNORECASE,
+)
+
+
+def is_on_topic(text: str) -> bool:
+    """Does the caller's message mention shipping, the car, the price or the call itself?"""
+    return bool(_ON_TOPIC.search(text))

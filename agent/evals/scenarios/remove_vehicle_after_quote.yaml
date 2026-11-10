@@ -1,0 +1,33 @@
+# Stage 8: two cars quoted, then the caller only wants one.
+id: remove_vehicle_after_quote
+persona: NG_C_NV
+path: NHP
+ground_truth:
+  origin: Boston, Massachusetts
+  destination: San Francisco, California
+  vehicles: [2025 Honda Civic]
+turns:
+  - user: "Yeah, sure"
+    expect:
+      judge: Asks where the vehicle ships from, to, or both.
+  - user: "From Boston, Massachusetts to San Francisco, California"
+    expect:
+      on_file: {origin: "Boston, Massachusetts", destination: "San Francisco, California"}
+      judge: Asks for the year, make and model of the vehicle.
+  - user: "I have two cars: a 2025 Honda Civic and a 2020 Toyota 4Runner"
+    expect:
+      on_file: {vehicles: [2025 Honda Civic, 2020 Toyota 4Runner]}
+      no_tools: [get_quote]
+  - user: "Yes, both go on the same route, that's correct"
+    expect:
+      tools: [get_quote]
+  - user: "Hmm, that's a lot. Remove the Toyota, just the Honda please"
+    expect:
+      tools: [remove_vehicle]
+      no_tools: [get_quote]
+      on_file: {vehicles: [2025 Honda Civic]}
+      judge: Says the Toyota was removed and asks the caller to confirm the Honda Civic and route.
+  - user: "Yes"
+    expect:
+      tools: [get_quote]
+      says: ["$1,291"]

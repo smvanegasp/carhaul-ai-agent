@@ -46,6 +46,16 @@ ESCALATE = (
 )
 
 
+# The same detail failed three times in a row (a city or vehicle we can't find): stop asking.
+STILL_NOT_FOUND = (
+    "Apologize: you still can't find it in our system. Offer to connect them with a licensed "
+    "representative who can help; if they agree, call request_human."
+)
+MAX_FAILURES = 3
+
+OFF_TOPIC_LIMIT = 3
+
+
 @dataclass
 class Services:
     """What the tools use besides the call state (one per call)."""
@@ -75,12 +85,21 @@ def _note_vehicle_count(state: QuoteSession, said: str | None) -> None:
             state.expected_vehicles = count
 
 
+def _failed(state: QuoteSession, detail: str, code: str, hint: str, **data: Any) -> Result:
+    """A detail the caller gave couldn't be found: ask again, or after the third time in a row,
+    offer a person instead of asking forever."""
+    state.failures[detail] = state.failures.get(detail, 0) + 1
+    if state.failures[detail] >= MAX_FAILURES:
+        return _err(state, code, STILL_NOT_FOUND, attempts=state.failures[detail], **data)
+    return _err(state, code, hint, attempts=state.failures[detail], **data)
+
+
 def _ok(state: QuoteSession, next_step: str, **data: Any) -> Result:
     return {"ok": True, **data, "on_file": state.snapshot(), "next": next_step}
 
 
 def _err(state: QuoteSession, code: str, next_step: str, **data: Any) -> Result:
-    if next_step == ESCALATE:
+    if next_step in (ESCALATE, STILL_NOT_FOUND):
         state.escalated = True  # a transfer after this is a "forced" one
     return {"ok": False, "error_code": code, **data, "on_file": state.snapshot(), "next": next_step}
 
@@ -166,7 +185,10 @@ async def save_origin_destination(
         if not origin_city and not destination_city:
             return _err(state, "NOT_SAID_BY_CALLER", NOT_SAID, ignored=ignored)
 
+    # Look up both sides before reporting a failure, so the side that worked is kept and the
+    # caller only repeats the other one ("From Atlantis to San Francisco": SF is saved).
     places: dict[str, Place | None] = {"origin": None, "destination": None}
+    failure: tuple[str, str, str | None, CityToZipError] | None = None
     for side, city, st in (
         ("origin", origin_city, origin_state),
         ("destination", destination_city, destination_state),
@@ -178,16 +200,19 @@ async def save_origin_destination(
         except CityToZipError as exc:
             if exc.code in ("GEOCODE_FAILED", "MISSING_API_KEY"):
                 return _err(state, "GEOCODING_UNAVAILABLE", ESCALATE)
-            hint = _GEO_HINTS.get(exc.code, "Ask them to repeat the {side} city and state.")
-            # Keep the side that worked.
-            state.set_route(places["origin"], places["destination"])
-            return _err(
-                state,
-                exc.code,
-                hint.format(city=city, state=st or "that state", side=side),
-                failed=side,
-                heard={"city": city, "state": st},
-            )
+            failure = failure or (side, city, st, exc)
+    if failure:
+        side, city, st, exc = failure
+        hint = _GEO_HINTS.get(exc.code, "Ask them to repeat the {side} city and state.")
+        state.set_route(places["origin"], places["destination"])
+        return _failed(
+            state,
+            "route",
+            exc.code,
+            hint.format(city=city, state=st or "that state", side=side),
+            failed=side,
+            heard={"city": city, "state": st},
+        )
 
     origin = places["origin"] or state.origin
     destination = places["destination"] or state.destination
@@ -198,6 +223,7 @@ async def save_origin_destination(
             "The origin and destination are the same place. Ask them to confirm both cities.",
         )
     state.set_route(places["origin"], places["destination"])
+    state.failures["route"] = 0
     saved = {side: p.spoken for side, p in places.items() if p}
     extra = {"ignored_not_said": ignored} if ignored else {}
     return _ok(state, _next_question(state), saved=saved, **extra)
@@ -242,6 +268,109 @@ def _vehicle_hint(exc: VehicleError) -> str:
     return "Ask them to repeat the year, make and model."
 
 
+def _grounded(
+    said: str | None, year: int | None, make: str | None, model: str | None, kind: str | None
+) -> tuple[int | None, str | None, str | None, str | None, list[str]]:
+    """Drop any vehicle detail the caller never said (grounding guardrail); None skips it."""
+    ignored: list[str] = []
+    if said is None:
+        return year, make, model, kind, ignored
+    if year is not None and not grounding.year_said(year, said):
+        ignored.append(f"year {year}")
+        year = None
+    if make and not grounding.make_said(make, said):
+        ignored.append(f"make {make}")
+        make = None
+    if model and not grounding.model_said(model, said):
+        ignored.append(f"model {model}")
+        model = None
+    if kind and not grounding.vehicle_type_said(kind, said):
+        ignored.append(f"type {kind}")
+        kind = None
+    return year, make, model, kind, ignored
+
+
+# Vehicle errors that mean "we couldn't find what they said" (not "they haven't said it yet").
+_NOT_FOUND = {
+    VehicleErrorCode.MAKE_NOT_FOUND,
+    VehicleErrorCode.MODEL_NOT_FOUND,
+    VehicleErrorCode.YEAR_NOT_AVAILABLE,
+    VehicleErrorCode.NO_TRIMS,
+}
+
+
+async def _resolve_vehicle(
+    state: QuoteSession,
+    services: Services,
+    *,
+    year: int | None,
+    make: str | None,
+    model: str | None,
+    vehicle_type: str | None,
+    operational: bool,
+) -> tuple[dict[str, Any] | None, Result | None]:
+    """Year/make/model -> the fields of a ``VehicleEntry`` (plus ``_estimate`` and
+    ``_heard_as``), or the error result that tells Mia what to ask."""
+    try:
+        v = await services.resolver.resolve(year=year, make=make, model=model)
+    except VehicleError as exc:
+        kind = normalize_vehicle_type(vehicle_type)
+        missing_codes = (
+            VehicleErrorCode.MISSING_MAKE_AND_MODEL,
+            VehicleErrorCode.MISSING_MODEL,
+            VehicleErrorCode.MISSING_YEAR,
+        )
+        if kind and exc.code in missing_codes:
+            fields = {
+                "year": normalize_year(year),
+                "make": exc.known.get("make"),
+                "model": exc.known.get("model"),
+                "vehicle_type": kind,
+                "operational": operational,
+                "_estimate": kind,
+            }
+            return fields, None
+        if vehicle_type and not kind:
+            return None, _err(
+                state,
+                "UNKNOWN_VEHICLE_TYPE",
+                "Ask whether it's a sedan, SUV, pickup, van, minivan, coupe, convertible, "
+                "hatchback or wagon.",
+            )
+        if exc.code in _NOT_FOUND:
+            return None, _failed(
+                state, "vehicle", str(exc.code), _vehicle_hint(exc), **exc.to_dict()
+            )
+        return None, _err(state, str(exc.code), _vehicle_hint(exc), **exc.to_dict())
+    except CarHaulerError as exc:
+        return None, _err(state, str(exc.code), ESCALATE)
+    state.failures["vehicle"] = 0
+    fields = {
+        "year": v.year,
+        "make": v.make,
+        "model": v.model,
+        "trim_id": v.trim_id,
+        "trim_name": v.trim_name,
+        "operational": operational,
+        "_heard_as": v.corrections or None,
+    }
+    return fields, None
+
+
+def _entry_fields(fields: dict[str, Any]) -> dict[str, Any]:
+    return {k: v for k, v in fields.items() if not k.startswith("_")}
+
+
+def _estimate_note(fields: dict[str, Any]) -> str:
+    kind = fields.get("_estimate")
+    if not kind:
+        return ""
+    return (
+        f"Tell them you'll quote it as a typical {'SUV' if kind == 'suv' else kind}, so the "
+        "price is an estimate. "
+    )
+
+
 async def save_vehicle(
     state: QuoteSession,
     services: Services,
@@ -263,74 +392,144 @@ async def save_vehicle(
         year = grounding.corrected_year(year, last_said)
     # Models send null for "not mentioned": only an explicit False means it doesn't run.
     operational = drivable is not False
-    if said is not None:  # grounding guardrail: drop any detail the caller never said
-        ignored = []
-        if year is not None and not grounding.year_said(year, said):
-            ignored.append(f"year {year}")
-            year = None
-        if make and not grounding.make_said(make, said):
-            ignored.append(f"make {make}")
-            make = None
-        if model and not grounding.model_said(model, said):
-            ignored.append(f"model {model}")
-            model = None
-        if vehicle_type and not grounding.vehicle_type_said(vehicle_type, said):
-            ignored.append(f"type {vehicle_type}")
-            vehicle_type = None
-        if ignored and not (year or make or model or vehicle_type):
-            return _err(state, "NOT_SAID_BY_CALLER", NOT_SAID, ignored=ignored)
+    year, make, model, vehicle_type, ignored = _grounded(said, year, make, model, vehicle_type)
+    if ignored and not (year or make or model or vehicle_type):
+        return _err(state, "NOT_SAID_BY_CALLER", NOT_SAID, ignored=ignored)
     # The count only if the caller said it ("two cars"): with "it's a twenty ten, twenty twenty
     # 4Runner" gpt-oss passed total_vehicles=2 and Mia asked for a second car (stage 8 test).
     if total_vehicles and total_vehicles > 0:
         if said is None or grounding.vehicle_count_said(said) == total_vehicles:
             state.expected_vehicles = total_vehicles
-    try:
-        v = await services.resolver.resolve(year=year, make=make, model=model)
-    except VehicleError as exc:
-        kind = normalize_vehicle_type(vehicle_type)
-        missing_codes = (
-            VehicleErrorCode.MISSING_MAKE_AND_MODEL,
-            VehicleErrorCode.MISSING_MODEL,
-            VehicleErrorCode.MISSING_YEAR,
-        )
-        if kind and exc.code in missing_codes:
-            entry = state.add_vehicle(
-                year=normalize_year(year),
-                make=exc.known.get("make"),
-                model=exc.known.get("model"),
-                vehicle_type=kind,
-                operational=operational,
-            )
-            return _ok(
-                state,
-                "Tell them you'll quote it as a typical "
-                f"{'SUV' if kind == 'suv' else kind}, so the price is an estimate. "
-                + _next_question(state),
-                saved={"quote_id": entry.quote_id, "vehicle": entry.label, "estimate": True},
-            )
-        if vehicle_type and not kind:
-            return _err(
-                state,
-                "UNKNOWN_VEHICLE_TYPE",
-                "Ask whether it's a sedan, SUV, pickup, van, minivan, coupe, convertible, "
-                "hatchback or wagon.",
-            )
-        return _err(state, str(exc.code), _vehicle_hint(exc), **exc.to_dict())
-    except CarHaulerError as exc:
-        return _err(state, str(exc.code), ESCALATE)
-
-    entry = state.add_vehicle(
-        year=v.year,
-        make=v.make,
-        model=v.model,
-        trim_id=v.trim_id,
-        trim_name=v.trim_name,
+    fields, error = await _resolve_vehicle(
+        state,
+        services,
+        year=year,
+        make=make,
+        model=model,
+        vehicle_type=vehicle_type,
         operational=operational,
     )
+    if error:
+        return error
+    assert fields is not None
+    entry = state.add_vehicle(**_entry_fields(fields))
     saved: dict[str, Any] = {"quote_id": entry.quote_id, "vehicle": entry.label}
-    if v.corrections:
-        saved["heard_as"] = v.corrections
-    return _ok(state, _next_question(state), saved=saved)
+    if fields.get("_estimate"):
+        saved["estimate"] = True
+    if fields.get("_heard_as"):
+        saved["heard_as"] = fields["_heard_as"]
+    return _ok(state, _estimate_note(fields) + _next_question(state), saved=saved)
+
+
+# --- changes (stage 8) -------------------------------------------------------------------
+# Changing, removing or restoring a vehicle (a route change is save_origin_destination again).
+# Each change sends the old version to the trash (state.py) and drops the last quote, so Mia
+# reads everything back and quotes again once the caller confirms.
+
+ASK_WHICH = (
+    "They have more than one vehicle: ask which one they mean, using each vehicle's name, "
+    "then call this again with its quote_id."
+)
+
+
+def _pick_vehicle(state: QuoteSession, quote_id: str | None) -> Result | Any:
+    if quote_id:
+        found = state.find_vehicle(quote_id)
+        if found:
+            return found
+    if not quote_id and len(state.vehicles) == 1:
+        return state.vehicles[0]
+    if not state.vehicles:
+        return _err(
+            state, "NO_VEHICLES", "There's no vehicle on file yet. " + _next_question(state)
+        )
+    return _err(state, "WHICH_VEHICLE", ASK_WHICH)
+
+
+async def update_vehicle(
+    state: QuoteSession,
+    services: Services,
+    *,
+    quote_id: str | None = None,
+    year: int | None = None,
+    make: str | None = None,
+    model: str | None = None,
+    vehicle_type: str | None = None,
+    drivable: bool | None = None,
+    said: str | None = None,
+    last_said: str | None = None,
+) -> Result:
+    """The caller changed a vehicle ("actually it's a 2021", "it's a Toyota 4Runner, not the
+    Civic"). Only what they changed is passed; the rest stays. A new make drops the old model
+    (a Toyota isn't a Civic)."""
+    target = _pick_vehicle(state, quote_id)
+    if isinstance(target, dict):
+        return target
+    if last_said:
+        year = grounding.corrected_year(year, last_said)
+    year, make, model, vehicle_type, ignored = _grounded(said, year, make, model, vehicle_type)
+    if not (year or make or model or vehicle_type) and drivable is None:
+        return _err(
+            state,
+            "NOT_SAID_BY_CALLER" if ignored else "NOTHING_TO_CHANGE",
+            NOT_SAID if ignored else "Ask what they'd like to change about the vehicle.",
+            ignored=ignored,
+        )
+    new_make = make or target.make
+    same_make = (new_make or "").lower() == (target.make or "").lower()
+    new_model = model or (target.model if same_make else None)
+    fields, error = await _resolve_vehicle(
+        state,
+        services,
+        year=year or target.year,
+        make=new_make,
+        model=new_model,
+        vehicle_type=vehicle_type or (target.vehicle_type if not model else None),
+        operational=target.operational if drivable is None else drivable is not False,
+    )
+    if error:
+        return error
+    assert fields is not None
+    before = target.label
+    entry = state.replace_vehicle(target.quote_id, **_entry_fields(fields))
+    return _ok(
+        state,
+        f"Tell them you've changed the {before} to the {entry.label}. "
+        + _estimate_note(fields)
+        + _next_question(state),
+        updated={"from": before, "to": entry.label, "quote_id": entry.quote_id},
+    )
+
+
+async def remove_vehicle(
+    state: QuoteSession, services: Services, *, quote_id: str | None = None
+) -> Result:
+    """The caller isn't shipping one of their vehicles after all."""
+    if len(state.vehicles) == 1 and (not quote_id or state.find_vehicle(quote_id)):
+        return _err(
+            state,
+            "ONLY_VEHICLE",
+            "That's their only vehicle, so it can't be removed: ask which vehicle they want to "
+            "ship instead (then use update_vehicle), or if they'd rather not ship anything.",
+        )
+    target = _pick_vehicle(state, quote_id)
+    if isinstance(target, dict):
+        return target
+    state.remove_vehicle(target.quote_id)
+    return _ok(
+        state,
+        f"Tell them you've removed the {target.label}. " + _next_question(state),
+        removed={"vehicle": target.label, "quote_id": target.quote_id},
+    )
+
+
+async def undo_last_change(state: QuoteSession, services: Services) -> Result:
+    """The caller changed their mind back ("actually, keep the Honda")."""
+    item = state.undo_last_change()
+    if item is None:
+        return _err(state, "NOTHING_TO_UNDO", "Nothing has changed yet. Ask what they'd like.")
+    what = "the route" if item.kind == "route" else "the vehicle"
+    return _ok(state, f"Tell them you've put back {what}. " + _next_question(state))
 
 
 # --- quote -------------------------------------------------------------------------------
@@ -480,3 +679,28 @@ async def end_call(state: QuoteSession, services: Services) -> Result:
     state.ended = True
     state.end_reason = state.end_reason or "mia"
     return _ok(state, "Say a short, friendly goodbye.")
+
+
+# --- off-topic (stage 8) -----------------------------------------------------------------
+
+
+async def note_off_topic(state: QuoteSession, services: Services) -> Result:
+    """The caller asked something unrelated to car shipping (a joke, trivia, nonsense). Mia
+    answers in a few words and steers back; the third time she ends the call politely, never
+    with a transfer (docs/CONVERSATION_DESIGN.md, adversarial path)."""
+    state.off_topic += 1
+    if state.off_topic >= OFF_TOPIC_LIMIT:
+        state.ended, state.end_reason = True, "off_topic"
+        state.hang_up_after_speech = True  # voice: hang up once this line has played
+        return _ok(
+            state,
+            "Say politely that you can only help with car shipping quotes, thank them for "
+            "calling F&F and say goodbye. Don't transfer them.",
+            off_topic=state.off_topic,
+        )
+    return _ok(
+        state,
+        "Answer in a few words at most, without making anything up, then steer back to the "
+        "quote: " + _next_question(state),
+        off_topic=state.off_topic,
+    )

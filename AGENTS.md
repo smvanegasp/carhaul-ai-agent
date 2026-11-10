@@ -30,18 +30,26 @@ files rather than reinventing.
 - **Teammate** (non-technical): manual tester. From stage 4 she calls the deployed agent, acts
   out persona cards from `docs/TESTING_GUIDE.md` and leaves feedback per call.
 
-## Status (2026-11-09)
+## Status (2026-11-10)
 
-Stages 0-5 merged and **live on AWS** at https://dj7jlcxkdszj1.cloudfront.net (profile
-`carhaul`, account 816940506502), plus the UI refresh (#12) and the voice picker (#13), both
-deployed. The worker is **on demand** (`/api/wake` starts it, ~1 min; it exits after 10 idle
-minutes), so hosting is about $1/month. Sergio's real browser calls work.
+Live on AWS at https://dj7jlcxkdszj1.cloudfront.net (profile `carhaul`, account 816940506502).
+Deployed: stages 0-6 and 9 (call page, live panel, Past calls, Stats with dispositions, voice
+picker, transfer to Sergio's phone through Twilio) through PR #21. **PR #22 (all of stage 8)
+is open**: changes after the quote + trash, error matrix, FAQs, off-topic guardrail (plus
+self-corrections and silence, already merged in #21). The worker is on demand (`/api/wake`
+starts it, ~1 min; it exits after 10 idle minutes), so hosting is about $1/month.
 
-Next: Sergio's feedback from calls, then stage 8 (non-happy paths; BACKLOG "Ideas / later" has
-the self-correction and silence cases seen in his calls) or stage 6 (dashboard). Deploys are
-manual (`scripts/deploy.sh` in Git Bash, Sergio types `yes`); the GitHub deploy workflow is off
-until the `DEPLOY_ENABLED` variable is set. No custom domain yet (later
-`carhaul.sergiovanegas.com`).
+Next after #22 is merged and deployed: stage 7 (AI-vs-AI simulations: 8 personas x fragments,
+report by persona and path, nightly workflow), which should also track the two flaky
+scenarios; then a custom domain (`carhaul.sergiovanegas.com`) and, if wanted, a phone number
+to call Mia (inbound; LiveKit's free number). Deploys are manual (`scripts/deploy.sh` in Git
+Bash, Sergio types `yes`); the GitHub deploy workflow is off until `DEPLOY_ENABLED` is set.
+
+The project is by Sergio Vanegas (https://www.linkedin.com/in/sergio-vanegas/) and Belinda Hu
+(https://www.linkedin.com/in/belinda-hu/): academic, non-commercial, prices from the
+CarHauler247 public API. Transfers ring Sergio's phone (`TRANSFER_PHONE_NUMBER`), showing a
+verified caller ID that is not his own number (`TRANSFER_CALLER_ID`; his own went to
+voicemail). Both live only in `.env` and SSM, never in the repo.
 
 ## 2. How we work
 
@@ -81,7 +89,7 @@ Fargate, not Lambda. Everything else follows the fit pattern.
 | `agent.py` | `Mia` (LiveKit `Agent`): tools, the output guardrail in `llm_node`, `GroqLLM` (strict schemas off), `new_session()` |
 | `prompt.py` | Instructions and greetings (from `docs/CONVERSATION_DESIGN.md`) |
 | `state.py` | `QuoteSession`: what's on file, quote IDs, trash, stage reached, dropped calls |
-| `tools.py` | Tool logic, LiveKit-free: every result has `on_file` and `next` (what Mia does now) |
+| `tools.py` | Tool logic, LiveKit-free: every result has `on_file` and `next` (what Mia does now). Changes: `update_vehicle`, `remove_vehicle`, `undo_last_change`; `note_off_topic`; repeated failures escalate (`STILL_NOT_FOUND`) |
 | `grounding.py` | Was this detail actually said by the caller? Vehicle count, yes detection |
 | `guardrails.py` | Drops invented/unconfirmed tool calls before they run; fallback lines; `tidy_speech` |
 | `geo.py`, `carhauler.py`, `vehicles.py`, `pricing.py` | City → ZIP, CarHauler API, year/make/model → trim, quotes and the spoken summary |
@@ -96,7 +104,7 @@ Fargate, not Lambda. Everything else follows the fit pattern.
 | `speech.py` | Numbers written out as words before any voice reads them (`Mia.tts_node`) |
 | `catalog.py` | CarHauler catalog snapshot on disk (a week), so worker restarts don't spend API calls |
 | `latency.py` | Per-turn latency from `ChatMessage.metrics` (end of turn, LLM TTFT, TTS TTFB, e2e) |
-| `smoke.py` | `uv run python -m mia.smoke [--api http://localhost:5190]`: a scripted caller phones the running worker through LiveKit |
+| `smoke.py` | `uv run python -m mia.smoke [--api http://localhost:5190] [--lines ...] [--wait 45]`: a scripted caller phones the running worker through LiveKit (`--wait`: stay silent, to test silence handling) |
 
 ### Repo map
 
@@ -203,6 +211,18 @@ docker compose up        # api :8020, web :5190, DynamoDB Local :8030, agent wor
   remembered in the browser. Wake-up shows a **progress bar**: `/api/wake` reports a `step`
   from the ECS task (`server` while PROVISIONING/PENDING, `loading` once it runs) and the bar
   moves with time inside that step, never 100% before ready.
+- 2026-11-10 (stage 8, part 3): **Errors, FAQs, off-topic.** Repeated "not found" on the same
+  detail escalates on the 3rd try; service failures escalate at once; both cities are looked
+  up before reporting a failure. `keep_going` (code) adds the next question when Mia answers
+  without one while details are missing (gpt-oss stopped after FAQ answers). `note_off_topic`
+  ends the call on the 3rd unrelated question, guarded so a shipping turn never counts. The
+  scenario runner can simulate CarHauler outages per turn. Known flakiness (~1 in 5):
+  `faq_mid_call` payment wording, `off_topic_three_strikes` 3rd call not made; both harmless.
+- 2026-11-10 (stage 8, part 2): **Changes and the trash.** `update_vehicle`,
+  `remove_vehicle`, `undo_last_change` (route changes reuse `save_origin_destination`); each
+  change goes to the trash with a new quote ID and drops the quote. Remove and undo only run
+  on the caller's own cue (guardrails), since they change what's priced. 4 new scenarios, 5/5
+  each; live voice re-quote after a vehicle change worked with the real APIs.
 - 2026-11-10 (stage 8, first part): **Self-corrections and silence**, both from Sergio's calls.
   The year a caller corrects to wins, in code (`grounding.corrected_year` in `save_vehicle`):
   the scenario with his exact phrasing failed 5/5 without it (the model kept 2010), passes

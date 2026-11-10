@@ -1,0 +1,35 @@
+# Stage 8: after the price the caller changes the destination.
+id: change_route_after_quote
+persona: NG_C_NV
+path: NHP
+ground_truth:
+  origin: Boston, Massachusetts
+  destination: New York, New York
+  vehicles: [2025 Honda Civic]
+turns:
+  - user: "Yeah, sure"
+    expect:
+      judge: Asks where the vehicle ships from, to, or both.
+  - user: "From Boston, Massachusetts to San Francisco, California"
+    expect:
+      on_file: {origin: "Boston, Massachusetts", destination: "San Francisco, California"}
+      judge: Asks for the year, make and model of the vehicle.
+  - user: "It's a 2025 Honda Civic"
+    expect:
+      on_file: {vehicles: [2025 Honda Civic]}
+      no_tools: [get_quote]
+      judge: Reads back the 2025 Honda Civic and the route, and asks the caller to confirm.
+  - user: "Yep"
+    expect:
+      tools: [get_quote]
+      says: ["$1,291"]
+  - user: "Actually, can you check if I send it to New York, New York instead?"
+    expect:
+      tools: [save_origin_destination]
+      no_tools: [get_quote]
+      on_file: {origin: "Boston, Massachusetts", destination: "New York, New York"}
+      judge: Reads back the Civic shipping from Boston to New York and asks to confirm.
+  - user: "Yes"
+    expect:
+      tools: [get_quote]
+      says: ["$1,291"]  # the fake API prices by vehicle only, so the price is the same

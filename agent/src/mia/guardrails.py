@@ -64,6 +64,31 @@ def check_call(
         # step to save what the caller just said (it sometimes skips save_vehicle).
         if not state.missing and not grounding.is_confirmation(last_said):
             return "caller has not confirmed"
+    elif name == "update_vehicle":
+        checks = [
+            (args.get("year"), grounding.year_said),
+            (args.get("make"), grounding.make_said),
+            (args.get("model"), grounding.model_said),
+            (args.get("vehicle_type"), grounding.vehicle_type_said),
+        ]
+        changed = any(value and said_fn(value, said) for value, said_fn in checks)
+        if not changed and args.get("drivable") is None:
+            return "no vehicle detail the caller said"
+    elif name == "remove_vehicle":
+        if not grounding.wants_removal(last_said):
+            return "caller did not ask to remove a vehicle"
+    elif name == "undo_last_change":
+        if not grounding.wants_undo(last_said):
+            return "caller did not ask to undo a change"
+    elif name == "note_off_topic":
+        # The third one ends the call: never on a turn about shipping, a city, a vehicle or a yes.
+        if (
+            not last_said.strip()
+            or grounding.is_on_topic(last_said)
+            or grounding.is_confirmation(last_said)
+            or grounding.vehicle_count_said(last_said)
+        ):
+            return "caller's message is about the quote"
     elif name == "request_human":
         # It rings a real phone (stage 9): only on the caller's own request, or a yes to Mia's
         # offer, never on a call the model made up.
@@ -155,3 +180,22 @@ def is_goodbye(speech: str) -> bool:
     """True if Mia is closing the call (a goodbye in her last sentence)."""
     sentences = [s for s in _SENTENCE_END.split(speech.strip()) if s.strip()]
     return bool(sentences) and bool(_GOODBYE.search(sentences[-1]))
+
+
+def keep_going(spoken: str, state: QuoteSession) -> str:
+    """After answering a question, Mia goes back to what's missing (CONVERSATION_DESIGN.md,
+    per-turn logic). gpt-oss often stops after the answer ("We only quote open car shipping.")
+    and the caller is left waiting (stage 8 FAQ scenario, 2026-11-10): a line with no question
+    while details are missing gets the next question. Never on a goodbye, during a transfer, or
+    once the call is ending."""
+    if (
+        not spoken
+        or "?" in spoken
+        or not state.missing
+        or state.ended
+        or state.hang_up_after_speech
+        or state.transfer in ("pending", "connected")
+        or is_goodbye(spoken)
+    ):
+        return spoken
+    return f"{spoken} {fallback_line(state)}"

@@ -1,0 +1,21 @@
+# Stage 8 error path: a city that doesn't exist. Mia says she couldn't find it and asks again;
+# the side that worked is kept.
+id: city_not_found
+persona: NG_C_NV
+path: NHP
+ground_truth:
+  origin: Boston, Massachusetts
+  destination: San Francisco, California
+  vehicles: []
+turns:
+  - user: "Yeah, sure"
+    expect:
+      judge: Asks where the vehicle ships from, to, or both.
+  - user: "From Atlantis to San Francisco, California"
+    expect:
+      on_file: {origin: null, destination: "San Francisco, California"}
+      judge: Says it couldn't find Atlantis and asks the caller to repeat or check the pickup city.
+  - user: "Sorry, I meant Boston, Massachusetts"
+    expect:
+      on_file: {origin: "Boston, Massachusetts", destination: "San Francisco, California"}
+      judge: Asks for the year, make and model of the vehicle.

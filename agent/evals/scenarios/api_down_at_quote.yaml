@@ -1,0 +1,31 @@
+# Stage 8 error path: CarHauler fails (402: allowance used up) right when the quote is asked
+# for. Mia must apologize, never invent a price, and offer a licensed representative; a yes is
+# a forced transfer.
+id: api_down_at_quote
+persona: NG_C_NV
+path: NHP
+ground_truth:
+  origin: Boston, Massachusetts
+  destination: San Francisco, California
+  vehicles: [2025 Honda Civic]
+turns:
+  - user: "Yeah, sure"
+    expect:
+      judge: Asks where the vehicle ships from, to, or both.
+  - user: "From Boston, Massachusetts to San Francisco, California"
+    expect:
+      on_file: {origin: "Boston, Massachusetts", destination: "San Francisco, California"}
+  - user: "It's a 2025 Honda Civic"
+    expect:
+      on_file: {vehicles: [2025 Honda Civic]}
+  - user: "Yep"
+    fail_carhauler: [402, 402, 402, 402, 402, 402]
+    expect:
+      # get_quote runs and fails (only successful calls are listed), so check the outcome.
+      on_file: {vehicles: [2025 Honda Civic]}
+      judge: >-
+        Apologizes that the system is having trouble, gives no price, and offers to connect
+        the caller with a licensed representative.
+  - user: "Yes please"
+    expect:
+      tools: [request_human]

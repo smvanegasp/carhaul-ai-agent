@@ -11,6 +11,10 @@ Each turn can check:
   no_tools  tools that must not be called this turn
   says      exact strings Mia must say (prices come from code, so they must match)
   judge     an LLM judge checks Mia's last message against this intent
+  ended     true if the call must be over after this turn (Mia said goodbye)
+
+A turn can also set ``fail_carhauler: [402, ...]``: the fake CarHauler API answers those
+status codes first (an outage at that point of the call; stage 8 error paths).
 
 Tool calls the guardrail dropped (invented details, unconfirmed quote) are allowed but printed:
 they show where the model tried to invent details.
@@ -22,6 +26,7 @@ import os
 import time
 from pathlib import Path
 
+import httpx
 import pytest
 import yaml
 from dotenv import load_dotenv
@@ -54,7 +59,7 @@ def _check_on_file(expected: dict, state: QuoteSession, where: str) -> None:
 
 
 @pytest.mark.parametrize("path", SCENARIOS, ids=lambda p: p.stem)
-async def test_scenario(path, client, resolver):
+async def test_scenario(path, client, resolver, fake_api):
     scenario = yaml.safe_load(path.read_text(encoding="utf-8"))
     services = Services(carhauler=client, resolver=resolver, geocode=fake_city_to_zip)
     state = QuoteSession()
@@ -68,6 +73,8 @@ async def test_scenario(path, client, resolver):
         for n, turn in enumerate(scenario["turns"], 1):
             where = f"{scenario['id']} turn {n}"
             print(f"You: {turn['user']}")
+            for code in turn.get("fail_carhauler", []):
+                fake_api.fail_next(httpx.Response(code, json={"error": f"simulated {code}"}))
             dropped_before = len(state.dropped_calls)
             started = time.perf_counter()
             result = await session.run(user_input=turn["user"])
@@ -97,6 +104,8 @@ async def test_scenario(path, client, resolver):
                 _check_on_file(expect["on_file"], state, where)
             for name in expect.get("tools", []):
                 assert name in called, f"{where}: expected a {name} call, got {called}"
+            if "ended" in expect:
+                assert state.ended == expect["ended"], f"{where}: ended is {state.ended}"
             for name in expect.get("no_tools", []):
                 assert name not in called, f"{where}: {name} must not be called yet"
             for phrase in expect.get("says", []):

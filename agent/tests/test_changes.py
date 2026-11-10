@@ -1,0 +1,164 @@
+"""Stage 8: changing, removing and restoring vehicles (state.py, tools.py), and their
+guardrails."""
+
+from __future__ import annotations
+
+import pytest
+from fake_geo import fake_city_to_zip
+
+from mia import grounding, tools
+from mia.guardrails import check_call
+from mia.state import QuoteSession
+from mia.tools import Services
+
+CIVIC = "It's a 2025 Honda Civic"
+RUNNER = "and a 2020 Toyota 4Runner"
+
+
+@pytest.fixture
+def state():
+    return QuoteSession()
+
+
+@pytest.fixture
+def services(client, resolver):
+    return Services(carhauler=client, resolver=resolver, geocode=fake_city_to_zip)
+
+
+async def _quoted(state, services, *cars: str):
+    said = "Boston, Massachusetts to San Francisco, California. " + " ".join(cars)
+    await tools.save_origin_destination(
+        state,
+        services,
+        origin_city="Boston",
+        origin_state="MA",
+        destination_city="San Francisco",
+        destination_state="CA",
+        said=said,
+    )
+    if CIVIC in cars:
+        await tools.save_vehicle(state, services, year=2025, make="Honda", model="Civic", said=said)
+    if RUNNER in cars:
+        await tools.save_vehicle(
+            state, services, year=2020, make="Toyota", model="4Runner", said=said
+        )
+    r = await tools.get_quote(state, services)
+    assert r["ok"]
+    return said
+
+
+async def test_changing_the_vehicle_after_the_quote(state, services):
+    said = await _quoted(state, services, CIVIC)
+    old_id = state.vehicles[0].quote_id
+    said += " Actually it's a 2020 Toyota 4Runner, not the Civic"
+    r = await tools.update_vehicle(
+        state, services, year=2020, make="Toyota", model="4Runner", said=said
+    )
+    assert r["ok"] and r["updated"]["to"] == "2020 Toyota 4Runner"
+    assert state.vehicles[0].quote_id != old_id  # a new quote ID
+    assert state.quote is None  # the old price is gone: read back and quote again
+    assert any(t.kind == "vehicle" and t.reason == "vehicle updated" for t in state.trash)
+    assert any(t.kind == "quote" for t in state.trash)
+    assert "Read it back" in r["next"]
+
+
+async def test_changing_only_the_year_keeps_make_and_model(state, services):
+    said = await _quoted(state, services, CIVIC) + " sorry, it's a 2024"
+    r = await tools.update_vehicle(state, services, year=2024, said=said)
+    assert r["ok"] and state.vehicles[0].label == "2024 Honda Civic"
+
+
+async def test_a_new_make_drops_the_old_model(state, services):
+    said = await _quoted(state, services, CIVIC) + " it's actually a Toyota"
+    r = await tools.update_vehicle(state, services, make="Toyota", said=said)
+    assert not r["ok"]  # Toyota "Civic" doesn't exist: Mia asks for the model
+    assert state.vehicles[0].label == "2025 Honda Civic"  # nothing changed
+
+
+async def test_with_several_vehicles_mia_asks_which(state, services):
+    said = await _quoted(state, services, CIVIC, RUNNER) + " make it a 2021"
+    r = await tools.update_vehicle(state, services, year=2021, said=said)
+    assert r["error_code"] == "WHICH_VEHICLE"
+    runner = state.vehicles[1].quote_id
+    r = await tools.update_vehicle(state, services, quote_id=runner, year=2021, said=said)
+    assert r["ok"] and state.vehicles[1].label == "2021 Toyota 4Runner"
+    assert state.vehicles[0].label == "2025 Honda Civic"
+
+
+async def test_removing_a_vehicle(state, services):
+    await _quoted(state, services, CIVIC, RUNNER)
+    state.expected_vehicles = 2
+    r = await tools.remove_vehicle(state, services, quote_id=state.vehicles[1].quote_id)
+    assert r["ok"] and [v.label for v in state.vehicles] == ["2025 Honda Civic"]
+    assert state.expected_vehicles == 1 and state.quote is None
+
+
+async def test_the_only_vehicle_cant_be_removed(state, services):
+    await _quoted(state, services, CIVIC)
+    r = await tools.remove_vehicle(state, services)
+    assert r["error_code"] == "ONLY_VEHICLE" and len(state.vehicles) == 1
+
+
+async def test_undo_puts_the_vehicle_back_and_can_be_undone(state, services):
+    said = await _quoted(state, services, CIVIC) + " Actually it's a 2020 Toyota 4Runner"
+    original = state.vehicles[0].quote_id
+    await tools.update_vehicle(
+        state, services, year=2020, make="Toyota", model="4Runner", said=said
+    )
+    r = await tools.undo_last_change(state, services)
+    assert r["ok"] and state.vehicles[0].label == "2025 Honda Civic"
+    assert state.vehicles[0].quote_id == original  # restored, with its own quote ID
+    await tools.undo_last_change(state, services)  # changed their mind again
+    assert state.vehicles[0].label == "2020 Toyota 4Runner"
+
+
+async def test_undo_a_removal(state, services):
+    await _quoted(state, services, CIVIC, RUNNER)
+    await tools.remove_vehicle(state, services, quote_id=state.vehicles[0].quote_id)
+    await tools.undo_last_change(state, services)
+    assert [v.label for v in state.vehicles] == ["2025 Honda Civic", "2020 Toyota 4Runner"]
+
+
+async def test_undo_a_route_change(state, services):
+    said = await _quoted(state, services, CIVIC) + " actually it's going to New York"
+    await tools.save_origin_destination(
+        state, services, destination_city="New York", destination_state="NY", said=said
+    )
+    assert state.destination.city == "New York"
+    await tools.undo_last_change(state, services)
+    assert state.destination.city == "San Francisco"
+
+
+async def test_nothing_to_undo(state, services):
+    r = await tools.undo_last_change(state, services)
+    assert r["error_code"] == "NOTHING_TO_UNDO"
+
+
+@pytest.mark.parametrize(
+    ("name", "last", "allowed"),
+    [
+        ("remove_vehicle", "Remove the Toyota, please", True),
+        ("remove_vehicle", "Actually just the Honda", True),
+        ("remove_vehicle", "I don't need the second car", True),
+        ("remove_vehicle", "Yes, that's correct", False),  # invented: would change the quote
+        ("undo_last_change", "Actually, keep the Civic", True),
+        ("undo_last_change", "Never mind, go back to the original", True),
+        ("undo_last_change", "Sure", False),
+    ],
+)
+def test_remove_and_undo_need_the_callers_words(name, last, allowed):
+    reason = check_call(name, "{}", QuoteSession(), last, last)
+    assert (reason is None) == allowed
+
+
+def test_update_needs_a_detail_the_caller_said():
+    said = "It's a 2025 Honda Civic. Actually make it a 2024"
+    assert check_call("update_vehicle", '{"year": 2024}', QuoteSession(), said, said) is None
+    assert check_call("update_vehicle", '{"year": 2019}', QuoteSession(), said, said) == (
+        "no vehicle detail the caller said"
+    )
+
+
+def test_cues():
+    assert grounding.wants_removal("forget the Toyota") and not grounding.wants_removal("yes")
+    assert grounding.wants_undo("change it back") and not grounding.wants_undo("correct")
