@@ -59,10 +59,41 @@ def build(room: str, state: QuoteSession, events: CallEvents, **extra: Any) -> d
     return record
 
 
+# The Stats view's per-call facts; must match backend/app/stats.py (facts_from_record), which
+# fills them in for rows saved before they existed. tests/test_records.py checks both agree.
+STATS_V = 1
+
+
+def stats_facts(record: dict[str, Any]) -> dict[str, Any]:
+    """Milestones reached and the time Mia handled the call (until the handoff if transferred)."""
+    events = record.get("events") or []
+    tools_ok = {e.get("name") for e in events if e.get("type") == "tool" and e.get("ok")}
+    transferred = record.get("transfer") == "connected"
+    mia_s = float(record.get("duration_s") or 0)
+    if transferred:
+        handoff = [
+            e["t"]
+            for e in events
+            if (e.get("type") == "tool" and e.get("name") == "dial_representative")
+            or (e.get("type") == "turn" and e.get("kind") == "handoff")
+        ]
+        if handoff:
+            mia_s = float(max(handoff))
+    return {
+        "route": bool(record.get("origin") and record.get("destination")),
+        "vehicles": bool(record.get("vehicles")) or "save_vehicle" in tools_ok,
+        "quoted": record.get("quote") is not None or "get_quote" in tools_ok,
+        "transfer": transferred,
+        "mia_s": round(mia_s, 1),
+        "stats_v": STATS_V,
+    }
+
+
 def summary(record: dict[str, Any]) -> dict[str, Any]:
-    """The few fields the call list needs."""
+    """The few fields the call list and the Stats view need."""
     quote = record.get("quote") or {}
     return {
+        **stats_facts(record),
         "room": record["room"],
         "started_at": record["started_at"],
         "duration_s": record["duration_s"],

@@ -14,7 +14,12 @@ describe("routes", () => {
   });
 
   it("round-trips", () => {
-    for (const hash of ["#/", "#/calls", "#/calls/call-0123456789ab"]) {
+    for (const hash of [
+      "#/",
+      "#/calls",
+      "#/calls/call-0123456789ab",
+      "#/stats",
+    ]) {
       expect(routeHash(parseRoute(hash))).toBe(hash);
     }
   });

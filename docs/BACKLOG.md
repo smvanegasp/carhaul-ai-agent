@@ -10,7 +10,7 @@ One branch and one PR per stage. ✅ done · 🔜 next · ⏳ later.
 | 3 | Web calling locally: `/api/token`, call page, Deepgram + ElevenLabs, turn detector, interruptions. Optional: share the local app through ngrok so the teammate can try it before AWS | ✅ |
 | 4 | AWS deploy: Terraform (fit + on-demand ECS Fargate worker), Deploy workflow, SSM secrets, TESTING_GUIDE. **Teammate starts testing** | ✅ |
 | 5 | Live panel (`mia.events`), call record to DynamoDB, feedback form per call | ✅ |
-| 6 | Public dashboard: call list and detail ✅ ("Past calls"); aggregate stats (averages/medians) next | 🔜 |
+| 6 | Public dashboard: Past calls (list + detail) and Stats (KPIs, funnel, trends) | ✅ |
 | 7 | AI-vs-AI simulation: 8 personas × fragments, report by persona and path, nightly workflow | ⏳ |
 | 8 | Non-happy paths: changes + trash, error matrix, FAQs, off-topic guardrail | ⏳ |
 | 9 | Transfer to a licensed representative (Sergio's phone) through a Twilio SIP trunk ✅ (this PR); later a phone number to call Mia | 🔜 |
@@ -340,7 +340,33 @@ after a call the stats panel's scrollbar grew and scrolled into empty space.
       Chrome at 1400x900 after a call: nothing overflows (before: 6 px of blank scroll)
 - [x] Checked in headless Chrome against the Docker stack: during and after a call, the
       transfer test call with details, collapsed sidebar, phone list and detail, no errors
-- [ ] Aggregate stats (outcomes, drop-off stage, talk share, latency medians) as a third view
+- [x] Aggregate stats: the Stats view (next section)
+
+## Stats view, graphite dark mode, intro popup (branch `stats-dashboard`, 2026-11-10)
+
+Sergio's feedback: stats should tell a story, most important KPIs first; a funnel (call →
+cities → vehicles → quote → transfer) with conversion rates over time; transfers are the
+key KPI (qualified leads); total and average time on calls is time saved for the business;
+dark mode still felt off (light mode loved); the intro and disclosure as a popup that closes
+itself; make it a better experience.
+
+- [x] `GET /api/stats`: per call `route`, `vehicles`, `quoted`, `transfer`, `mia_s` (until the
+      handoff), `test`; written by the worker on new calls (`records.stats_facts`), backfilled
+      from the record for older rows (once; 50 per request). A test keeps the worker's and
+      the API's code identical
+- [x] Stats view: story sentence, KPI row (hero: transfers + rate; calls; time handled by
+      Mia total + average; quotes; response time), funnel with share of calls and step
+      conversion, calls/transfers per day, small multiples of each step's share per day, a
+      table view, range 7 / 30 days / all time, test calls toggle. Ordinal ramp validated
+      (light end 2.11:1 on white, 2.16:1 on the dark surface)
+- [x] Dark mode: graphite tokens (ink 14.9:1, muted 7.2:1, white on brand 4.6:1)
+- [x] Intro popup (once per session, 15 s, pauses on hover/keys); header shortened; "About &
+      disclosure" reopens it
+- [x] UX: an example sentence on the call card; after a call "See this call in Past calls"
+      (retries while the record saves); Past calls hides test calls unless asked
+- [x] Checked in headless Chrome: real local data and a synthetic 30-day set (served only to
+      the test browser), tooltips, dark mode, phone, popup auto-close; no console errors
+- [ ] Sergio: deploy (`scripts/deploy.sh`; no Terraform or secrets) and look at real numbers
 
 ## Ideas / later
 

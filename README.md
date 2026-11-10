@@ -4,7 +4,8 @@ Call Mia from your browser, tell her where your car is going and what it is, and
 an open car-shipping quote from the [CarHauler247](https://carhauler247.com/) API. While you
 talk, a live panel shows the transcript, every tool call (with its JSON) and how long each part
 of the pipeline took. **Past calls** shows every saved call the same way (conversation, tool
-calls, latency); aggregate stats come next.
+calls, latency), and **Stats** tells the story: transfers to a licensed representative
+(qualified leads), time handled by Mia, and the funnel from call to transfer over time.
 
 > Status: live on AWS (stages 0-5). The public dashboard, harder conversations and a phone
 > line are coming in stages (see [docs/BACKLOG.md](docs/BACKLOG.md)).
