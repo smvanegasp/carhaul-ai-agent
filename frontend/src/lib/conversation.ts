@@ -31,6 +31,8 @@ const NOTES: Record<string, string> = {
   greeting: "greeting (from code)",
   filler: "filler line (from code)",
   time_limit: "time limit (from code)",
+  handoff: "handoff to the representative (from code)",
+  transfer_failed: "transfer not answered (from code)",
 };
 
 function eventTime(e: MiaEvent): number {

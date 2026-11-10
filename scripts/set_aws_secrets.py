@@ -36,6 +36,12 @@ PARAMETERS = {
         "CARHAULER_API_KEY",
         "GOOGLE_MAPS_API_KEY",
         "CARTESIA_API_KEY",
+        # Phone transfer (agent/src/mia/transfer.py).
+        "TWILIO_SIP_ADDRESS",
+        "TWILIO_SIP_USERNAME",
+        "TWILIO_SIP_PASSWORD",
+        "TRANSFER_PHONE_NUMBER",
+        "TRANSFER_CALLER_ID",
     ],
 }
 # Local .env names that differ from the AWS ones.

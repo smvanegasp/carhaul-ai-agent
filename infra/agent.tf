@@ -54,6 +54,9 @@ locals {
     "LIVEKIT_URL", "LIVEKIT_API_KEY", "LIVEKIT_API_SECRET", "GROQ_API_KEY", "DEEPGRAM_API_KEY",
     "ELEVENLABS_API_KEY", "ELEVENLABS_VOICE_ID", "CARHAULER_API_KEY", "GOOGLE_MAPS_API_KEY",
     "CARTESIA_API_KEY",
+    # Phone transfer (agent/src/mia/transfer.py): Twilio trunk, who to call, the caller ID.
+    "TWILIO_SIP_ADDRESS", "TWILIO_SIP_USERNAME", "TWILIO_SIP_PASSWORD", "TRANSFER_PHONE_NUMBER",
+    "TRANSFER_CALLER_ID",
   ]
   agent_ssm_arn = "arn:aws:ssm:us-east-1:${local.account_id}:parameter${local.ssm_prefix}agent"
 }
@@ -102,8 +105,9 @@ resource "aws_iam_role_policy" "agent_task" {
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [{
-      Effect   = "Allow"
-      Action   = ["dynamodb:GetItem", "dynamodb:PutItem"]
+      Effect = "Allow"
+      # UpdateItem: the daily transfer counter (transfer.take_slot).
+      Action   = ["dynamodb:GetItem", "dynamodb:PutItem", "dynamodb:UpdateItem"]
       Resource = aws_dynamodb_table.main.arn
     }]
   })

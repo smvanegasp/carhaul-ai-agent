@@ -72,10 +72,41 @@ def test_quote_needs_details_and_a_yes():
     assert check_call("get_quote", "{}", s, "", "Yep") is None
 
 
-def test_other_tools_always_run():
-    s = QuoteSession()
-    assert check_call("request_human", "{}", s, "", "") is None
-    assert check_call("end_call", "{}", s, "", "") is None
+def test_end_call_always_runs():
+    assert check_call("end_call", "{}", QuoteSession(), "", "") is None
+
+
+OFFER = (
+    "Your estimated cost is $724. Would you like me to connect you with a licensed representative?"
+)
+
+
+@pytest.mark.parametrize(
+    ("last", "mia_last"),
+    [
+        ("Can I talk to a real person?", ""),
+        ("I want to speak with an agent", "What's the year, make and model?"),
+        ("Yeah, sure", OFFER),
+        ("Yes please", OFFER),
+    ],
+)
+def test_transfer_runs_when_the_caller_asks_or_accepts(last, mia_last):
+    assert check_call("request_human", "{}", QuoteSession(), last, last, mia_last) is None
+
+
+@pytest.mark.parametrize(
+    ("last", "mia_last"),
+    [
+        ("", ""),  # invented: nobody asked (it would ring a real phone)
+        ("Yeah, sure", "Shall we get started?"),  # a yes, but not to an offer
+        ("No thanks", OFFER),
+        ("No, I don't need an agent", OFFER),
+        ("It's a 2020 Toyota", OFFER),
+    ],
+)
+def test_transfer_is_dropped_otherwise(last, mia_last):
+    reason = check_call("request_human", "{}", QuoteSession(), last, last, mia_last)
+    assert reason == "caller did not ask for a person"
 
 
 def test_fallback_lines_follow_the_state():

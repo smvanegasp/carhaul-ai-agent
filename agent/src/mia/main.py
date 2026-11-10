@@ -33,7 +33,7 @@ from livekit.agents import (
 )
 from livekit.plugins import deepgram, silero
 
-from mia import catalog, idle, records, voices
+from mia import catalog, idle, records, transfer, voices
 from mia.agent import Mia, make_llm, new_session
 from mia.carhauler import CarHaulerClient
 from mia.events import TOPIC, CallEvents
@@ -201,6 +201,59 @@ async def entrypoint(ctx: JobContext) -> None:
     services.before_quote = before_quote
     services.end_call = session.shutdown  # drains: the goodbye finishes playing first
 
+    # Phone transfer to a licensed representative (transfer.py), when the trunk is configured.
+    phone_line = transfer.Config.from_env()
+
+    async def run_transfer() -> None:
+        """Ring the representative into this room; on answer Mia introduces the caller and
+        leaves, otherwise she apologizes and the call goes on."""
+        session.input.set_audio_enabled(False)  # nobody to answer while it rings
+        started = asyncio.get_running_loop().time()
+        outcome = "limit"
+        if await asyncio.to_thread(transfer.take_slot):
+            outcome = await transfer.dial(ctx.api, phone_line, ctx.room.name)
+        state.transfer = outcome
+        events.tool(
+            "dial_representative",
+            {},
+            {"ok": outcome == "connected", "outcome": outcome},
+            (asyncio.get_running_loop().time() - started) * 1000,
+        )
+        events.state(state.snapshot(), str(state.stage), state.quote)
+        try:
+            if outcome == "connected":
+                timer.cancel()  # Mia's 6-minute limit; the phone leg has its own (10 min)
+                line = transfer.handoff_line(state)
+                events.turn("assistant", line, kind="handoff")
+                handle = session.say(line, allow_interruptions=False, add_to_chat_ctx=False)
+                handle.add_done_callback(lambda _: session.shutdown())
+                asyncio.get_running_loop().call_later(
+                    transfer.MAX_TRANSFER_MINUTES * 60 + 60, lambda: ctx.delete_room()
+                )
+            else:
+                session.input.set_audio_enabled(True)
+                line = transfer.NO_ANSWER if outcome == "no_answer" else transfer.UNAVAILABLE
+                events.turn("assistant", line, kind="transfer_failed")
+                session.say(line)
+        except RuntimeError:  # the caller hung up while it rang; the session is gone
+            logger.info("transfer finished after the session closed (%s)", outcome)
+
+    if phone_line:
+        services.transfer = lambda: asyncio.ensure_future(run_transfer())
+
+    @session.on("close")
+    def _on_close(_ev) -> None:
+        # The room ends with Mia's session, except after a transfer: then the caller and the
+        # representative keep talking, and it ends when either hangs up.
+        if state.transfer != "connected":
+            ctx.delete_room()
+
+    @ctx.room.on("participant_disconnected")
+    def _on_left(participant) -> None:
+        if state.transfer == "connected":
+            logger.info("%s left the transferred call; closing the room", participant.identity)
+            ctx.delete_room()
+
     @session.on("agent_state_changed")
     def _on_state(ev) -> None:
         # Mia said goodbye without end_call (agent.llm_node): hang up once it has played.
@@ -252,8 +305,9 @@ async def entrypoint(ctx: JobContext) -> None:
     await session.start(
         agent=Mia(services, speak_greeting=True),
         room=ctx.room,
-        # When Mia hangs up the room is deleted, which disconnects the browser too.
-        room_options=room_io.RoomOptions(delete_room_on_close=True),
+        # The room is deleted when Mia's session closes (_on_close above), which disconnects the
+        # browser too; after a transfer only when the caller or representative hangs up.
+        room_options=room_io.RoomOptions(delete_room_on_close=False),
     )
     await background.start(room=ctx.room, agent_session=session)
 

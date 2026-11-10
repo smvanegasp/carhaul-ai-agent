@@ -32,7 +32,12 @@ def _join(parts: list[str]) -> str:
 
 
 def check_call(
-    name: str, arguments: str, state: QuoteSession, said: str, last_said: str
+    name: str,
+    arguments: str,
+    state: QuoteSession,
+    said: str,
+    last_said: str,
+    mia_last: str = "",
 ) -> str | None:
     """Why this call must not run, or None if it may."""
     try:
@@ -59,6 +64,12 @@ def check_call(
         # step to save what the caller just said (it sometimes skips save_vehicle).
         if not state.missing and not grounding.is_confirmation(last_said):
             return "caller has not confirmed"
+    elif name == "request_human":
+        # It rings a real phone (stage 9): only on the caller's own request, or a yes to Mia's
+        # offer, never on a call the model made up.
+        offered = grounding.offered_person(mia_last) and grounding.is_confirmation(last_said)
+        if not (grounding.wants_person(last_said) or offered):
+            return "caller did not ask for a person"
     return None
 
 

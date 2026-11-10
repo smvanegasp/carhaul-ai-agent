@@ -27,7 +27,7 @@ turns:
     expect:
       tools: [get_quote]
       says: ["$1,291"]
-      judge: Gives the estimated cost and offers to connect the caller with Sergio.
+      judge: Gives the estimated cost and offers to connect the caller with a licensed representative (and doesn't name Sergio).
   - user: "Sure."
     expect:
       tools: [request_human]

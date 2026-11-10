@@ -84,6 +84,9 @@ class QuoteSession:
     quote: dict[str, Any] | None = None  # last quote given: total, items, transit_days
     human_requested: bool = False
     human_request_reason: str | None = None
+    # Phone transfer (transfer.py): "pending", "connected", "no_answer", "limit" (daily cap) or
+    # None (not tried; e.g. text chat, or no trunk configured).
+    transfer: str | None = None
     ended: bool = False
     # Who ended it: "mia" (end_call or her goodbye), "time_limit" or "caller" (hung up first).
     end_reason: str | None = None
@@ -182,6 +185,7 @@ class QuoteSession:
             "stage": str(self.stage),
             "quote": self.quote,
             "human_requested": self.human_requested,
+            "transfer": self.transfer,
             "dropped_calls": self.dropped_calls,
             "caller_turns": self.caller_turns,
             "end_reason": self.end_reason,

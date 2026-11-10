@@ -95,6 +95,14 @@ def caller_turn_count(chat_ctx: ChatContext) -> int:
     )
 
 
+def mia_last_said(chat_ctx: ChatContext) -> str:
+    """Mia's latest line (did she just offer to connect them with someone?)."""
+    for item in reversed(chat_ctx.items):
+        if getattr(item, "type", None) == "message" and item.role == "assistant":
+            return item.text_content or ""
+    return ""
+
+
 def caller_last_said(chat_ctx: ChatContext) -> str:
     """The caller's latest message."""
     for item in reversed(chat_ctx.items):
@@ -162,6 +170,7 @@ class Mia(Agent):
         """
         state: QuoteSession = self.session.userdata
         said, last_said = caller_said(chat_ctx), caller_last_said(chat_ctx)
+        mia_last = mia_last_said(chat_ctx)
         state.caller_turns = caller_turn_count(chat_ctx)
         held: list[llm.ChatChunk | str] = []
         text, runs_tool, dropped = "", False, []
@@ -173,7 +182,7 @@ class Mia(Agent):
                 keep = []
                 for call in chunk.delta.tool_calls:
                     reason = guardrails.check_call(
-                        call.name, call.arguments, state, said, last_said
+                        call.name, call.arguments, state, said, last_said, mia_last
                     )
                     if reason:
                         dropped.append({"tool": call.name, "args": call.arguments, "why": reason})
@@ -310,18 +319,26 @@ class Mia(Agent):
 
     @function_tool
     async def request_human(self, context: RunContext[QuoteSession], reason: str = "") -> str:
-        """Connect the caller with Sergio (a person).
+        """Connect the caller with a licensed representative (a person). Only when the caller
+        asked for one or said yes to your offer.
 
         Args:
             reason: Short reason, e.g. "wants to talk after quote" or "asked for a human".
         """
-        return await _run_tool(
+        state = context.userdata
+        was_pending = state.transfer in ("pending", "connected")
+        result = await _run_tool(
             self.services,
-            context.userdata,
+            state,
             "request_human",
             {"reason": reason},
-            tools.request_human(context.userdata, self.services, reason=reason),
+            tools.request_human(state, self.services, reason=reason),
         )
+        start = self.services.transfer
+        if start and state.transfer == "pending" and not was_pending:
+            # Dial once "connecting you" has been spoken (same pattern as end_call).
+            context.speech_handle.add_done_callback(lambda _: start())
+        return result
 
     @function_tool
     async def end_call(self, context: RunContext[QuoteSession]) -> str:

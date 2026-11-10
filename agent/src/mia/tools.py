@@ -19,7 +19,7 @@ from collections.abc import Callable
 from dataclasses import dataclass, field
 from typing import Any
 
-from mia import grounding
+from mia import grounding, transfer
 from mia.carhauler import CarHaulerClient, CarHaulerError, ErrorCode
 from mia.events import CallEvents
 from mia.geo import CityToZipError, city_to_zip
@@ -41,8 +41,8 @@ NOT_SAID = (
 )
 
 ESCALATE = (
-    "Apologize briefly: our system is having trouble right now. Offer to connect them with "
-    "Sergio; if they agree, call request_human."
+    "Apologize briefly: our system is having trouble right now. Offer to connect them with a "
+    "licensed representative; if they agree, call request_human."
 )
 
 
@@ -58,6 +58,9 @@ class Services:
     # (agent.py calls it once the goodbye has been spoken).
     before_quote: Callable[[str], Any] | None = None
     end_call: Callable[[], Any] | None = None
+    # Voice with a trunk configured (transfer.py): ring the representative into the call.
+    # agent.py starts it once Mia's "connecting you" line has been spoken.
+    transfer: Callable[[], Any] | None = None
     # The call's events (live panel, call record). Text chat and tests get one that only
     # keeps them; the worker's also publishes them to the room.
     events: CallEvents = field(default_factory=CallEvents)
@@ -408,9 +411,8 @@ async def _quote(state: QuoteSession, services: Services) -> Result:
     state.advance(Stage.QUOTED)
     after = (
         "Read `say` to the caller word for word (don't change any numbers). Then ask if they'd "
-        "like to be connected with Sergio, who built this solution and would be happy to talk "
-        "about it. If they say no, ask if there's anything else; when they're done, call "
-        "end_call."
+        "like to be connected with a licensed representative who can assist them further. If "
+        "they say no, ask if there's anything else; when they're done, call end_call."
     )
     if state.quote["estimate"]:
         after = "Mention the price is an estimate based on the vehicle type. " + after
@@ -427,16 +429,25 @@ async def _quote(state: QuoteSession, services: Services) -> Result:
 
 
 async def request_human(state: QuoteSession, services: Services, *, reason: str = "") -> Result:
+    """Connect the caller with a licensed representative: a phone transfer on voice calls
+    with a trunk (transfer.py), otherwise just noted."""
     state.human_requested = True
     state.human_request_reason = reason or None
     state.advance(Stage.TRANSFER)
-    # Browser calls can't be transferred yet (phone transfer arrives in stage 9).
+    if state.transfer in ("pending", "connected"):
+        return _ok(state, "You're already connecting them. Say nothing else.", transferring=True)
+    if services.transfer is None:
+        return _ok(
+            state,
+            "Tell them a licensed representative isn't available on this line right now, and "
+            "ask if there's anything else you can help with.",
+            transferring=False,
+        )
+    state.transfer = "pending"
     return _ok(
         state,
-        "Tell them you've passed the request to Sergio and he'll follow up; they can also reach "
-        "him through the contact link on this page. Ask if there's anything else you can help "
-        "with.",
-        transferred=False,
+        f'Say exactly this and nothing else: "{transfer.CONNECTING}"',
+        transferring=True,
     )
 
 
