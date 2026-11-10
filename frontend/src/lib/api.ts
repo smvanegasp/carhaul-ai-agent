@@ -66,6 +66,8 @@ export async function sendFeedback(
 export interface WakeStatus {
   state: "ready" | "starting" | "unavailable";
   detail: string;
+  /** While starting: ECS is getting a server, or Mia is loading (backend/app/worker.py). */
+  step?: "server" | "loading" | null;
 }
 
 /** Ask for Mia's voice worker (on AWS it only runs around calls; starting takes ~1 minute). */

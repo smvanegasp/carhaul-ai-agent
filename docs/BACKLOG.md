@@ -270,6 +270,23 @@ the old voices took 6.1-7.1 s at speed 0.92:
 Cartesia Iris (also American, customer care) was 7.3 s too, so that slower pace is how those
 Cartesia voices talk, not a setting; Skylar is the quickest of the six.
 
+## Call page polish (branch `call-page-polish`, 2026-11-09)
+
+Sergio's feedback: a progress bar while Mia wakes up; the palette still too dark, make it more
+professional (McKinsey-like colors).
+
+- [x] `/api/wake` adds `step` (`server` / `loading`, from the ECS task's `lastStatus`); the page
+      shows a progress bar with the step and seconds (`lib/wake.ts`: time-based inside the
+      step, capped at 95% until ready)
+- [x] New palette tokens in `index.css`: white/cool grey, deep blue ink, electric blue buttons,
+      cyan highlights; serif title. Light by default even when the OS is dark; "Dark mode"
+      toggle in the header (deep-blue surfaces), remembered, applied before the first paint
+- [x] Checked in headless Chrome (OS in dark mode, fake mic, `/api/wake` faked to show both
+      steps): progress bar, a live call in light and dark, phone width, choice kept on reload,
+      no console errors
+- [ ] Sergio: `scripts/deploy.sh` (code only; the Lambda gets the new `step`) and look at the
+      wake-up on AWS, where the steps are real
+
 ## Ideas / later
 
 - **Self-corrections:** "it's twenty ten... twenty twenty Toyota" was saved as 2010 (Sergio's

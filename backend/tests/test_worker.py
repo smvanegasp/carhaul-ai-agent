@@ -87,7 +87,27 @@ def test_healthy_worker_is_ready(aws_env, monkeypatch):
 
 def test_running_but_not_registered_yet_is_starting(aws_env, monkeypatch):
     ecs = FakeECS([{"lastStatus": "RUNNING", "healthStatus": "UNKNOWN"}])
-    assert _client(monkeypatch, ecs).post("/api/wake").json()["state"] == "starting"
+    body = _client(monkeypatch, ecs).post("/api/wake").json()
+    assert (body["state"], body["step"]) == ("starting", "loading")
+
+
+@pytest.mark.parametrize(
+    ("last_status", "step"),
+    [("PROVISIONING", "server"), ("PENDING", "server"), ("ACTIVATING", "loading")],
+)
+def test_the_start_step_follows_the_task(aws_env, monkeypatch, last_status, step):
+    ecs = FakeECS([{"lastStatus": last_status}])
+    assert _client(monkeypatch, ecs).post("/api/wake").json()["step"] == step
+
+
+def test_a_new_start_is_on_the_server_step(aws_env, monkeypatch):
+    body = _client(monkeypatch, FakeECS()).post("/api/wake").json()
+    assert (body["state"], body["step"]) == ("starting", "server")
+
+
+def test_ready_has_no_step(aws_env, monkeypatch):
+    ecs = FakeECS([{"lastStatus": "RUNNING", "healthStatus": "HEALTHY"}])
+    assert _client(monkeypatch, ecs).post("/api/wake").json()["step"] is None
 
 
 def test_starts_are_capped_per_day(aws_env, monkeypatch):
