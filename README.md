@@ -15,7 +15,7 @@ of the pipeline took. A public dashboard shows how calls go overall.
 | Real-time audio | LiveKit Cloud (WebRTC; SIP for phone calls later) |
 | Speech-to-text | Deepgram nova-3 |
 | LLM | Groq, `openai/gpt-oss-20b` |
-| Text-to-speech | The caller picks: ElevenLabs flash v2.5 (default), Cartesia sonic-3 or Deepgram Aura-2, two voices each |
+| Text-to-speech | The caller picks one of 6 American voices: Cartesia sonic-3 (Skylar, the first choice), ElevenLabs flash v2.5 or Deepgram Aura-2, two each |
 | Turn taking | Silero VAD, LiveKit turn detector, interruptions (caller can talk over Mia) |
 | Agent | Python 3.12, `livekit-agents` 1.8, uv |
 | API | FastAPI on AWS Lambda (container image), DynamoDB |

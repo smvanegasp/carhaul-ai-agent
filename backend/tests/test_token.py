@@ -89,17 +89,21 @@ def _voice_in(token: str) -> str:
 
 
 def test_the_chosen_voice_goes_to_the_worker(client):
-    body = client.post("/api/token", json={"voice": "cartesia-courtney"}).json()
-    assert _voice_in(body["participant_token"]) == "cartesia-courtney"
+    body = client.post("/api/token", json={"voice": "deepgram-athena"}).json()
+    assert _voice_in(body["participant_token"]) == "deepgram-athena"
 
 
-@pytest.mark.parametrize("payload", [None, {}, {"voice": "not-a-voice"}])
+@pytest.mark.parametrize(
+    "payload", [None, {}, {"voice": "not-a-voice"}, {"voice": "elevenlabs-mia"}]
+)
 def test_no_or_unknown_voice_gets_the_default(client, payload):
     body = client.post("/api/token", json=payload).json()
-    assert _voice_in(body["participant_token"]) == "elevenlabs-mia"
+    assert _voice_in(body["participant_token"]) == "cartesia-skylar"
 
 
 def test_the_voice_list(client):
     voices = client.get("/api/voices").json()
     assert len(voices) == 6
-    assert [v["key"] for v in voices if v["default"]] == ["elevenlabs-mia"]
+    assert [v["key"] for v in voices if v["default"]] == ["cartesia-skylar"]
+    assert voices[0]["key"] == "cartesia-skylar"  # the page starts with the first one
+    assert all(v["description"] and "default" not in v["label"].lower() for v in voices)

@@ -47,6 +47,7 @@ export function VoicePicker({
   disabled?: boolean;
 }) {
   if (options.length === 0) return null;
+  const description = options.find((o) => o.key === selected)?.description;
   return (
     <label className="flex w-full flex-col gap-1 text-sm">
       <span className="text-muted">Mia's voice</span>
@@ -62,6 +63,7 @@ export function VoicePicker({
           </option>
         ))}
       </select>
+      {description && <span className="text-xs leading-snug text-muted">{description}</span>}
     </label>
   );
 }
