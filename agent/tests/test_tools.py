@@ -447,3 +447,31 @@ async def test_a_state_without_a_city_asks_which_city(state, services):
         state, services, destination_state="California", said=said
     )
     assert "Which city in California?" in r["next"]
+
+
+# --- varied wording (phrases.py; Belinda, 2026-11-11) ----------------------------------------
+
+
+def test_a_varied_line_never_repeats_and_holds_within_a_turn(monkeypatch):
+    from mia import grounding, phrases
+    from mia.guardrails import is_goodbye, is_read_back
+    from mia.state import QuoteSession
+
+    monkeypatch.setattr(phrases, "choose", __import__("random").choice)
+    s = QuoteSession()
+    seen = []
+    for turn in range(30):
+        s.caller_turns = turn
+        first = phrases.pick(s, "closing", phrases.CLOSING)
+        assert phrases.pick(s, "closing", phrases.CLOSING) == first  # same turn, same line
+        seen.append(first)
+    assert all(a != b for a, b in zip(seen, seen[1:], strict=False))
+    assert set(seen) == set(phrases.CLOSING)
+    # Every wording keeps what code looks for in it.
+    assert all(is_goodbye(c) for c in phrases.CLOSING)
+    assert all(grounding.offered_person(o) for o in phrases.OFFER)
+    for template in phrases.READ_BACK:
+        line = template.format(
+            vehicles="your 2025 Honda Civic", origin="Boston", destination="Miami"
+        )
+        assert is_read_back(line), line

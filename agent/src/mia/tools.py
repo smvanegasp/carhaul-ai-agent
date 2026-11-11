@@ -20,7 +20,7 @@ from collections.abc import Callable
 from dataclasses import dataclass, field
 from typing import Any
 
-from mia import grounding, transfer
+from mia import grounding, phrases, transfer
 from mia.carhauler import CarHaulerClient, CarHaulerError, ErrorCode
 from mia.events import CallEvents
 from mia.geo import CityToZipError, canonicalize_state, city_to_zip
@@ -644,11 +644,32 @@ async def remove_vehicle(
     target = _pick_vehicle(state, quote_id)
     if isinstance(target, dict):
         return target
+    priced = state.priced if state.quote else []
     state.remove_vehicle(target.quote_id)
+    removed = {"vehicle": target.label, "quote_id": target.quote_id}
+    # Belinda, 2026-11-11 (call fa3b77253965): after the quote, removing the Toyota made Mia
+    # read everything back and quote again, but each vehicle was already priced on its own for
+    # this route. What's left is repriced from that quote: no read-back, no new API call.
+    left = [q for q in priced if state.find_vehicle(q.request.quote_id)]
+    if left and len(left) == len(state.vehicles):
+        summary = _store_quote(state, left)
+        # "Your new estimated cost for the Honda is $881." (one left), or the usual breakdown.
+        new = "Your new estimated cost"
+        if len(summary.items) == 1:
+            new += f" for {summary.items[0][0]}"
+        say = summary.speech.replace("Your estimated cost", new, 1)
+        return _ok(
+            state,
+            f"Tell them you've removed the {target.label}. Then: " + _after_quote(state),
+            removed=removed,
+            say=say,
+            total=summary.total,
+            transit=_transit(summary),
+        )
     return _ok(
         state,
         f"Tell them you've removed the {target.label}. " + _next_question(state),
-        removed={"vehicle": target.label, "quote_id": target.quote_id},
+        removed=removed,
     )
 
 
@@ -696,7 +717,8 @@ async def get_quote(
         )
     assert state.origin and state.destination
     state.advance(Stage.CONFIRM)
-    pause = services.before_quote(FILLER) if services.before_quote else None
+    filler = phrases.pick(state, "filler", phrases.FILLER)
+    pause = services.before_quote(filler) if services.before_quote else None
     result = await _quote(state, services)
     # The price waits for the filler and the typing sound, so it feels calculated (Sergio's
     # call, 2026-11-09); never more than a few seconds even if the audio hangs.
@@ -708,7 +730,7 @@ async def get_quote(
     return result
 
 
-FILLER = "Give me one second while I calculate your quote."
+FILLER = phrases.FILLER[0]  # one of phrases.FILLER is said
 MAX_QUOTE_PAUSE_SECONDS = 8.0
 
 
@@ -734,8 +756,26 @@ async def _quote(state: QuoteSession, services: Services) -> Result:
         hint = _QUOTE_ERROR_HINTS.get(exc.code, ESCALATE)
         return _err(state, str(exc.code), hint)
 
+    summary = _store_quote(state, quotes)
+    return _ok(
+        state,
+        _after_quote(state),
+        say=summary.speech,
+        total=summary.total,
+        transit=_transit(summary),
+    )
+
+
+def _transit(summary: Any) -> str | None:
+    days = summary.transit_days
+    return f"{days[0]} to {days[1]} days door to door" if days else None
+
+
+def _store_quote(state: QuoteSession, quotes: list[Any]) -> Any:
+    """Keep a quote (one priced VehicleQuote per vehicle) as the one on file."""
     summary = summarize(quotes)
     transit = summary.transit_days
+    state.priced = list(quotes)
     state.quote = {
         "total": summary.total,
         "items": [{"vehicle": label, "price": price} for label, price in summary.items],
@@ -747,23 +787,22 @@ async def _quote(state: QuoteSession, services: Services) -> Result:
         "estimate": any(v.is_estimate for v in state.vehicles),
     }
     state.advance(Stage.QUOTED)
-    # Sergio, 2026-11-11: after a "no" to the representative, don't ask "anything else?";
-    # close the call (end_call's `next` has the closing line). A question still gets answered.
+    return summary
+
+
+def _after_quote(state: QuoteSession) -> str:
+    """What Mia does once she has a price. Sergio, 2026-11-11: after a "no" to the
+    representative, don't ask "anything else?"; close the call (end_call's `next` has the
+    closing line). A question still gets answered. The offer's wording varies (phrases.py)."""
+    offer = phrases.pick(state, "offer", phrases.OFFER)
     after = (
-        "Read `say` to the caller word for word (don't change any numbers). Then ask if they'd "
-        "like to be connected with a licensed representative who can assist them further. If "
-        "they say no, or say goodbye, call end_call (don't ask if there's anything else). If "
-        "they ask a question, answer it first."
+        "Read `say` to the caller word for word (don't change any numbers). Then ask, in these "
+        f'words: "{offer}" If they say no, or say goodbye, call end_call (do not ask if '
+        "there's anything else). If they ask a question, answer it first."
     )
-    if state.quote["estimate"]:
+    if state.quote and state.quote["estimate"]:
         after = "Mention the price is an estimate based on the vehicle type. " + after
-    return _ok(
-        state,
-        after,
-        say=summary.speech,
-        total=summary.total,
-        transit=f"{transit[0]} to {transit[1]} days door to door" if transit else None,
-    )
+    return after
 
 
 # --- people ------------------------------------------------------------------------------
@@ -810,18 +849,24 @@ async def end_call(state: QuoteSession, services: Services) -> Result:
     agent.py after the goodbye has been spoken, so the caller hears it."""
     state.ended = True
     state.end_reason = state.end_reason or "mia"
-    return _ok(state, f'Say exactly this and nothing else: "{CLOSING}"')
+    if state.end_reason == "off_topic":
+        # note_off_topic ended it in the same step: keep its goodbye, which says why.
+        return _ok(state, OFF_TOPIC_GOODBYE)
+    closing = phrases.pick(state, "closing", phrases.CLOSING)
+    return _ok(state, f'Say exactly this and nothing else: "{closing}"')
 
 
 # Sergio, 2026-11-11: "Sure, let us know. Feel free to call again if you want to get another
-# quote. Have a nice day."
-CLOSING = (
-    "Thanks for calling F&F! Feel free to call us again if you'd like another quote. Have a "
-    "nice day!"
-)
+# quote. Have a nice day." One of phrases.CLOSING is said.
+CLOSING = phrases.CLOSING[0]
 
 
 # --- off-topic (stage 8) -----------------------------------------------------------------
+
+OFF_TOPIC_GOODBYE = (
+    "Say politely that you can only help with car shipping quotes, thank them for calling F&F "
+    "and say goodbye. Don't transfer them."
+)
 
 
 async def note_off_topic(state: QuoteSession, services: Services) -> Result:
@@ -835,8 +880,7 @@ async def note_off_topic(state: QuoteSession, services: Services) -> Result:
         state.hang_up_after_speech = True  # voice: hang up once this line has played
         return _ok(
             state,
-            "Say politely that you can only help with car shipping quotes, thank them for "
-            "calling F&F and say goodbye. Don't transfer them.",
+            OFF_TOPIC_GOODBYE,
             off_topic=state.off_topic,
         )
     return _ok(

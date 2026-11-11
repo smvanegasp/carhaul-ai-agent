@@ -114,3 +114,30 @@ describe("buildConversation", () => {
     expect(items.map((i) => i.kind)).toEqual(["line", "dropped"]);
   });
 });
+
+describe("screening lines (call-7334ef371604)", () => {
+  const press =
+    "Hi, this is Mia from F&F. I have a caller here about shipping 2 vehicles. Press 1 to take the call.";
+  const events = [
+    turn(1, "mia", "Please stay on the line.", 1000),
+    turn(2, "mia", press, 5000, { kind: "handoff" }),
+    turn(3, "mia", "Press 1 to take the call.", 9000, { kind: "handoff" }),
+    turn(4, "mia", "No representative is available.", 12000, { kind: "transfer_failed" }),
+  ];
+
+  it("hides what Mia told the line when built from the record", () => {
+    const texts = buildConversation([], events).map((i) => (i.kind === "line" ? i.text : ""));
+    expect(texts).toEqual(["Please stay on the line.", "No representative is available."]);
+  });
+
+  it("hides the matching transcription lines too", () => {
+    const lines = [
+      line("a", "mia", "Please stay on the line.", 900),
+      line("b", "mia", press, 4000),
+      line("c", "mia", "Press 1 to take the call.", 8500),
+      line("d", "mia", "No representative is available.", 11000),
+    ];
+    const ids = buildConversation(lines, events).map((i) => i.id);
+    expect(ids).toEqual(["a", "d"]);
+  });
+});

@@ -183,6 +183,14 @@ docker compose up        # api :8020, web :5190, DynamoDB Local :8030, agent wor
 
 ## 6. Decisions log
 
+- 2026-11-11 (Belinda, second round): **Lines code writes come in three wordings**
+  (`phrases.py`: read-back, "one second" filler, representative offer, closing), picked at
+  random but never the same twice in a row in a call. **Removing a vehicle after the quote
+  reprices from the last quote** (each car was priced on its own for the route): Mia says the
+  new total at once, no read-back, no new CarHauler call. **The screening ("Press 1") isn't
+  part of the conversation**: not transcribed, not a turn; it's in `screen_representative`'s
+  event as `told_line`, and the UI hides it in older records.
+
 - 2026-11-11 (Belinda's calls): **The caller's words drive more in code.** A question anywhere
   in a message (or "I want to know if...") is answered first: tool results say so, and FAQ
   facts are added by code. "from X to Y", every car named with year + make + model, and a bare

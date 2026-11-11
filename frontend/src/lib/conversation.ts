@@ -42,6 +42,15 @@ const NOTES: Record<string, string> = {
   silence: "the caller went quiet (from code)",
 };
 
+/**
+ * What Mia told the representative's line while it was screened ("...Press 1 to take the
+ * call."). The caller never hears it, so it isn't part of the conversation (Belinda,
+ * 2026-11-11). Newer calls don't log it as a turn at all; this hides it in older records.
+ */
+export function isScreening(t: TurnEvent): boolean {
+  return t.kind === "handoff" && /press 1 to take the call/i.test(t.text);
+}
+
 function eventTime(e: MiaEvent): number {
   // Older events (before "at" existed) only have seconds since the call started.
   return e.at ?? e.t * 1000;
@@ -61,7 +70,9 @@ export function buildConversation(
   lines: TranscriptLine[],
   events: MiaEvent[],
 ): ConversationItem[] {
-  const turns = events.filter((e): e is TurnEvent => e.type === "turn");
+  const allTurns = events.filter((e): e is TurnEvent => e.type === "turn");
+  const turns = allTurns.filter((t) => !isScreening(t));
+  const screening = allTurns.filter(isScreening);
   const items: ConversationItem[] =
     lines.length > 0
       ? lines.map((l) => ({ kind: "line" as const, ...l }))
@@ -92,6 +103,17 @@ export function buildConversation(
     match.note = NOTES[t.kind];
     match.interrupted = t.interrupted;
   }
+
+  // A transcription line that is a screening line: dropped (same text, Mia's side).
+  const hidden = new Set(screening.map((t) => t.text.trim().toLowerCase()));
+  const shown = items.filter(
+    (i) =>
+      i.kind !== "line" ||
+      i.who !== "mia" ||
+      !hidden.has(i.text.trim().toLowerCase()),
+  );
+  items.length = 0;
+  items.push(...shown);
 
   for (const e of events) {
     if (e.type === "tool")
