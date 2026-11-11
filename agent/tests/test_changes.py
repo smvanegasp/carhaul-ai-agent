@@ -6,7 +6,7 @@ from __future__ import annotations
 import pytest
 from fake_geo import fake_city_to_zip
 
-from mia import grounding, tools
+from mia import grounding, guardrails, tools
 from mia.guardrails import check_call
 from mia.state import QuoteSession
 from mia.tools import Services
@@ -286,3 +286,19 @@ def test_a_yes_to_mias_removal_question_removes():
     assert check_call(
         "remove_vehicle", '{"quote_id": "Q2"}', QuoteSession(), "", "Yes", "Is that correct?"
     )
+
+
+async def test_a_replacement_with_a_missing_model_keeps_its_year_and_make(state, services):
+    # Call 9ea951ab02c2: the Jeep was removed and "my twenty twenty four Honda" saved in the same
+    # step; the save needed the model, but the 2024 Honda was forgotten and Mia asked for the
+    # second car's year, make and model.
+    said = await _quoted(state, services, CIVIC, RUNNER)
+    said += " I no longer need the Toyota. I want to send my twenty twenty four Ford."
+    await tools.remove_vehicle(state, services, quote_id=state.vehicles[1].quote_id)
+    state.expected_vehicles = 2
+    r = await tools.save_vehicle(state, services, year=2024, make="Ford", said=said)
+    assert r["error_code"] == "MISSING_MODEL"
+    assert state.partial_vehicle == {"year": 2024, "make": "Ford"}
+    assert r["on_file"]["heard_so_far"] == "2024 Ford"
+    assert guardrails.fallback_line(state) == state.partial_question()
+    assert "2024 Ford" in state.partial_question()

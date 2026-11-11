@@ -522,6 +522,16 @@ async def save_vehicle(
         unsure=unsure,
     )
     if error:
+        # Keep the year and make it did hear, whenever the vehicle became missing. Call
+        # 9ea951ab02c2 (2026-11-11): "I no longer need the Jeep, I want to send my twenty
+        # twenty four Honda" -> the Jeep was removed in the same step, so the turn started with
+        # nothing missing and the 2024 Honda wasn't noted; Mia asked "What's the year, make and
+        # model of the second car?" and the caller had to say it again.
+        known = error.get("known") or {}
+        heard = {k: known[k] for k in ("year", "make") if known.get(k)}
+        if heard:
+            state.note_partial_vehicle(heard)
+            error["on_file"] = state.snapshot()
         if ignored and error.get("error_code", "").startswith("MISSING"):
             # A detail they gave was dropped as not said (e.g. a model the guardrail didn't
             # match). Ask as usual, but count it: asking forever is worse than a person
