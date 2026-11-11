@@ -29,8 +29,6 @@ import httpx
 from tenacity import (
     AsyncRetrying,
     retry_if_exception,
-    stop_after_attempt,
-    wait_exponential,
 )
 
 DEFAULT_BASE_URL = "https://carhauler247.com/api/public/v2"
@@ -195,13 +193,30 @@ class CarHaulerClient:
             raise CarHaulerError(_classify_quote_failure(message), message)
         return body
 
+    def _wait(self, retry_state: Any) -> float:
+        """Backoff: 2 s then 4 s, except a rate limit waits 5 s each time. The quote burst
+        limit clears in ~15 s, and 2 + 4 s gave up too early (real-API run, 2026-11-11: a
+        two- and a three-car quote failed with RATE_LIMITED)."""
+        exc = retry_state.outcome.exception() if retry_state.outcome else None
+        if isinstance(exc, CarHaulerError) and exc.code == ErrorCode.RATE_LIMITED:
+            return 2.5 * self._retry_wait
+        return min(8.0, self._retry_wait * 2 ** (retry_state.attempt_number - 1))
+
+    def _stop(self, retry_state: Any) -> bool:
+        """3 attempts, or 4 for a rate limit (5 + 5 + 5 s covers the burst window)."""
+        exc = retry_state.outcome.exception() if retry_state.outcome else None
+        limit = self._max_attempts
+        if isinstance(exc, CarHaulerError) and exc.code == ErrorCode.RATE_LIMITED:
+            limit += 1
+        return retry_state.attempt_number >= limit
+
     async def _get(self, path: str, params: dict[str, Any] | None = None) -> Any:
         params = params or {}
         attempt = 0
         try:
             async for attempt_state in AsyncRetrying(
-                stop=stop_after_attempt(self._max_attempts),
-                wait=wait_exponential(multiplier=self._retry_wait, max=8),
+                stop=self._stop,
+                wait=self._wait,
                 retry=retry_if_exception(
                     lambda e: isinstance(e, CarHaulerError) and e.code in _RETRYABLE
                 ),

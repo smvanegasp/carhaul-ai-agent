@@ -159,6 +159,13 @@ docker compose up        # api :8020, web :5190, DynamoDB Local :8030, agent wor
   **Run it only after big changes to Mia** (Sergio wants it cheap; no schedule). The
   `simulations.yml` workflow does the same on GitHub, by hand only, and pushes to main. Use
   `--out <scratch dir>` for throwaway tries.
+- **Real APIs:** `MIA_SCENARIOS_LIVE=1 TABLE_NAME=carhaul AWS_PROFILE=carhaul uv run pytest
+  -m llm -s` (in `agent/`) replays the scenarios against the real CarHauler API and Google
+  geocoding (Sergio: we don't control those APIs, so test against them). Run it **before a PR
+  that changes Mia**, never in CI: a full run is ~85 CarHauler requests (the catalog comes from
+  the shared DynamoDB snapshot; each quote and trim lookup counts) and each scenario that
+  quoted waits 30 s for the quote endpoint's per-minute cap. Prices are checked against the
+  live quote; outage scenarios are skipped. The runner prints the request count.
 - Offline tests use `tests/fake_carhauler.py` (respx), which mimics the real API's quirks.
   **Never assert live prices**; they change weekly.
 - CI (`.github/workflows/ci.yml`): agent, backend, frontend, docker build, gitleaks.
@@ -175,6 +182,14 @@ docker compose up        # api :8020, web :5190, DynamoDB Local :8030, agent wor
   token-endpoint rate limit, the daily call cap and the max call length.
 
 ## 6. Decisions log
+
+- 2026-11-11 (Sergio): **Scenarios against the real APIs** before PRs that change Mia (fakes
+  stay in CI: free and fast). The first real run (81 CarHauler requests) failed 7 of 23 that
+  passed on fakes: CarHauler's quote **rate limit** (two- and three-car quotes; a rate limit now
+  waits 5 s per retry, 4 tries), "?" accepted as a city or model, "Honda Civic" counted as an
+  off-topic question, and Atlantis being a real city (Florida). **Mia is more direct**: the
+  greeting asks for the route, she acknowledges each new detail briefly, answers questions
+  first, and asks "which city in California?" for a state without a city.
 
 - 2026-11-11 (evening calls): **Code may call a tool the LLM skipped**, when the caller's own
   words make it certain: a yes right after the read-back -> get_quote; year, make and a

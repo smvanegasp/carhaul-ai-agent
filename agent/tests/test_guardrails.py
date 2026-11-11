@@ -274,3 +274,10 @@ def test_no_model_question_after_they_said_they_dont_know():
     plain = QuoteSession(origin=BOS, destination=SF)
     plain.note_partial_vehicle({"year": 2022, "make": "Toyota"})
     assert guardrails.no_model_again("What model is it?", plain) == "What model is it?"
+
+
+def test_an_answer_before_the_read_back_is_kept():
+    s = QuoteSession(origin=BOS, destination=SF)
+    s.add_vehicle(year=2025, make="Honda", model="Civic", trim_id=1)
+    told = "We only quote open car shipping. " + read_back(s)
+    assert guardrails.honest_read_back(told, s) == told

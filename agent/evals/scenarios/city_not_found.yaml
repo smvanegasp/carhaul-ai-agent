@@ -11,10 +11,10 @@ turns:
   - user: "Yeah, sure"
     expect:
       judge: Asks where the vehicle ships from, to, or both.
-  - user: "From Atlantis to San Francisco, California"
+  - user: "From Blorptopia to San Francisco, California"
     expect:
       on_file: {origin: null, destination: "San Francisco, California"}
-      judge: Says it couldn't find Atlantis and asks the caller to repeat or check the pickup city.
+      judge: Says it couldn't find Blorptopia and asks the caller to repeat or check the pickup city.
   - user: "Sorry, I meant Boston, Massachusetts"
     expect:
       on_file: {origin: "Boston, Massachusetts", destination: "San Francisco, California"}

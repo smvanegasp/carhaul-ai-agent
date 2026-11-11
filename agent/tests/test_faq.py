@@ -49,3 +49,13 @@ def test_a_right_answer_is_left_alone():
 def test_a_price_line_is_never_rewritten():
     line = "Your estimated cost is $1,291. Would you like me to connect you?"
     assert faq.ensure_answer(line, "Can I pay with a credit card?") == line
+
+
+def test_a_question_with_the_car_keeps_the_read_back():
+    # "It's a 2025 Honda Civic. Oh, and do you do enclosed shipping?" -> the answer was lost.
+    read_back = (
+        "Just to confirm, your 2025 Honda Civic will ship from Boston, Massachusetts to San "
+        "Francisco, California. Is that correct?"
+    )
+    out = faq.ensure_answer(read_back, "It's a Civic. Oh, and do you do enclosed shipping?")
+    assert out == f"We only quote open car shipping. {read_back}"

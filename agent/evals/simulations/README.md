@@ -10,6 +10,7 @@ Every run keeps its full transcripts. Newest first:
 
 | Run (UTC) | Label | Mia | Caller | Calls | Passed | Weakest scenario | Cost | |
 | --- | --- | --- | --- | ---: | ---: | --- | ---: | --- |
+| 2026-11-11T05:09:44+00:00 | direct-mia-live-tests | `openai/gpt-oss-20b` | `openai/gpt-oss-120b` | 72 | 71 (99%) | - | $0.17 | [report](runs/20261111T0509Z_direct-mia-live-tests/report.md) |
 | 2026-11-11T04:20:30+00:00 | call-feedback-nov11 | `openai/gpt-oss-20b` | `openai/gpt-oss-120b` | 72 | 70 (97%) | `city_not_found` 0/1 | $0.19 | [report](runs/20261111T0420Z_call-feedback-nov11/report.md) |
 | 2026-11-11T01:44:44+00:00 | mia-120b | `openai/gpt-oss-120b` | `openai/gpt-oss-120b` | 72 | 64 (89%) | `off_topic_three_strikes` 0/2 | $0.40 | [report](runs/20261111T0144Z_mia-120b/report.md) |
 | 2026-11-11T01:38:37+00:00 | mia-20b | `openai/gpt-oss-20b` | `openai/gpt-oss-120b` | 72 | 71 (99%) | `api_down_at_quote` 2/2 | $0.20 | [report](runs/20261111T0138Z_mia-20b/report.md) |

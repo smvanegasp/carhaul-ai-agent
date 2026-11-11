@@ -17,6 +17,7 @@ import re
 from dataclasses import dataclass
 
 from mia import grounding
+from mia.guardrails import _READ_BACK
 
 
 @dataclass(frozen=True)
@@ -99,6 +100,10 @@ def ensure_answer(spoken: str, last_said: str) -> str:
     faq = asked_about(last_said)
     if faq is None or (spoken and _has_key(spoken, faq)) or "$" in spoken:
         return spoken  # a line with a price is the quote: never rewritten
+    if _READ_BACK.search(spoken):
+        # The car and a question in one message: the answer, then the whole read-back
+        # (scenario acknowledge_and_answer, 2026-11-11).
+        return f"{faq.answer} {spoken}"
     sentences = [s for s in _SENTENCE.split(spoken.strip()) if s]
     question = next((s for s in reversed(sentences) if s.endswith("?")), "")
     return f"{faq.answer} {question}".strip()

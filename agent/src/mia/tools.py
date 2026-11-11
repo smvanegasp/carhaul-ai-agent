@@ -114,6 +114,13 @@ def _next_question(state: QuoteSession) -> str:
             "state, destination city and state) and ask if it's correct. Call get_quote only "
             "after they confirm."
         )
+    for side, word in (("origin", "from"), ("destination", "to")):
+        st = state.states_without_city.get(side)
+        if side in missing and st:
+            return (
+                f"They said {st} but no city: ask which city in {st} they're shipping {word} "
+                f'(e.g. "Which city in {st}?").'
+            )
     if "origin" in missing or "destination" in missing:
         which = " and ".join(m for m in missing if m in ("origin", "destination"))
         return f"Ask for the {which} (city and state)."
@@ -195,8 +202,15 @@ async def save_origin_destination(
 ) -> Result:
     """``said``: everything the caller said so far, for the grounding check (None skips it)."""
     _note_vehicle_count(state, said)
+    # A state with no city ("from Miami to California"): ask which city in it, on that side.
+    for side, city, st in (
+        ("origin", origin_city, origin_state),
+        ("destination", destination_city, destination_state),
+    ):
+        if st and not city and (said is None or grounding.state_said(st, said)):
+            state.states_without_city[side] = st
     if not origin_city and not destination_city:
-        return _err(state, "NOTHING_TO_SAVE", "Ask for the origin and destination cities.")
+        return _err(state, "NOTHING_TO_SAVE", _next_question(state))
 
     # Grounding guardrail: only cities the caller said; a state they didn't say is dropped
     # (the geocoder picks the best match and Mia confirms the state out loud).
@@ -260,6 +274,9 @@ async def save_origin_destination(
         )
     state.set_route(places["origin"], places["destination"])
     state.failures["route"] = 0
+    for side, place in places.items():
+        if place:
+            state.states_without_city.pop(side, None)
     saved = {side: p.spoken for side, p in places.items() if p}
     extra = {"ignored_not_said": ignored} if ignored else {}
     return _ok(state, _next_question(state), saved=saved, **extra)
@@ -798,6 +815,7 @@ async def note_off_topic(state: QuoteSession, services: Services) -> Result:
     answers in a few words and steers back; the third time she ends the call politely, never
     with a transfer (docs/CONVERSATION_DESIGN.md, adversarial path)."""
     state.off_topic += 1
+    state.off_topic_turns.append(state.caller_turns)
     if state.off_topic >= OFF_TOPIC_LIMIT:
         state.ended, state.end_reason = True, "off_topic"
         state.hang_up_after_speech = True  # voice: hang up once this line has played

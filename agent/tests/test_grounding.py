@@ -351,3 +351,16 @@ def test_actually_before_a_count_is_not_a_correction():
 )
 def test_model_named_right_after_the_make(model, make, said, named):
     assert grounding.model_named(model, make, said) is named
+
+
+def test_punctuation_is_never_a_detail_the_caller_said():
+    # Real-API run, 2026-11-11: "Yeah, sure" -> save_origin_destination(origin_city="?").
+    assert not grounding.city_said("?", "Yeah, sure")
+    assert not grounding.model_said("?", "it's my Ford")
+
+
+def test_a_make_or_a_year_is_on_topic():
+    # "It's a 2025 Honda Civic" was counted as an off-topic question.
+    assert grounding.is_on_topic("It's a 2025 Honda Civic")
+    assert grounding.is_on_topic("It's a Toyota 4Runner from 2020")
+    assert not grounding.is_on_topic("Tell me a joke about cats")

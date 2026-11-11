@@ -217,3 +217,33 @@ async def test_a_yes_to_the_read_back_gets_the_quote(client, resolver):
         await session.run(user_input="It's a 2025 Honda Civic")
         await session.run(user_input="Yep.")
     assert state.quote and state.quote["total"] == 1291
+
+
+async def test_a_third_off_topic_question_in_a_row_ends_the_call(client, resolver):
+    # The model often doesn't count the third one (off_topic_three_strikes turned CI red).
+    state = QuoteSession()
+    off = ("note_off_topic", "{}")
+    model = ScriptedLLM(
+        [
+            Step(calls=[off]),
+            Step(text="Not sure. Where are you shipping from?"),
+            Step(calls=[off]),
+            Step(text="Not sure. Where are you shipping from?"),
+            Step(text="I'm not sure about that. Where are you shipping from?"),
+            Step(text="I can only help with car shipping quotes. Thanks for calling. Goodbye!"),
+        ]
+    )
+    services = Services(carhauler=client, resolver=resolver, geocode=fake_city_to_zip)
+    async with new_session(state, llm=model) as session:
+        await session.start(Mia(services, greeting=GREETINGS[0]))
+        await session.run(user_input="What's the capital of France?")
+        await session.run(user_input="Tell me a joke about cats?")
+        await session.run(user_input="What's your favorite pizza topping?")
+    assert state.off_topic == 3 and state.ended and state.end_reason == "off_topic"
+
+
+def test_the_greeting_asks_the_first_question():
+    # Sergio, 2026-11-11: no "Shall we start?"; the greeting itself asks for the route.
+    for greeting in GREETINGS:
+        assert greeting.endswith("?") and "start" not in greeting.lower()
+        assert "virtual assistant" in greeting

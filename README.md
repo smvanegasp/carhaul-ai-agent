@@ -83,7 +83,8 @@ mid-sentence and, once, a 3 s Groq response.
 
 1. Unit tests for every tool, including typos and API failures.
 2. Scenario tests: reference conversations replayed in text against the real LLM, checking the
-   tool calls (an LLM judge checks the wording). The model isn't deterministic, so CI retries a
+   tool calls (an LLM judge checks the wording). They run on fake APIs in CI and against the
+   **real CarHauler and Google APIs** before changes to Mia, since those APIs aren't ours. The model isn't deterministic, so CI retries a
    failed scenario twice; pass rates come from the simulations (4).
 3. Voice smoke test: a scripted caller (a different TTS voice) phones Mia through LiveKit and
    checks the whole call end to end, with timings.

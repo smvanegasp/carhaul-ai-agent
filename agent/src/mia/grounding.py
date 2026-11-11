@@ -100,7 +100,9 @@ def _fuzzy_in(value: str, said: str, cutoff: float = MATCH_CUTOFF) -> bool:
     """Does ``value`` appear in ``said`` (both normalized), allowing typos?"""
     v = normalize(value)
     if not v:
-        return True
+        # Nothing to match: "?" or "" was never said (real-API run, 2026-11-11: "Yeah, sure"
+        # -> save_origin_destination(origin_city="?") passed, then "Which state is that in?").
+        return False
     # Short names need a closer match ("car" is 0.75 similar to "camry"), and a typo never
     # changes the length by much.
     min_ratio = max(cutoff, 0.8) if len(v) <= 6 else cutoff
@@ -546,8 +548,10 @@ _ON_TOPIC = re.compile(
 
 
 def is_on_topic(text: str) -> bool:
-    """Does the caller's message mention shipping, the car, the price or the call itself?"""
-    return bool(_ON_TOPIC.search(text))
+    """Does the caller's message mention shipping, the car, the price or the call itself? A
+    make or a year counts (real-API run, 2026-11-11: "It's a 2025 Honda Civic" was counted as
+    an off-topic question)."""
+    return bool(_ON_TOPIC.search(text)) or bool(makes_in(text)) or bool(_years_in(text))
 
 
 # Questions. STT usually adds the "?", but not always, so a question word at the start counts

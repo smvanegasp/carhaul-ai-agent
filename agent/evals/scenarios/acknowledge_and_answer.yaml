@@ -1,0 +1,21 @@
+# Sergio, 2026-11-11: be conversational: acknowledge what the caller gave, answer their question
+# first, then continue with what's missing.
+id: acknowledge_and_answer
+persona: G_C_V
+path: QHP
+ground_truth:
+  origin: Boston, Massachusetts
+  destination: San Francisco, California
+  vehicles: [2025 Honda Civic]
+turns:
+  - user: "From Boston, Massachusetts to San Francisco, California."
+    expect:
+      on_file: {origin: "Boston, Massachusetts", destination: "San Francisco, California"}
+      judge: Briefly acknowledges the route, then asks for the vehicle.
+  - user: "It's a 2025 Honda Civic. Oh, and do you do enclosed shipping?"
+    expect:
+      on_file: {vehicles: [2025 Honda Civic]}
+      no_tools: [get_quote]
+      judge: >-
+        Answers the question first (only open car shipping is quoted), then reads the details
+        back or asks the caller to confirm them.
