@@ -485,7 +485,10 @@ def corrected_year(year: int | None, last_said: str) -> int | None:
 # Removing a vehicle and undoing a change only run on the caller's own words (gpt-oss invents
 # tool calls; these change what's quoted).
 _REMOVE = re.compile(
-    r"\b(?:remove|take (?:off|out)|drop|delete|cancel|forget|scratch|without|leave out|"
+    # "eliminate": Sergio's call, 2026-11-11 ("Can you actually eliminate the Toyota?" was
+    # dropped, then Mia read the same three cars back three times).
+    r"\b(?:remove|eliminate|get rid of|exclude|erase|take (?:off|out|away)|drop|delete|"
+    r"cancel|forget|scratch|without|leave out|"
     r"don'?t need|do not need|not (?:shipping|sending|bringing)|no longer|only (?:the|one)|"
     r"just (?:the|one))",
     re.IGNORECASE,
@@ -500,6 +503,14 @@ _UNDO = re.compile(
 def wants_removal(text: str) -> bool:
     """ "Remove the Toyota", "I don't need the second car", "just the Honda"."""
     return bool(_REMOVE.search(text))
+
+
+_OFFERED_REMOVAL = re.compile(r"\bremove the\b[^.!?]*\?", re.IGNORECASE)
+
+
+def offered_removal(mia_said: str) -> bool:
+    """Did Mia just ask "Do you want me to remove the 2024 Toyota 4Runner?"."""
+    return bool(_OFFERED_REMOVAL.search(mia_said))
 
 
 def wants_undo(text: str) -> bool:

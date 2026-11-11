@@ -1,0 +1,19 @@
+# Sergio's call, 2026-11-11: "Can you actually eliminate the Toyota?" was dropped (not a word the
+# removal guardrail knew) and Mia read the same cars back again.
+id: eliminate_vehicle
+persona: NG_C_NV
+path: NHP
+ground_truth:
+  origin: Boston, Massachusetts
+  destination: San Francisco, California
+  vehicles: [2025 Honda Civic]
+turns:
+  - user: "Yes."
+  - user: "From Boston, Massachusetts to San Francisco, California"
+  - user: "I have two cars: a 2025 Honda Civic and a 2020 Toyota 4Runner"
+    expect:
+      on_file: {vehicles: [2025 Honda Civic, 2020 Toyota 4Runner]}
+  - user: "Can you actually eliminate the Toyota?"
+    expect:
+      on_file: {vehicles: [2025 Honda Civic]}
+      no_tools: [get_quote]

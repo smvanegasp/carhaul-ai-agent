@@ -561,6 +561,21 @@ Still open (from the transcripts):
 
       120b invented more tool calls and missed the off-topic ending 6 times
 
+## Fixes from Sergio's call of 2026-11-11 (branch `call-fixes-voicemail-removal`)
+
+- [x] **Transfer to voicemail**: the line must press 1 before the caller is put through; until
+      then they can't hear each other; no 1 -> the line is hung up and the caller hears "I
+      couldn't reach a licensed representative". Offline tests of the screening; **needs one
+      live check** (it rings Sergio's phone: once letting it go to voicemail, once pressing 1)
+- [x] **"Eliminate the Toyota"** ignored, then STT heard "I won't tell him Nate" and Mia read the
+      same cars back three times: more removal words (eliminate, get rid of, exclude, erase,
+      take away); a removal the guardrail can't confirm becomes "Do you want me to remove the
+      2024 Toyota 4Runner?" and a yes runs it. Scenario `eliminate_vehicle` **0/5 -> 5/5**
+- [x] **"Ford f one fifty"**: the model passed F-150 but grounding didn't match the spoken number,
+      so Mia asked for the model three times. Number words now go up to "ninety" and "hundred".
+      Scenario `spoken_model_number` **0/5 -> 5/5**
+- Scenario suite 19/19 after the changes
+
 ## Ideas / later
 
 

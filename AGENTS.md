@@ -99,7 +99,7 @@ Fargate, not Lambda. Everything else follows the fit pattern.
 | `events.py` | `CallEvents`: turns with latency, tool calls with JSON, guardrail drops, state; the live panel's stream (`mia.events`) and the record's content |
 | `records.py` | The call record and its DynamoDB write (keys documented there; shared table with the backend) |
 | `idle.py` | On AWS the worker exits after 10 idle minutes (no call, no wake) or 2 hours, so it only costs money around calls |
-| `transfer.py` | Transfer to a licensed representative: Mia dials Sergio's phone into the call through the Twilio SIP trunk, introduces the caller and leaves; daily cap, ring/talk limits |
+| `transfer.py` | Transfer to a licensed representative: Mia dials Sergio's phone into the call through the Twilio SIP trunk, **screens the line (press 1; a voicemail never does)** with caller and line unable to hear each other until then, introduces the caller and leaves; daily cap, ring/talk limits |
 | `silence.py` | What Mia does when the caller goes quiet: "are you still there?", or a goodbye and hang-up |
 | `voices.py` | The 6 American voices callers can pick (2 each: Cartesia, ElevenLabs, Deepgram; Cartesia Skylar first and default), each with a description; keys and descriptions match `backend/app/voices.py` |
 | `speech.py` | Numbers written out as words before any voice reads them (`Mia.tts_node`) |
@@ -175,6 +175,14 @@ docker compose up        # api :8020, web :5190, DynamoDB Local :8030, agent wor
   token-endpoint rate limit, the daily call cap and the max call length.
 
 ## 6. Decisions log
+
+- 2026-11-11 (Sergio's call): **Transfers are screened: press 1.** His voicemail answered the
+  transfer and the SIP leg reported it as answered, so Mia introduced the caller to a voicemail
+  while the caller heard both. Now the line must press 1 (DTMF) and the two can't hear each other
+  until then (server-side `update_subscriptions`); no 1 -> Mia hangs up the line and tells the
+  caller. Also from that call: "eliminate" is a removal word, a garbled removal makes Mia ask
+  "Do you want me to remove the ...?" (a yes runs it), and spoken model numbers ground ("f one
+  fifty" = F-150).
 
 - 2026-11-11: **Simulations by hand, after big changes; no nightly run** (Sergio: no gain from
   running them every day, keep the project super cheap). The workflow stays, manual only. One

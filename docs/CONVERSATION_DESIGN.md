@@ -148,11 +148,14 @@ can assist you further?"
 Mia never names Sergio or says who built this (Sergio, 2026-11-09: it sounded arrogant). If the
 caller says yes or asks for a person at any point: "Sure, I'll connect you with a licensed
 representative now. Please stay on the line." The caller hears ringing while Mia dials the
-representative (Sergio's phone; the page discloses it). When they answer, Mia tells them who's
-waiting ("Hi, this is Mia from F&F. I have a caller here about shipping a 2025 Honda Civic from
-Boston, Massachusetts to San Francisco, California. Their estimate was 1,291 dollars. I'll let
-you two talk now. Goodbye!") and leaves. No answer in 30 s: "I'm sorry, I couldn't reach a
-licensed representative right now. Is there anything else I can help you with?"
+representative (Sergio's phone; the page discloses it). When the line picks up, the caller and
+the line can't hear each other yet, and Mia screens it: "Hi, this is Mia from F&F. I have a
+caller here about shipping a 2025 Honda Civic from Boston, Massachusetts to San Francisco,
+California. Their estimate was 1,291 dollars. **Press 1 to take the call.**" (once more if
+needed). On a 1 they're connected: "Thank you. I'll let you two talk now. Goodbye!" and Mia
+leaves. No answer in 30 s, or no 1 (a voicemail picked up): Mia hangs up that line and tells the
+caller "I'm sorry, I couldn't reach a licensed representative right now. Is there anything else I
+can help you with?"
 
 ## On a voice call (stage 3)
 

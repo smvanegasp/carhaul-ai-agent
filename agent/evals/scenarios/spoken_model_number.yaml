@@ -1,0 +1,16 @@
+# Sergio's call, 2026-11-11: "twenty twenty four Ford f one fifty" -> the model passed F-150 but
+# grounding didn't match "f one fifty", so Mia asked "What model is the 2024 Ford?" three times.
+id: spoken_model_number
+persona: NG_C_NV
+path: SHP
+ground_truth:
+  origin: Boston, Massachusetts
+  destination: San Francisco, California
+  vehicles: [2024 Ford F-150]
+turns:
+  - user: "Yes."
+  - user: "From Boston, Massachusetts to San Francisco, California"
+  - user: "It's twenty twenty four Ford f one fifty."
+    expect:
+      on_file: {vehicles: [2024 Ford F-150]}
+      no_tools: [get_quote]
