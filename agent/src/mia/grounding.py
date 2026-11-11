@@ -734,11 +734,25 @@ def is_question(text: str) -> bool:
         return False
     if _ASKING.search(text):
         return True
-    return any(
-        s.endswith("?") or _QUESTION_START.search(s)
-        for s in (x.strip() for x in _SENTENCES.split(text))
-        if s
-    )
+    return bool(question_part(text))
+
+
+def question_part(text: str) -> str:
+    """The sentences of a message that ask something: those ending in "?" or starting like a
+    question, and the one with "I want to know if..." (from there on). "" if none.
+    "Yes. Can we actually I think I made a mistake. I want to change one card." -> "Can we
+    actually I think I made a mistake." (call 9ea951ab02c2: the payment FAQ was answered
+    because "card" was elsewhere in the message)."""
+    parts = []
+    for s in (x.strip() for x in _SENTENCES.split(text.strip())):
+        if not s:
+            continue
+        asking = _ASKING.search(s)
+        if asking:
+            parts.append(s[asking.start() :])
+        elif s.endswith("?") or _QUESTION_START.search(s):
+            parts.append(s)
+    return " ".join(parts)
 
 
 # The caller ending the call ("Cool. Thank you. Bye.", "What? Goodbye."). Belinda's call,
