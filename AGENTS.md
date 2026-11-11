@@ -176,6 +176,11 @@ docker compose up        # api :8020, web :5190, DynamoDB Local :8030, agent wor
 
 ## 6. Decisions log
 
+- 2026-11-11: **Mia keeps what the caller already said of a vehicle** (Sergio's feedback: never
+  make them repeat). The year and make come from the caller's own words in code
+  (`grounding.vehicle_details_in`), not from the model's tool calls, which skipped them in his
+  call; `save_vehicle` merges them and the next question asks only for what's missing.
+
 - 2026-11-10 (stage 7): **Simulations are a record, not just a test.** Every run (report and
   full transcripts) is committed to `agent/evals/simulations/`, public, nightly. The runner
   scripts *when* fragments happen and a model plays the caller (gpt-oss-120b); scoring is code

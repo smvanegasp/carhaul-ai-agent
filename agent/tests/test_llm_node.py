@@ -129,6 +129,26 @@ async def test_a_failed_model_step_keeps_the_call_going(client, resolver):
     # Stage 7 simulation: "Failed to parse tool call arguments as JSON" ended 3 of 72 calls.
     state = QuoteSession(origin=BOS, destination=SF)
     steps = [Step(error="Failed to parse tool call arguments as JSON")]
-    spoken, calls = await _reply(steps, state, "It's a 2025 Honda Civic", client, resolver)
+    spoken, calls = await _reply(steps, state, "Okay, go ahead", client, resolver)
     assert spoken == "What's the year, make and model of the car?"
     assert len(calls) == 1  # not retryable: no second attempt
+
+
+async def test_a_year_and_make_said_with_the_route_are_kept(client, resolver):
+    # Sergio's call, 2026-11-10: "It's from Miami to Chicago. It's a twenty twenty Honda." ->
+    # the route was saved, then Mia asked for the year, make and model again, because the
+    # route tool told the model to.
+    state = QuoteSession()
+    route = '{"origin_city": "Boston", "destination_city": "San Francisco"}'
+    model = ScriptedLLM(
+        [Step(calls=[("save_origin_destination", route)]), Step(text="What model is it?")]
+    )
+    services = Services(carhauler=client, resolver=resolver, geocode=fake_city_to_zip)
+    said = "It's from Boston to San Francisco. It's a twenty twenty five Honda."
+    async with new_session(state, llm=model) as session:
+        await session.start(Mia(services, greeting=GREETINGS[0]))
+        await session.run(user_input=said)
+    assert state.partial_vehicle == {"year": 2025, "make": "Honda"}
+    outputs = [i.output for i in model.contexts[1].items if i.type == "function_call_output"]
+    assert "What model is the 2025 Honda?" in outputs[-1]
+    assert '"heard_so_far": "2025 Honda"' in outputs[-1]

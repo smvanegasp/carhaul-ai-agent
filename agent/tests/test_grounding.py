@@ -277,3 +277,20 @@ def test_asks_for_person(text, asks):
 )
 def test_makes_named(text, n):
     assert grounding.makes_named(text) == n
+
+
+@pytest.mark.parametrize(
+    "text, heard",
+    [
+        (
+            "It's from Miami to Chicago. It's a twenty twenty Honda.",
+            {"year": 2020, "make": "Honda"},
+        ),
+        ("a 2019... no 2020 Chevy", {"year": 2020, "make": "Chevrolet"}),
+        ("It's a Toyota", {"make": "Toyota"}),
+        ("From Boston to SF", {}),
+        ("a Honda and a Toyota", {}),  # two cars: no single make
+    ],
+)
+def test_vehicle_details_in(text, heard):
+    assert grounding.vehicle_details_in(text) == heard

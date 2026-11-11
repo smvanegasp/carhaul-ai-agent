@@ -115,6 +115,11 @@ def _next_question(state: QuoteSession) -> str:
     if "origin" in missing or "destination" in missing:
         which = " and ".join(m for m in missing if m in ("origin", "destination"))
         return f"Ask for the {which} (city and state)."
+    if state.partial_vehicle and any(m.startswith("vehicle") for m in missing):
+        return (
+            f"They already said it's a {state.partial_label()}: don't ask for that again. Ask "
+            f'only for what\'s missing, e.g. "{state.partial_question()}"'
+        )
     if "vehicle" in missing:
         if state.expected_vehicles and state.expected_vehicles > 1:
             return (
@@ -410,6 +415,10 @@ async def save_vehicle(
         named = grounding.makes_named(last_said)
         if named >= 2 and named > (state.expected_vehicles or 0):
             state.expected_vehicles = named  # so Mia asks for the one the model skipped
+    # What the caller already said of this vehicle (an earlier turn), if the model left it out.
+    if state.partial_vehicle and not (vehicle_type and not make):
+        year = year or state.partial_vehicle.get("year")
+        make = make or state.partial_vehicle.get("make")
     # Models send null for "not mentioned": only an explicit False means it doesn't run.
     operational = drivable is not False
     year, make, model, vehicle_type, ignored = _grounded(said, year, make, model, vehicle_type)
@@ -435,6 +444,7 @@ async def save_vehicle(
     if _already_on_file(state, _entry_fields(fields)):
         return _ok(state, ALREADY_ON_FILE + _next_question(state), saved=None)
     entry = state.add_vehicle(**_entry_fields(fields))
+    state.partial_vehicle = {}
     saved: dict[str, Any] = {"quote_id": entry.quote_id, "vehicle": entry.label}
     if fields.get("_estimate"):
         saved["estimate"] = True

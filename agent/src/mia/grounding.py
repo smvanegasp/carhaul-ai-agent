@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import re
 from difflib import SequenceMatcher
+from typing import Any
 
 from mia.geo import canonicalize_state
 from mia.vehicles import MAKE_ALIASES, VEHICLE_TYPE_ALIASES, normalize, normalize_vehicle_type
@@ -179,6 +180,42 @@ def makes_named(text: str) -> int:
         if re.search(rf"\b{alias}\b", words):
             found.add(full.lower())
     return len(found)
+
+
+_MAKE_NAMES = {"bmw": "BMW", "gmc": "GMC", "ram": "Ram", "mercedes-benz": "Mercedes-Benz"}
+
+
+def makes_in(text: str) -> list[str]:
+    """The makes one message names, as display names ("Honda", "Chevrolet"), in order."""
+    words = " ".join(_words(text.replace("-", " ")))
+    hits: list[tuple[int, str]] = []
+    for m in COMMON_MAKES:
+        found = re.search(rf"\b{m.replace('-', ' ')}\b", words)
+        if found:
+            hits.append((found.start(), _MAKE_NAMES.get(m, m.title())))
+    for alias, full in MAKE_ALIASES.items():
+        found = re.search(rf"\b{alias}\b", words)
+        if found:
+            hits.append((found.start(), full))
+    out: list[str] = []
+    for _, name in sorted(hits):
+        if name not in out:
+            out.append(name)
+    return out
+
+
+def vehicle_details_in(text: str) -> dict[str, Any]:
+    """The year and make in one message ("It's from Miami to Chicago. It's a twenty twenty
+    Honda" -> {"year": 2020, "make": "Honda"}), so Mia never asks for them again. A make only
+    when exactly one is named (two makes are two cars); the year a caller corrected to wins."""
+    out: dict[str, Any] = {}
+    years = _years_in(text)
+    if years:
+        out["year"] = corrected_year(years[0][2], text)
+    makes = makes_in(text)
+    if len(makes) == 1:
+        out["make"] = makes[0]
+    return out
 
 
 def make_said(make: str, said: str) -> bool:

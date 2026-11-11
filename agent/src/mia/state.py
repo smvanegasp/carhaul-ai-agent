@@ -106,6 +106,10 @@ class QuoteSession:
     # Tool calls the output guardrail dropped (invented details, unconfirmed quote).
     dropped_calls: list[dict[str, Any]] = field(default_factory=list)
     caller_turns: int = 0  # how many times the caller has spoken
+    # Year and make the caller said for the vehicle in progress, before its model (Sergio's
+    # call, 2026-11-10: "from Miami to Chicago. It's a twenty twenty Honda", then asked for
+    # the year, make and model again). Merged into the next save_vehicle, then cleared.
+    partial_vehicle: dict[str, Any] = field(default_factory=dict)
     _next_id: int = 1
 
     # --- quote IDs and the trash ---------------------------------------------------------
@@ -258,7 +262,27 @@ class QuoteSession:
             ],
             "expected_vehicles": self.expected_vehicles,
             "missing": self.missing,
-        }
+        } | ({"heard_so_far": self.partial_label()} if self.partial_vehicle else {})
+
+    def partial_label(self) -> str:
+        """ "2020 Honda", "2020 car", "Honda": what the caller said of the next vehicle."""
+        p = self.partial_vehicle
+        if p.get("make"):
+            return " ".join(str(x) for x in (p.get("year"), p["make"]) if x)
+        return f"{p['year']} car" if p.get("year") else ""
+
+    def partial_question(self) -> str:
+        """The question for what's still missing of the vehicle in progress."""
+        p = self.partial_vehicle
+        if p.get("year") and p.get("make"):
+            return f"What model is the {p['year']} {p['make']}?"
+        if p.get("make"):
+            return f"What year and model is the {p['make']}?"
+        return f"What's the make and model of the {p['year']} car?"
+
+    def note_partial_vehicle(self, heard: dict[str, Any]) -> None:
+        """Keep what the caller said of the vehicle in progress (newer values win)."""
+        self.partial_vehicle = {**self.partial_vehicle, **heard}
 
     def to_record(self) -> dict[str, Any]:
         """Full state for logs and the call record (records.py)."""

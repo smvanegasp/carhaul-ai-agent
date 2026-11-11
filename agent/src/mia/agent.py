@@ -97,6 +97,20 @@ ANSWER_ONLY = (
 )
 
 
+def _note_partial_vehicle(state: QuoteSession, last_said: str) -> None:
+    """While a vehicle is missing, keep the year and make the caller just said, whatever tools
+    the model calls (in Sergio's call it called none for "It's a twenty twenty Honda"). Not
+    once a vehicle was saved from this same message, nor after the quote (changes then go
+    through update_vehicle)."""
+    if state.quote or not any(m.startswith("vehicle") for m in state.missing):
+        return
+    if any(v.saved_turn == state.caller_turns for v in state.vehicles):
+        return
+    heard = grounding.vehicle_details_in(last_said)
+    if heard:
+        state.note_partial_vehicle(heard)
+
+
 def _call_chunk(name: str, args: dict[str, Any]) -> llm.ChatChunk:
     """A tool call added by code (see ``Mia.llm_node``)."""
     call = llm.FunctionToolCall(
@@ -201,6 +215,7 @@ class Mia(Agent):
         said, last_said = caller_said(chat_ctx), caller_last_said(chat_ctx)
         mia_last = mia_last_said(chat_ctx)
         state.caller_turns = caller_turn_count(chat_ctx)
+        _note_partial_vehicle(state, last_said)
         held: list[llm.ChatChunk | str] = []
         text, runs_tool, dropped, failed = "", False, [], False
         try:
