@@ -1,0 +1,76 @@
+name: Simulations
+
+# Stage 7: every night, Mia talks to a simulated caller (8 personas x 9 paths, fake CarHauler
+# and geocoder, so only Groq tokens: a few cents a run), and the scenario suite runs 3 times
+# for per-scenario pass rates. The run's transcripts and report are committed to
+# agent/evals/simulations/ on main, so the repo keeps every run (public on purpose).
+#
+# The push uses this workflow's GITHUB_TOKEN, which never starts other workflows: no CI run and
+# no deploy. Needs the GROQ_API_KEY repository secret; skipped (with a notice) without it.
+on:
+  schedule:
+    - cron: "0 8 * * *" # 08:00 UTC, 3 am in Boston
+  workflow_dispatch:
+    inputs:
+      repeat:
+        description: "Times each persona x path runs"
+        default: "1"
+      scenario_runs:
+        description: "Times the scenario suite runs (0: skip)"
+        default: "3"
+      paths:
+        description: "Only these paths (comma-separated; empty: all)"
+        default: ""
+
+permissions:
+  contents: write
+
+concurrency:
+  group: simulations
+  cancel-in-progress: false
+
+jobs:
+  simulate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    env:
+      GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+    defaults:
+      run:
+        working-directory: agent
+    steps:
+      - if: env.GROQ_API_KEY == ''
+        working-directory: .
+        run: echo "::notice::GROQ_API_KEY secret not set; skipping simulations"
+      - if: env.GROQ_API_KEY != ''
+        uses: actions/checkout@v7
+        with:
+          ref: main
+      - if: env.GROQ_API_KEY != ''
+        uses: astral-sh/setup-uv@v7
+      - if: env.GROQ_API_KEY != ''
+        run: uv sync --frozen
+      - if: env.GROQ_API_KEY != ''
+        env:
+          LABEL: ${{ github.event_name == 'schedule' && 'nightly' || 'manual' }}
+          REPEAT: ${{ inputs.repeat || '1' }}
+          SCENARIO_RUNS: ${{ inputs.scenario_runs || '3' }}
+          PATHS: ${{ inputs.paths }}
+        run: >-
+          uv run python -m evals.sim.run --label "$LABEL" --repeat "$REPEAT"
+          --scenario-runs "$SCENARIO_RUNS" ${PATHS:+--paths "$PATHS"}
+      - if: env.GROQ_API_KEY != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: simulation-run
+          path: agent/evals/simulations/
+      - if: env.GROQ_API_KEY != ''
+        name: Commit the run to main
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add evals/simulations
+          git diff --cached --quiet && exit 0
+          git commit -m "Simulations: $(ls -1 evals/simulations/runs | tail -1) [skip ci]"
+          for i in 1 2 3; do git pull --rebase -q && git push -q && exit 0; sleep 5; done
+          exit 1

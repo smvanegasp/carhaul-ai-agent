@@ -41,10 +41,11 @@ was lost there); no duplicate vehicle after undo; silence lines logged once. The
 demand (`/api/wake` starts it, ~1 min; it exits after 10 idle minutes), so hosting is about
 $1/month.
 
-Next after the follow-ups are merged and deployed: stage 7 (AI-vs-AI simulations: 8 personas x fragments,
-report by persona and path, nightly workflow), which should also track the two flaky
-scenarios; then a custom domain (`carhaul.sergiovanegas.com`) and, if wanted, a phone number
-to call Mia (inbound; LiveKit's free number). Deploys are manual (`scripts/deploy.sh` in Git
+Branch `stage-7-simulations` (PR open): the AI-vs-AI simulator, the nightly workflow and
+the first four runs (58% -> 94% of 72 calls), plus 8 Mia fixes the simulations found
+(one is a crash in #23's no-tools retry, so deploy this PR after #23). Next: the open items
+in BACKLOG stage 7 (FAQ answer quality), a custom domain (`carhaul.sergiovanegas.com`) and,
+if wanted, a phone number to call Mia (inbound; LiveKit's free number). Deploys are manual (`scripts/deploy.sh` in Git
 Bash, Sergio types `yes`); the GitHub deploy workflow is off until `DEPLOY_ENABLED` is set.
 
 The project is by Sergio Vanegas (https://www.linkedin.com/in/sergio-vanegas/) and Belinda Hu
@@ -112,7 +113,7 @@ Fargate, not Lambda. Everything else follows the fit pattern.
 
 | Path | What |
 | --- | --- |
-| `agent/` | uv project `mia-agent`, package `src/mia/` (see below). `evals/scenarios/*.yaml`: reference conversations |
+| `agent/` | uv project `mia-agent`, package `src/mia/` (see below). `evals/scenarios/*.yaml`: reference conversations. `evals/sim/`: the stage 7 simulator (`catalog` personas/cases/paths, `caller` the simulated caller, `run` conversation + scoring + CLI, `report`). `evals/simulations/`: **every simulation run, committed** (README index, per run report + transcripts; public on purpose) |
 | `backend/` | uv project `carhaul-api`: FastAPI for Lambda (`app/`). `POST /api/token` (`livekit_token.py`, rate limited by `ratelimit.py`), `POST /api/calls/{room}/feedback` (`calls.py`), `POST /api/wake` (`worker.py`: starts the on-demand worker), `GET /api/calls` and `GET /api/calls/{room}` (public, rate limited), `GET /api/stats` (`stats.py`: per-call milestones and Mia's time, backfilled once from records), DynamoDB in `db.py` |
 | `frontend/` | React 19 + Vite + Tailwind v4 + LiveKit components. `App.tsx`: the shell (collapsible sidebar on desktop, tabs on a phone; views in the URL hash, `lib/route.ts`; the call view stays mounted so switching views never drops a call). `src/history/PastCalls.tsx`: past calls (list + the same conversation/stats views from the saved record). `src/stats/StatsPage.tsx` + `lib/stats.ts`: KPIs, funnel, trends. `IntroDialog.tsx`: what this is + the disclosure, once a session. `src/call/`: `CallPage.tsx` (layout, call controls, wake), `Conversation.tsx` (chat + inline tool calls and latency behind "Show details", built by `lib/conversation.ts`), `Insights.tsx` (stage, stats, latency, on file), `FeedbackForm.tsx`, `useWake.ts` (+ `lib/wake.ts`: the wake progress bar), `ThemeToggle.tsx`. Colors are theme tokens in `src/index.css` (light by default, dark on request). Later: dashboard |
 | `notebooks/` | Exploration only; kernel is `agent/.venv` (`uv sync --group notebooks`) |
@@ -150,7 +151,14 @@ docker compose up        # api :8020, web :5190, DynamoDB Local :8030, agent wor
   and CarHauler APIs; it prints every tool call, its JSON and anything the guardrail dropped.
 - `uv run pytest -m llm` replays `evals/scenarios/*.yaml` against the real LLM (fake CarHauler
   and geocoder, so prices are fixed). `MIA_LLM_MODEL` switches the model. CI runs it when the
-  `GROQ_API_KEY` repository secret is set.
+  `GROQ_API_KEY` repository secret is set, retrying a failed scenario twice (flakes).
+- `uv run python -m evals.sim.run` (in `agent/`): **AI-vs-AI simulations**, 8 personas x 9
+  paths (72 calls, ~10 min, cents of Groq; no CarHauler or Google calls). `--personas`,
+  `--paths`, `--repeat`, `--limit`, `--scenario-runs N` (the scenario suite N times, for pass
+  rates). Each run is saved to `evals/simulations/runs/` and listed in
+  `evals/simulations/README.md`: commit it, the transcripts are the project's record. The
+  nightly workflow (`simulations.yml`, 08:00 UTC) does the same and pushes to main. Use
+  `--out <scratch dir>` for throwaway tries.
 - Offline tests use `tests/fake_carhauler.py` (respx), which mimics the real API's quirks.
   **Never assert live prices**; they change weekly.
 - CI (`.github/workflows/ci.yml`): agent, backend, frontend, docker build, gitleaks.
@@ -167,6 +175,14 @@ docker compose up        # api :8020, web :5190, DynamoDB Local :8030, agent wor
   token-endpoint rate limit, the daily call cap and the max call length.
 
 ## 6. Decisions log
+
+- 2026-11-10 (stage 7): **Simulations are a record, not just a test.** Every run (report and
+  full transcripts) is committed to `agent/evals/simulations/`, public, nightly. The runner
+  scripts *when* fragments happen and a model plays the caller (gpt-oss-120b); scoring is code
+  against ground truth, so it's cheap (~$0.20 a run), the same every night and re-scorable
+  from saved records. Groq's 250k TPM caps it at 2 calls at once. First run: 58%, mostly
+  rate limits; it found a crash in #23's no-tools retry and a read-back naming a car that
+  wasn't on file (now rebuilt from state, `honest_read_back`).
 
 - 2026-11-10 (stage 8 follow-ups): **CI retries LLM scenarios** (`--reruns 2`): main went red
   after #22 on known 1-in-5 flakes; a scenario now fails the build only after 3 misses in a

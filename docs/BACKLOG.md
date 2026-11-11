@@ -11,7 +11,7 @@ One branch and one PR per stage. ✅ done · 🔜 next · ⏳ later.
 | 4 | AWS deploy: Terraform (fit + on-demand ECS Fargate worker), Deploy workflow, SSM secrets, TESTING_GUIDE. **Teammate starts testing** | ✅ |
 | 5 | Live panel (`mia.events`), call record to DynamoDB, feedback form per call | ✅ |
 | 6 | Public dashboard: Past calls (list + detail) and Stats (KPIs, funnel, trends) | ✅ |
-| 7 | AI-vs-AI simulation: 8 personas × fragments, report by persona and path, nightly workflow | 🔜 |
+| 7 | AI-vs-AI simulation: 8 personas × fragments, report by persona and path, nightly workflow | ✅ |
 | 8 | Non-happy paths: self-corrections, silence, changes + trash, error matrix, FAQs, off-topic guardrail | ✅ |
 | 9 | Transfer to a licensed representative (Sergio's phone) through a Twilio SIP trunk ✅; later a phone number to call Mia | ⏳ |
 
@@ -433,7 +433,7 @@ itself; make it a better experience.
       `faq_mid_call` 4/5 (the misses: the payment answer left out "cash on delivery"),
       `off_topic_three_strikes` 5/5 then 4/5 (the miss: the model didn't call note_off_topic
       on the 3rd joke, so Mia kept steering back instead of ending; harmless)
-- [ ] Track those two in the stage 7 simulations (prompt or code if they stay above 1 in 10)
+- [x] Track those two in the stage 7 simulations (every report has the scenario pass rates)
 - [x] Seen in the final live check: STT heard "do you do a closed shipping?" (enclosed); the
       model's step was dropped by the guardrail and the fallback line only repeated the
       vehicle question, so the FAQ went unanswered. Fixed in the follow-ups below
@@ -474,6 +474,67 @@ From main's red CI after PR #22 and the first live calls on the deployed stage 8
 - [ ] Seen in the same live call: "from Miami to Chicago. It's a twenty twenty Honda" saved the
       route but Mia then asked for "year, make and model" instead of "what model is the 2020
       Honda?" (a partial vehicle in the same turn as the route)
+
+## Stage 7: AI-vs-AI simulations (branch `stage-7-simulations`, 2026-11-10)
+
+- [x] Simulator (`agent/evals/sim/`): 8 personas (generous or not x complete or partial x
+      verbose or not) x 9 paths (SHP, SHP + transfer, QHP, NHP correction / change vehicle /
+      change route / person, AP two / three off-topic) = 72 calls. A model (gpt-oss-120b)
+      plays the caller with a ground truth; **the runner decides when each fragment happens**
+      (a director's note per turn), the persona decides how it's said. Fake CarHauler and
+      geocoder: no CarHauler or Google calls, only Groq (~$0.20 a run)
+- [x] Scored in code, from the saved record (re-scorable): route, vehicles, quote covers what's
+      on file (quote IDs), price spoken, transfer, off-topic end, FAQ answers (keywords from
+      CONVERSATION_DESIGN's FAQ), fragments fired, no API error
+- [x] **Every run is kept in the repo** (Sergio: the transcripts are key and public):
+      `agent/evals/simulations/README.md` (index) and `runs/<run>/` (`report.md`,
+      `transcripts.md`, `transcripts.jsonl`, `summary.json`). Account and request IDs are
+      scrubbed from errors
+- [x] Nightly workflow `simulations.yml` (08:00 UTC, also manual with inputs): the 72 calls +
+      the scenario suite 3 times, committed to main (its token starts no CI or deploy)
+- [x] The scenario suite's pass rates per scenario are in every report (the flaky ones:
+      `faq_mid_call` 3/3 and 3/3, `off_topic_three_strikes` 3/3 then 1/3 then 4/5 alone,
+      `happy_path_ngc_3v` 3/3 and 3/3)
+
+What the simulations found, all fixed with offline tests (scripted LLM) and re-run:
+
+| Found | Fix |
+| --- | --- |
+| The no-tools retry from #23 crashed a turn: gpt-oss called a tool anyway, Groq refused, 4 retries | one attempt, 5 s, fallback line on error; the retry sees no tool calls in its history (was failing 8 times a run) |
+| "Could you connect me to a live representative?" -> wrong tool (dropped) -> asked for the car | all calls dropped + a plain request for a person (`asks_for_person`, stricter than `wants_person`) -> `request_human` |
+| `drivable: null` -> Groq schema error -> turn crashed | `drivable: bool \| None` |
+| Two cars said, one saved, **both read back**, one-car price confirmed | `honest_read_back`: Mia's read-back is rebuilt from what's on file (keeps what she said before it) |
+| "Sure, Mia, can you tell me a joke?" counted as a yes, so the 3rd off-topic never ended the call | `is_short_yes` (6 words or fewer, not a question) |
+| "I've got a couple of vehicles" -> no count -> one car quoted | "a couple" counts as two |
+| First version of the read-back fix dropped "I've removed the Toyota." (`remove_vehicle_after_quote` 0/3) | only the read-back sentences are replaced; 5/5 |
+| Groq "Failed to parse tool call arguments as JSON" (gpt-oss) ended 3 of 72 calls after 6+ s of retries | a failed step gets the fallback line and the call goes on; LLM retries 1 x 0.5 s instead of 3 x 2 s |
+| "2022 Toyota RAV4 and 2017 Honda Civic": one saved; the honest read-back said one car, the caller said yes anyway | two makes in one sentence (not a correction) set the count, so Mia asks for the second (`makes_named`) |
+
+Simulator fixes on the way: 4 calls at once hit Groq's 250k tokens/minute (18 of 72 failed) ->
+2 at once and a rate-limited call starts over; quote items are spoken labels, so the quote is
+matched by quote ID; callers who answer only what's asked never mentioned their second car ->
+the turn's note says so; fragments fire late if the call went past their trigger.
+
+| Run | Passed | API errors | Scenario suite |
+| --- | ---: | ---: | --- |
+| baseline (before the fixes) | 42/72 (58%) | 19 (18 rate limits) | 14/14 x 3 |
+| fixes (first 5 fixes) | 60/72 (83%) | 1 | `remove_vehicle_after_quote` 0/3, `off_topic_three_strikes` 1/3 |
+| stage7 (+ read-back keeps her words, "a couple") | 60/72 (83%) | 3 (broken tool JSON) | `off_topic_three_strikes` 2/3, the rest 3/3 |
+| **final (all fixes, this PR)** | **68/72 (94%)** | **0** | `change_vehicle_after_quote` 2/3, the rest 3/3 |
+
+The final run's 4 misses: a third off-topic question that didn't end the call; an FAQ answer
+without the key fact; "a 2023 sedan" quoted as an estimate without asking the make; and a
+caller who accepted Mia's offer of a representative after a payment question (fine; the path
+didn't expect it).
+
+Still open (from the transcripts):
+- [ ] "Can I leave some boxes in the trunk?" -> "Sure." (should be: up to 100 lb, below the
+      windows); FAQ answers are the model's, checked only by keywords
+- [ ] After "It's a Toyota" (no model) Mia sometimes offers "sedan, SUV or pickup?" (an
+      estimate) before asking for the model
+- [ ] Count from the vehicles named ("a 2022 RAV4 and a 2017 Civic" without "two cars"): the
+      honest read-back now catches it, but Mia could ask for the second car directly
+- [ ] Re-check gpt-oss-20b vs 120b for Mia with `MIA_LLM_MODEL` (one run each)
 
 ## Ideas / later
 

@@ -11,7 +11,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-from livekit.agents import llm
+from livekit.agents import APIError, llm
 from livekit.agents.types import DEFAULT_API_CONNECT_OPTIONS
 
 
@@ -19,6 +19,7 @@ from livekit.agents.types import DEFAULT_API_CONNECT_OPTIONS
 class Step:
     text: str = ""
     calls: list[tuple[str, str]] = field(default_factory=list)  # (tool name, JSON arguments)
+    error: str = ""  # the step fails with this message (e.g. Groq rejecting a tool call)
 
 
 class _Stream(llm.LLMStream):
@@ -28,6 +29,8 @@ class _Stream(llm.LLMStream):
 
     async def _run(self) -> None:
         n = len(self._llm.calls)
+        if self._step.error:
+            raise APIError(self._step.error, retryable=False)
         delta = llm.ChoiceDelta(
             role="assistant",
             content=self._step.text or None,
@@ -44,6 +47,7 @@ class ScriptedLLM(llm.LLM):
         super().__init__()
         self.steps = list(steps)
         self.calls: list[dict] = []  # one per model step: {"tools": number of tools offered}
+        self.contexts: list = []  # the chat context each step saw
 
     def chat(
         self,
@@ -54,5 +58,6 @@ class ScriptedLLM(llm.LLM):
         **kwargs,
     ) -> llm.LLMStream:
         step = self.steps.pop(0) if self.steps else Step()
+        self.contexts.append(chat_ctx)
         self.calls.append({"tools": len(tools or []), "tool_choice": kwargs.get("tool_choice")})
         return _Stream(self, step, chat_ctx=chat_ctx, tools=tools or [], conn_options=conn_options)

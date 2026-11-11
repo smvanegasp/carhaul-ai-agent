@@ -220,6 +220,9 @@ a transfer for off-topic questions. A turn about shipping never counts.
 question, change, adversarial) and combine them to generate many conversations. Check the
 captured slots against ground truth, typos and turn order.
 
+Built in stage 7: `agent/evals/sim/` (8 personas x 9 paths, scored in code) and every run's
+report and transcripts in `agent/evals/simulations/`.
+
 ## Reference conversations
 
 Ground truth for the happy-path scenario tests (stage 2):

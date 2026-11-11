@@ -133,6 +133,54 @@ def state_said(state: str, said: str) -> bool:
     return any(canonicalize_state(w) == code for w in _windows(_words(said), 3))
 
 
+# Makes callers name most; enough to notice two cars in one sentence (makes_named).
+COMMON_MAKES = (
+    "acura",
+    "audi",
+    "bmw",
+    "buick",
+    "cadillac",
+    "chevrolet",
+    "chrysler",
+    "dodge",
+    "ford",
+    "gmc",
+    "honda",
+    "hyundai",
+    "infiniti",
+    "jeep",
+    "kia",
+    "lexus",
+    "lincoln",
+    "mazda",
+    "mercedes-benz",
+    "mitsubishi",
+    "nissan",
+    "porsche",
+    "ram",
+    "subaru",
+    "tesla",
+    "toyota",
+    "volkswagen",
+    "volvo",
+)
+_CORRECTION = re.compile(r"\b(?:no|not|actually|instead|sorry|i mean|rather)\b", re.IGNORECASE)
+
+
+def makes_named(text: str) -> int:
+    """How many different makes one message names ("a 2022 Toyota RAV4 and a 2017 Honda
+    Civic" -> 2). 0 for a correction ("a Honda, not a Toyota"). Stage 7 simulation: two cars
+    in one sentence, the model saved one, and nothing in code knew about the second."""
+    if _CORRECTION.search(text):
+        return 0
+    words = " ".join(_words(text.replace("-", " ")))
+    found = {m for m in COMMON_MAKES if re.search(rf"\b{m.replace('-', ' ')}\b", words)}
+    for alias, full in MAKE_ALIASES.items():
+        if re.search(rf"\b{alias}\b", words):
+            found.add(full.lower())
+    return len(found)
+
+
 def make_said(make: str, said: str) -> bool:
     if _fuzzy_in(make, said):
         return True
@@ -172,7 +220,8 @@ def vehicle_type_said(vehicle_type: str, said: str) -> bool:
 
 _COUNTS = {"two": 2, "three": 3, "four": 4, "five": 5, "six": 6, "seven": 7, "eight": 8}
 _COUNT_RE = re.compile(
-    r"\b(both|two|three|four|five|six|seven|eight|[2-8])\s+(?:of\s+(?:my|our|the)\s+)?"
+    r"\b(both|couple|two|three|four|five|six|seven|eight|[2-8])\s+(?:of\s+)?"
+    r"(?:(?:my|our|the)\s+)?"
     r"(?:\w+\s+)?(cars|vehicles|autos|trucks|suvs|vans)\b"
 )
 
@@ -186,7 +235,7 @@ def vehicle_count_said(said: str) -> int | None:
     found = None
     for m in _COUNT_RE.finditer(said.lower()):
         word = m.group(1)
-        found = 2 if word == "both" else _COUNTS.get(word) or int(word)
+        found = 2 if word in ("both", "couple") else _COUNTS.get(word) or int(word)
     return found
 
 
@@ -230,6 +279,13 @@ def is_confirmation(text: str) -> bool:
     return any(f" {phrase} " in joined for phrase in _YES)
 
 
+def is_short_yes(text: str) -> bool:
+    """A yes that's only a yes ("Sure", "Yes, that's correct"). "Sure, Mia, can you tell me a
+    joke about cats?" starts with a yes but isn't one (stage 7 simulation: it kept the third
+    off-topic question from ending the call)."""
+    return is_confirmation(text) and len(_words(text)) <= 6 and not text.strip().endswith("?")
+
+
 # Asking for a person. Since stage 9 request_human rings a real phone, so it only runs when the
 # caller asked for one, or said yes right after Mia offered (guardrails.check_call).
 _PERSON = re.compile(
@@ -248,6 +304,25 @@ def wants_person(text: str) -> bool:
     if _DECLINE.search(text) and not _ACCEPT.search(text):
         return False
     return bool(_PERSON.search(text))
+
+
+# A plain request for a person, stricter than ``wants_person`` ("someone will drop it off"
+# mentions someone): used when code itself runs request_human (Mia.llm_node), which rings a
+# real phone.
+_ASKS_PERSON = re.compile(
+    r"\b(?:talk|speak|connect|transfer|put me through|get me)\b[^.?!]{0,40}"
+    r"\b(?:person|human|representative|rep|agent|operator|someone|somebody)\b"
+    r"|\b(?:real|live|actual) (?:person|human|representative|agent)\b",
+    re.IGNORECASE,
+)
+
+
+def asks_for_person(text: str) -> bool:
+    """ "Could you connect me to a live representative?", "I want to talk to a human". Not a
+    "no" ("no, I don't need a person")."""
+    if _DECLINE.search(text) and not _ACCEPT.search(text):
+        return False
+    return bool(_ASKS_PERSON.search(text))
 
 
 def offered_person(mia_said: str) -> bool:

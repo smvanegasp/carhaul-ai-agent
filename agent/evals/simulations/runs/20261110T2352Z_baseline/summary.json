@@ -1,0 +1,238 @@
+{
+  "started": "2026-11-10T23:52:39+00:00",
+  "minutes": 5.9,
+  "label": "baseline",
+  "mia_model": "openai/gpt-oss-20b",
+  "caller_model": "openai/gpt-oss-120b",
+  "commit": "b571b24",
+  "n": 72,
+  "passed": 42,
+  "pass_rate": 0.5833333333333334,
+  "errors": 19,
+  "outcomes": {
+    "ended": 35,
+    "transferred": 14,
+    "off_topic_end": 3,
+    "error": 19,
+    "caller_done": 1
+  },
+  "by_path": {
+    "SHP": {
+      "n": 8,
+      "passed": 5,
+      "quoted": 7,
+      "avg_turns": 4.6,
+      "dropped_per_call": 0.5,
+      "p50_ms": 696
+    },
+    "SHP_transfer": {
+      "n": 8,
+      "passed": 6,
+      "quoted": 7,
+      "avg_turns": 4.8,
+      "dropped_per_call": 0.5,
+      "p50_ms": 668
+    },
+    "QHP": {
+      "n": 8,
+      "passed": 4,
+      "quoted": 8,
+      "avg_turns": 7.2,
+      "dropped_per_call": 1.0,
+      "p50_ms": 588
+    },
+    "NHP_correction": {
+      "n": 8,
+      "passed": 6,
+      "quoted": 8,
+      "avg_turns": 4.5,
+      "dropped_per_call": 0.5,
+      "p50_ms": 726
+    },
+    "NHP_change_vehicle": {
+      "n": 8,
+      "passed": 4,
+      "quoted": 7,
+      "avg_turns": 5,
+      "dropped_per_call": 0.62,
+      "p50_ms": 566
+    },
+    "NHP_change_route": {
+      "n": 8,
+      "passed": 4,
+      "quoted": 4,
+      "avg_turns": 4.9,
+      "dropped_per_call": 1.12,
+      "p50_ms": 746
+    },
+    "NHP_person": {
+      "n": 8,
+      "passed": 7,
+      "quoted": 1,
+      "avg_turns": 2.6,
+      "dropped_per_call": 0.75,
+      "p50_ms": 576
+    },
+    "AP_two": {
+      "n": 8,
+      "passed": 3,
+      "quoted": 4,
+      "avg_turns": 5.6,
+      "dropped_per_call": 1.12,
+      "p50_ms": 721
+    },
+    "AP_three": {
+      "n": 8,
+      "passed": 3,
+      "quoted": 3,
+      "avg_turns": 5.4,
+      "dropped_per_call": 0.75,
+      "p50_ms": 728
+    }
+  },
+  "by_persona": {
+    "NG_P_NV": {
+      "n": 9,
+      "passed": 6,
+      "quoted": 7,
+      "avg_turns": 6.8,
+      "dropped_per_call": 1.67,
+      "p50_ms": 556
+    },
+    "NG_P_V": {
+      "n": 9,
+      "passed": 7,
+      "quoted": 7,
+      "avg_turns": 5.9,
+      "dropped_per_call": 0.89,
+      "p50_ms": 612
+    },
+    "NG_C_NV": {
+      "n": 9,
+      "passed": 8,
+      "quoted": 7,
+      "avg_turns": 5.3,
+      "dropped_per_call": 0.78,
+      "p50_ms": 588
+    },
+    "NG_C_V": {
+      "n": 9,
+      "passed": 4,
+      "quoted": 6,
+      "avg_turns": 4.7,
+      "dropped_per_call": 1.0,
+      "p50_ms": 688
+    },
+    "G_P_NV": {
+      "n": 9,
+      "passed": 2,
+      "quoted": 4,
+      "avg_turns": 4.7,
+      "dropped_per_call": 0.89,
+      "p50_ms": 898
+    },
+    "G_P_V": {
+      "n": 9,
+      "passed": 5,
+      "quoted": 5,
+      "avg_turns": 4.3,
+      "dropped_per_call": 0.44,
+      "p50_ms": 773
+    },
+    "G_C_NV": {
+      "n": 9,
+      "passed": 5,
+      "quoted": 4,
+      "avg_turns": 3,
+      "dropped_per_call": 0.11,
+      "p50_ms": 677
+    },
+    "G_C_V": {
+      "n": 9,
+      "passed": 5,
+      "quoted": 9,
+      "avg_turns": 5,
+      "dropped_per_call": 0.33,
+      "p50_ms": 853
+    }
+  },
+  "failed_checks": {
+    "no_error": 19,
+    "finished": 19,
+    "vehicles": 12,
+    "price_spoken": 12,
+    "quoted": 11,
+    "quote_matches": 11,
+    "fragments_fired": 8,
+    "off_topic_end": 5,
+    "no_quote": 4,
+    "faq_answered": 3,
+    "transferred": 2,
+    "route": 1
+  },
+  "usage": {
+    "mia_in": 1339678,
+    "mia_out": 20217,
+    "caller_in": 209381,
+    "caller_out": 13936
+  },
+  "cost_usd": 0.1463,
+  "scenarios": {
+    "api_down_at_quote": {
+      "runs": 3,
+      "passed": 3
+    },
+    "change_route_after_quote": {
+      "runs": 3,
+      "passed": 3
+    },
+    "change_vehicle_after_quote": {
+      "runs": 3,
+      "passed": 3
+    },
+    "city_not_found": {
+      "runs": 3,
+      "passed": 3
+    },
+    "faq_during_read_back": {
+      "runs": 3,
+      "passed": 3
+    },
+    "faq_mid_call": {
+      "runs": 3,
+      "passed": 3
+    },
+    "faq_stt_closed_shipping": {
+      "runs": 3,
+      "passed": 3
+    },
+    "happy_path_ngc_1v": {
+      "runs": 3,
+      "passed": 3
+    },
+    "happy_path_ngc_2v": {
+      "runs": 3,
+      "passed": 3
+    },
+    "happy_path_ngc_3v": {
+      "runs": 3,
+      "passed": 3
+    },
+    "off_topic_three_strikes": {
+      "runs": 3,
+      "passed": 3
+    },
+    "remove_vehicle_after_quote": {
+      "runs": 3,
+      "passed": 3
+    },
+    "self_correction_year": {
+      "runs": 3,
+      "passed": 3
+    },
+    "undo_vehicle_change": {
+      "runs": 3,
+      "passed": 3
+    }
+  }
+}

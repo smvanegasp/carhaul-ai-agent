@@ -15,6 +15,17 @@ CITIES = {
     "portland": ("Portland", "OR", "Oregon", "97201"),
     "miami": ("Miami", "FL", "Florida", "33130"),
     "chicago": ("Chicago", "IL", "Illinois", "60601"),
+    # Stage 7 simulations (evals/sim/catalog.py): the TESTING_GUIDE routes.
+    "seattle": ("Seattle", "WA", "Washington", "98101"),
+    "denver": ("Denver", "CO", "Colorado", "80202"),
+    "austin": ("Austin", "TX", "Texas", "78701"),
+    "atlanta": ("Atlanta", "GA", "Georgia", "30303"),
+    "dallas": ("Dallas", "TX", "Texas", "75201"),
+    "los angeles": ("Los Angeles", "CA", "California", "90012"),
+    "la": ("Los Angeles", "CA", "California", "90012"),
+    "orlando": ("Orlando", "FL", "Florida", "32801"),
+    "tampa": ("Tampa", "FL", "Florida", "33602"),
+    "phoenix": ("Phoenix", "AZ", "Arizona", "85004"),
 }
 
 

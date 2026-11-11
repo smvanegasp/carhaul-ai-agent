@@ -85,7 +85,7 @@ def check_call(
         if (
             not last_said.strip()
             or grounding.is_on_topic(last_said)
-            or grounding.is_confirmation(last_said)
+            or grounding.is_short_yes(last_said)
             or grounding.vehicle_count_said(last_said)
         ):
             return "caller's message is about the quote"
@@ -180,6 +180,38 @@ def is_goodbye(speech: str) -> bool:
     """True if Mia is closing the call (a goodbye in her last sentence)."""
     sentences = [s for s in _SENTENCE_END.split(speech.strip()) if s.strip()]
     return bool(sentences) and bool(_GOODBYE.search(sentences[-1]))
+
+
+# Stage 7 simulation, 2026-11-10: the caller said "2022 Toyota RAV4 and 2017 Honda Civic",
+# the model saved only the RAV4, then read back both cars; the caller said yes and got a
+# one-car price. So a read-back Mia speaks is rebuilt from what's on file.
+_READ_BACK = re.compile(
+    r"\bship\w*\b.*\b(?:is that (?:all )?(?:correct|right)|does that sound right|"
+    r"is this correct|correct\?|right\?)",
+    re.IGNORECASE | re.DOTALL,
+)
+
+
+def honest_read_back(spoken: str, state: QuoteSession) -> str:
+    """If Mia is reading the details back, say what's actually on file: the code's read-back
+    when everything is there, otherwise the question for what's missing."""
+    if not spoken or not _READ_BACK.search(spoken) or not (state.origin or state.vehicles):
+        return spoken
+    # Keep what comes before the read-back ("I've removed the Toyota."): only the read-back
+    # itself is replaced (scenario remove_vehicle_after_quote failed 3/3 when all of it was).
+    sentences = [x.strip() for x in _SENTENCE_END.split(spoken.strip()) if x.strip()]
+    start = next(
+        (
+            i
+            for i in range(len(sentences))
+            if _READ_BACK.search(" ".join(sentences[i:]))
+            and not _READ_BACK.search(" ".join(sentences[i + 1 :]))
+        ),
+        0,
+    )
+    while start > 0 and re.search(r"\bship", sentences[start - 1], re.IGNORECASE):
+        start -= 1
+    return " ".join([*sentences[:start], fallback_line(state)])
 
 
 def keep_going(spoken: str, state: QuoteSession) -> str:

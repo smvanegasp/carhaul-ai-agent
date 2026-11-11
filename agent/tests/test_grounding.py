@@ -230,3 +230,50 @@ def test_corrected_year(year, said, settled):
 )
 def test_is_question(text, asked):
     assert grounding.is_question(text) is asked
+
+
+@pytest.mark.parametrize(
+    "said, count",
+    [
+        ("I've got a couple of vehicles to move", 2),
+        ("a couple cars", 2),
+        ("two of my cars", 2),
+        ("we need both cars shipped", 2),
+        ("a couple of days", None),
+    ],
+)
+def test_vehicle_count_includes_a_couple(said, count):
+    assert grounding.vehicle_count_said(said) == count
+
+
+@pytest.mark.parametrize(
+    "text, asks",
+    [
+        ("could you connect me to a live representative?", True),
+        ("I want to talk to a human", True),
+        ("a real person please", True),
+        ("Can I speak with someone?", True),
+        ("Someone else will drop it off", False),
+        ("can someone call me back", False),
+        ("no, I don't need to talk to a person", False),
+        ("It's a 2020 Honda", False),
+    ],
+)
+def test_asks_for_person(text, asks):
+    # Stricter than wants_person: code runs request_human on it, and that rings a real phone.
+    assert grounding.asks_for_person(text) is asks
+
+
+@pytest.mark.parametrize(
+    "text, n",
+    [
+        ("2022 Toyota RAV4 and 2017 Honda Civic.", 2),
+        ("a twenty twenty-two Toyota RAV4, and a Honda Civic.", 2),
+        ("a Chevy and a Ford F-150", 2),
+        ("a 2025 Honda Civic", 1),
+        ("It's a Honda, not a Toyota", 0),  # a correction, one car
+        ("sorry, I mean the Toyota, the Honda's sold", 0),
+    ],
+)
+def test_makes_named(text, n):
+    assert grounding.makes_named(text) == n
