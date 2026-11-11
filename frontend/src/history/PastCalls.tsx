@@ -276,6 +276,7 @@ function CallDetail({ room, onBack }: { room: string; onBack: () => void }) {
             live={false}
             details={details}
             onDetails={setDetails}
+            onCopy={() => Promise.resolve(call)}
           />
         </div>
         <div className="xl:min-h-0 xl:overflow-y-auto xl:overscroll-contain">

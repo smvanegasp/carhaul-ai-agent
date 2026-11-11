@@ -1,6 +1,7 @@
-import { useEffect, useRef, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 
 import type { ConversationItem } from "../lib/conversation";
+import { copyText, toJson } from "../lib/copy";
 import { formatMs, type DroppedEvent, type ToolEvent, type TurnMetrics } from "../lib/events";
 
 /**
@@ -14,6 +15,7 @@ export function Conversation({
   details,
   onDetails,
   footer,
+  onCopy,
 }: {
   items: ConversationItem[];
   live: boolean;
@@ -21,6 +23,8 @@ export function Conversation({
   details: boolean;
   onDetails: (on: boolean) => void;
   footer?: ReactNode;
+  /** What "Copy JSON" puts on the clipboard (the call record, or a live snapshot). */
+  onCopy?: () => Promise<unknown>;
 }) {
   const box = useRef<HTMLDivElement>(null);
   const stuck = useRef(true); // following the newest line (until the caller scrolls up)
@@ -48,7 +52,9 @@ export function Conversation({
             <span className="size-2 animate-pulse rounded-full bg-ok" /> live
           </span>
         )}
-        <label className="ml-auto flex cursor-pointer items-center gap-2 text-sm text-muted">
+        <span className="ml-auto" />
+        {onCopy && <CopyButton getData={onCopy} />}
+        <label className="flex cursor-pointer items-center gap-2 text-sm text-muted">
           Show details
           <input
             type="checkbox"
@@ -92,6 +98,42 @@ export function Conversation({
         {footer}
       </div>
     </section>
+  );
+}
+
+/** Copies the call as JSON, for feedback notes; says "Copied" (or why not) for 2 s. */
+function CopyButton({ getData }: { getData: () => Promise<unknown> }) {
+  const [state, setState] = useState<"idle" | "busy" | "copied" | "failed">("idle");
+  useEffect(() => {
+    if (state !== "copied" && state !== "failed") return;
+    const timer = setTimeout(() => setState("idle"), 2000);
+    return () => clearTimeout(timer);
+  }, [state]);
+  const label = {
+    idle: "Copy JSON",
+    busy: "Copying…",
+    copied: "Copied",
+    failed: "Couldn't copy",
+  }[state];
+  return (
+    <button
+      type="button"
+      title="Copy the whole call (transcript, tool calls and their JSON, latency) to the clipboard"
+      disabled={state === "busy"}
+      onClick={async () => {
+        setState("busy");
+        try {
+          setState((await copyText(toJson(await getData()))) ? "copied" : "failed");
+        } catch {
+          setState("failed");
+        }
+      }}
+      className={`rounded-full border border-line px-3 py-1 text-sm transition hover:bg-raised focus-visible:ring-2 focus-visible:ring-accent focus-visible:outline-none ${
+        state === "copied" ? "text-ok" : state === "failed" ? "text-warn" : "text-muted"
+      }`}
+    >
+      <span aria-live="polite">{label}</span>
+    </button>
   );
 }
 

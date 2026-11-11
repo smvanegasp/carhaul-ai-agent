@@ -14,7 +14,8 @@ import {
   type ReactNode,
 } from "react";
 
-import { CallError, fetchCallToken, wakeMia } from "../lib/api";
+import { CallError, fetchCall, fetchCallToken, wakeMia } from "../lib/api";
+import { liveSnapshot } from "../lib/copy";
 import { buildConversation } from "../lib/conversation";
 import {
   addEvent,
@@ -146,6 +147,19 @@ export function CallPage() {
       live={false}
       details={details}
       onDetails={setDetails}
+      onCopy={
+        phase.kind === "ended"
+          ? async () => {
+              // The saved record has everything; the worker writes it a few seconds after
+              // the call, so until then the copy is what this page saw.
+              try {
+                return await fetchCall(phase.roomName);
+              } catch {
+                return liveSnapshot(phase.roomName, phase.lines, events);
+              }
+            }
+          : undefined
+      }
       footer={
         phase.kind === "ended" ? (
           <FeedbackForm key={phase.roomName} room={phase.roomName} />
@@ -435,6 +449,7 @@ function LiveConversation({
       live
       details={details}
       onDetails={onDetails}
+      onCopy={() => Promise.resolve(liveSnapshot(room.name, lines, events))}
     />
   );
 }
