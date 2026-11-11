@@ -116,7 +116,7 @@ Fargate, not Lambda. Everything else follows the fit pattern.
 | `backend/` | uv project `carhaul-api`: FastAPI for Lambda (`app/`). `POST /api/token` (`livekit_token.py`, rate limited by `ratelimit.py`), `POST /api/calls/{room}/feedback` (`calls.py`), `POST /api/wake` (`worker.py`: starts the on-demand worker), `GET /api/calls` and `GET /api/calls/{room}` (public, rate limited), `GET /api/stats` (`stats.py`: per-call milestones and Mia's time, backfilled once from records), DynamoDB in `db.py` |
 | `frontend/` | React 19 + Vite + Tailwind v4 + LiveKit components. `App.tsx`: the shell (collapsible sidebar on desktop, tabs on a phone; views in the URL hash, `lib/route.ts`; the call view stays mounted so switching views never drops a call). `src/history/PastCalls.tsx`: past calls (list + the same conversation/stats views from the saved record). `src/stats/StatsPage.tsx` + `lib/stats.ts`: KPIs, funnel, trends. `IntroDialog.tsx`: what this is + the disclosure, once a session. `src/call/`: `CallPage.tsx` (layout, call controls, wake), `Conversation.tsx` (chat + inline tool calls and latency behind "Show details", built by `lib/conversation.ts`; **Copy JSON** puts the whole call record on the clipboard for feedback notes, `lib/copy.ts`), `Insights.tsx` (stage, stats, latency, on file), `FeedbackForm.tsx`, `useWake.ts` (+ `lib/wake.ts`: the wake progress bar), `ThemeToggle.tsx`. Colors are theme tokens in `src/index.css` (light by default, dark on request). Later: dashboard |
 | `notebooks/` | Exploration only; kernel is `agent/.venv` (`uv sync --group notebooks`) |
-| `docs/` | BACKLOG, CONVERSATION_DESIGN, TESTING_GUIDE (stage 4) |
+| `docs/` | BACKLOG, CONVERSATION_DESIGN, TESTING_GUIDE (stage 4), `evaluation/Mia_evaluation.xlsx` (29 test calls for the team: result, rating, feedback, call ID, JSON; when it comes back filled in, read the call IDs' records from `GET /api/calls/{room}` and turn the feedback into fixes) |
 | `infra/` | Terraform (profile `carhaul`, everything `carhaul-*`): DynamoDB, Lambda + HTTP API, S3 + CloudFront (custom domain optional), on-demand ECS Fargate worker task (`agent.tf`), GitHub OIDC deploy role, alarms. `bootstrap/`: the state bucket |
 | `scripts/` | `deploy.sh` (images, `terraform apply`, frontend, new worker), `set_aws_secrets.py` (.env → SSM), `upload_frontend.sh` |
 
@@ -301,7 +301,7 @@ docker compose up        # api :8020, web :5190, DynamoDB Local :8030, agent wor
   person hangs up. Twilio upgraded ($20 prepaid, ~1 cent a minute) with **no Twilio number**:
   caller ID is a verified number that is *not* the one called (calling Sergio from his own
   number went to voicemail). Guardrail: `request_human` runs only on the caller's own request
-  or a yes to Mia's offer, because it rings a real phone. 5 transfers a day, 30 s ring, 10 min.
+  or a yes to Mia's offer, because it rings a real phone. 10 transfers a day (was 5 until 2026-11-11), 30 s ring, 10 min.
 - 2026-11-09 (stage 4): **Local and AWS workers have different names**: the first scripted
   call on AWS was answered by the local Docker worker, because both registered as `mia` on the
   same LiveKit project. Now `MIA_AGENT_NAME` is `mia` only on AWS (task definition and Lambda);

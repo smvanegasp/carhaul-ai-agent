@@ -12,6 +12,14 @@ takes about 2 minutes.
 - Calls end on their own after 6 minutes. After about 6 calls in an hour the page asks you to
   wait a bit: that's a limit Sergio set on purpose.
 
+## The evaluation workbook
+
+[`docs/evaluation/Mia_evaluation.xlsx`](evaluation/Mia_evaluation.xlsx) has 29 planned test
+calls (what to say, what Mia should do) with a row each for your result, rating, feedback, the
+call ID and the call's JSON (Copy JSON). The Summary sheet fills in by itself. Send the filled-in
+copy back so the feedback can be turned into fixes. Tests in pink ring Sergio's phone: agree a
+time with him first (10 transfers a day at most).
+
 ## Each call
 
 1. Pick a **persona card** (below) and read it once. You don't need to follow it word for word;
