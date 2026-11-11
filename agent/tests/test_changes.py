@@ -302,3 +302,28 @@ async def test_a_replacement_with_a_missing_model_keeps_its_year_and_make(state,
     assert r["on_file"]["heard_so_far"] == "2024 Ford"
     assert guardrails.fallback_line(state) == state.partial_question()
     assert "2024 Ford" in state.partial_question()
+
+
+async def test_removing_with_a_replacement_named_asks_for_its_model(state, services):
+    # Scenario replace_vehicle_partial: the model removed the Toyota and never saved the Ford.
+    await _quoted(state, services, CIVIC, RUNNER)
+    state.expected_vehicles = 2
+    said = "I no longer need the Toyota. I want to send my twenty twenty four Ford instead."
+    r = await tools.remove_vehicle(
+        state, services, quote_id=state.vehicles[1].quote_id, last_said=said
+    )
+    assert r["ok"] and [v.label for v in state.vehicles] == ["2025 Honda Civic"]
+    assert state.expected_vehicles == 2 and state.quote is None
+    assert state.partial_vehicle == {"year": 2024, "make": "Ford"}
+    assert "2024 Ford" in r["next"] and "say" not in r
+
+
+async def test_removing_without_a_replacement_is_unchanged(state, services):
+    await _quoted(state, services, CIVIC, RUNNER)
+    state.expected_vehicles = 2
+    said = "Hmm, that's a lot. Remove the Toyota, just the Honda please"
+    r = await tools.remove_vehicle(
+        state, services, quote_id=state.vehicles[1].quote_id, last_said=said
+    )
+    assert state.expected_vehicles == 1 and state.partial_vehicle == {}
+    assert "say" in r  # repriced from the last quote
