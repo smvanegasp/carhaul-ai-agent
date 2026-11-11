@@ -182,8 +182,9 @@ steps = [
      None),
     ("2. Call Mia from the site and play the test. Note anything odd while it happens.", None),
     ("3. When the call ends: in Past calls, open your call, press Copy JSON and paste it into "
-     "\"Transcript JSON\". Copy the call ID too (it starts with call-, e.g. call-803e7edb7473; "
-     "it's in the page address after #/calls/ and in the JSON as \"room\").", None),
+     "\"Transcript JSON\". Copy the call ID too: it's shown next to the call (\"Call ID "
+     "call-...\" with a Copy button) in Past calls, and on the call page right after the call "
+     "ends.", None),
     ("4. Fill in Tester, Date, Result (pick from the list), Rating 1-5 and \"What happened\": "
      "what was good, what was wrong, what you expected instead.", None),
     ("5. Calls outside the plan go in the Extra calls sheet. Summary updates by itself.", None),

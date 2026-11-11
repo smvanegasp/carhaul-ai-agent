@@ -28,6 +28,7 @@ import {
   toTranscript,
   type TranscriptLine,
 } from "../lib/transcript";
+import { CallId } from "./CallId";
 import { Conversation } from "./Conversation";
 import { ErrorBoundary } from "./ErrorBoundary";
 import { FeedbackForm } from "./FeedbackForm";
@@ -256,6 +257,9 @@ function CallButtonCard({
           >
             See this call in Past calls
           </a>
+          <span className="mt-1 block">
+            <CallId room={phase.roomName} />
+          </span>
         </p>
       )}
       {phase.kind === "idle" && ready && (
