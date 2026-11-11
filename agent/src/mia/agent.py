@@ -26,7 +26,7 @@ from livekit.plugins import groq
 from mia import faq, grounding, guardrails, speech, tools
 from mia.prompt import INSTRUCTIONS, pick_greeting
 from mia.state import QuoteSession
-from mia.tools import Services, model_from_words
+from mia.tools import OFF_TOPIC_LIMIT, Services, model_from_words
 
 DEFAULT_MODEL = "openai/gpt-oss-20b"
 
@@ -301,6 +301,22 @@ class Mia(Agent):
                 held.append(_call_chunk("save_vehicle", args))
                 runs_tool = True
                 logger.info("caller named the whole vehicle; running save_vehicle %s", args)
+        if (
+            not runs_tool
+            and state.off_topic == OFF_TOPIC_LIMIT - 1
+            and state.off_topic_turns
+            and state.off_topic_turns[-1] == state.caller_turns - 1
+            and grounding.is_question(last_said)
+            and guardrails.check_call("note_off_topic", "{}", state, said, last_said, mia_last)
+            is None
+            and state.code_ran_once("note_off_topic")
+        ):
+            # The model often doesn't count the third unrelated question in a row (stage 7
+            # simulations; it turned main's CI red on 2026-11-11). Only a question, only right
+            # after another counted one, and never one about shipping (the guardrail's check).
+            held.append(_call_chunk("note_off_topic", {}))
+            runs_tool = True
+            logger.info("third off-topic question in a row; running note_off_topic")
         if not runs_tool and dropped and grounding.asks_for_person(last_said):
             # Stage 7 simulation, 2026-11-10: "could you connect me to a live representative?"
             # -> the model called note_off_topic (dropped) and Mia asked for the car again.
@@ -331,8 +347,8 @@ class Mia(Agent):
                 logger.info("dropped-only step on a question; answered: %r", spoken)
             if not spoken and (dropped or failed):
                 spoken = guardrails.fallback_line(state)
-            spoken = faq.ensure_answer(spoken, last_said) if spoken else spoken
             spoken = guardrails.honest_read_back(spoken, state)
+            spoken = faq.ensure_answer(spoken, last_said) if spoken else spoken
             spoken = guardrails.no_model_again(spoken, state)
             spoken = guardrails.keep_going(spoken, state)
             if spoken and guardrails.is_goodbye(spoken) and not state.ended:

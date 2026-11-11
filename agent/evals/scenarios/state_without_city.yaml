@@ -1,0 +1,16 @@
+# Sergio, 2026-11-11: when the caller names a state but not a city, ask which city in it.
+id: state_without_city
+persona: G_P_NV
+path: SHP
+ground_truth:
+  origin: Miami, Florida
+  destination: Los Angeles, California
+  vehicles: []
+turns:
+  - user: "From Miami to California."
+    expect:
+      on_file: {origin: "Miami, Florida", destination: null}
+      judge: Asks which city in California the car is going to.
+  - user: "Los Angeles."
+    expect:
+      on_file: {origin: "Miami, Florida", destination: "Los Angeles, California"}

@@ -196,6 +196,12 @@ _READ_BACK = re.compile(
 )
 
 
+_READ_BACK_START = re.compile(
+    r"\b(?:just to confirm|to confirm|will ship|you(?: want|'d like|'re| are)? (?:to )?ship)\b",
+    re.IGNORECASE,
+)
+
+
 def is_read_back(spoken: str) -> bool:
     """Is this Mia's read-back ("...will ship from ... Is that correct?")."""
     return bool(spoken) and bool(_READ_BACK.search(spoken))
@@ -218,7 +224,9 @@ def honest_read_back(spoken: str, state: QuoteSession) -> str:
         ),
         0,
     )
-    while start > 0 and re.search(r"\bship", sentences[start - 1], re.IGNORECASE):
+    # Only sentences that are part of the read-back ("We only quote open car shipping." is
+    # an answer, not a read-back: scenario acknowledge_and_answer, 2026-11-11).
+    while start > 0 and _READ_BACK_START.search(sentences[start - 1]):
         start -= 1
     return " ".join([*sentences[:start], fallback_line(state)])
 

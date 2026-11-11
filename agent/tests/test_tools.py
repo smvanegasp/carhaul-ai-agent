@@ -433,3 +433,17 @@ async def test_a_detail_dropped_again_and_again_offers_a_person(state, services)
         )
         codes.append(r["next"])
     assert "representative" not in codes[0] and "representative" in codes[2]
+
+
+async def test_a_state_without_a_city_asks_which_city(state, services):
+    # Sergio, 2026-11-11: "if someone says the state and not the city, ask which city".
+    said = "From Miami to California"
+    r = await tools.save_origin_destination(
+        state, services, origin_city="Miami", destination_state="California", said=said
+    )
+    assert r["ok"] and state.origin.city == "Miami"
+    assert "Which city in California?" in r["next"]
+    r = await tools.save_origin_destination(
+        state, services, destination_state="California", said=said
+    )
+    assert "Which city in California?" in r["next"]

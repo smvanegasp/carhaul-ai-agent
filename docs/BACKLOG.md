@@ -591,6 +591,26 @@ the once-per-turn guard was in (the other miss was the judge wanting "city" with
 - [ ] Some calls were said to have no call ID; on the live site every call since 03:00 UTC
       showed one in Past calls. Waiting for an example
 
+## Real-API tests and a more direct Mia (branch `live-api-tests-and-direct-mia`, 2026-11-11)
+
+Sergio: re-run the earlier tests on every change; test against the real APIs (we can't control
+them); Mia should be more direct, smarter about states, and more conversational.
+
+- [x] `MIA_SCENARIOS_LIVE=1`: the scenario suite against real CarHauler + Google. First full
+      run: **16/23** (7 failures the fakes hid), 81 CarHauler requests. After the fixes, all 9
+      failing or new scenarios pass on the real APIs; fake suite 24/24
+- [x] Found by the real run: CarHauler **rate-limits** two- and three-car quotes (retries now
+      wait 5 s, 4 tries; the live runner paces quoting scenarios 30 s apart); "?" passed as a
+      city or model (now never "said"); "It's a 2025 Honda Civic" counted as off-topic (makes
+      and years are on-topic); "Atlantis" is a real city in Florida (the test uses Blorptopia)
+- [x] Direct greeting (asks for the route), brief acknowledgments, questions answered first
+      (the FAQ answer is kept in front of a read-back), "Which city in California?" for a state
+      without a city. Scenarios `state_without_city` and `acknowledge_and_answer` 3/3
+- [x] `off_topic_three_strikes` turned main red (failed 3 tries in CI): the third unrelated
+      question in a row is counted by code if the model doesn't (a question, right after
+      another counted one, never about shipping)
+- Simulation `direct-mia-live-tests`: **71/72**; callers now give the route on their first turn
+
 ## Ideas / later
 
 

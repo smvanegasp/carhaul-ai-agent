@@ -121,3 +121,12 @@ async def test_missing_key(fake_api, monkeypatch):
     assert exc.value.code == ErrorCode.MISSING_API_KEY
     assert fake_api.calls["/car/makes"] == 0
     await c.aclose()
+
+
+async def test_a_rate_limit_gets_one_more_try(fake_api, client):
+    # The quote burst limit clears in ~15 s; 2 + 4 s gave up too early (real-API run,
+    # 2026-11-11). A rate limit now gets 4 attempts (5 s apart in production; 0 in tests).
+    too_many = httpx.Response(429, text="Too many requests")
+    fake_api.fail_next(too_many, too_many, too_many)
+    q = await client.quote("02110", "94103", trim_id=34547)
+    assert q.price == 1291

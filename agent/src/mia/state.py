@@ -100,6 +100,9 @@ class QuoteSession:
     failures: dict[str, int] = field(default_factory=dict)
     # Unrelated or joke questions (note_off_topic): the third ends the call politely.
     off_topic: int = 0
+    off_topic_turns: list[int] = field(default_factory=list)  # caller turns that counted
+    # "from Miami to California": the side with a state but no city, so Mia asks for the city.
+    states_without_city: dict[str, str] = field(default_factory=dict)
     ended: bool = False
     # Who ended it: "mia" (end_call or her goodbye), "time_limit", "caller" (hung up first) or
     # "silence" (the caller stopped answering; silence.py).
