@@ -237,13 +237,18 @@ async def save_origin_destination(
 # --- vehicles ----------------------------------------------------------------------------
 
 
-def _vehicle_hint(exc: VehicleError) -> str:
+def _vehicle_hint(exc: VehicleError, unsure: bool = False) -> str:
+    """What to ask. The body type comes up only once the caller said they don't know
+    (CONVERSATION_DESIGN.md: make only -> year and model; "I don't know" -> sedan, SUV or
+    pickup); offered earlier, gpt-oss jumped to it and quoted an estimate."""
     k = exc.known
     name = " ".join(str(k[x]) for x in ("year", "make", "model") if k.get(x)) or "the vehicle"
     options = ", ".join(exc.options)
     fallback = (
-        " If they don't know, ask whether it's a sedan, SUV or pickup and call save_vehicle "
+        " They don't know it: ask whether it's a sedan, SUV or pickup and call save_vehicle "
         "again with vehicle_type."
+        if unsure
+        else ""
     )
     match exc.code:
         case VehicleErrorCode.MISSING_MAKE_AND_MODEL:
@@ -313,6 +318,7 @@ async def _resolve_vehicle(
     model: str | None,
     vehicle_type: str | None,
     operational: bool,
+    unsure: bool = True,
 ) -> tuple[dict[str, Any] | None, Result | None]:
     """Year/make/model -> the fields of a ``VehicleEntry`` (plus ``_estimate`` and
     ``_heard_as``), or the error result that tells Mia what to ask."""
@@ -325,7 +331,7 @@ async def _resolve_vehicle(
             VehicleErrorCode.MISSING_MODEL,
             VehicleErrorCode.MISSING_YEAR,
         )
-        if kind and exc.code in missing_codes:
+        if kind and exc.code in missing_codes and unsure:
             fields = {
                 "year": normalize_year(year),
                 "make": exc.known.get("make"),
@@ -346,7 +352,7 @@ async def _resolve_vehicle(
             return None, _failed(
                 state, "vehicle", str(exc.code), _vehicle_hint(exc), **exc.to_dict()
             )
-        return None, _err(state, str(exc.code), _vehicle_hint(exc), **exc.to_dict())
+        return None, _err(state, str(exc.code), _vehicle_hint(exc, unsure), **exc.to_dict())
     except CarHaulerError as exc:
         return None, _err(state, str(exc.code), ESCALATE)
     state.failures["vehicle"] = 0
@@ -405,10 +411,13 @@ async def save_vehicle(
     total_vehicles: int | None = None,
     said: str | None = None,
     last_said: str | None = None,
+    unsure: bool = True,
 ) -> Result:
     """``said``: everything the caller said so far, for the grounding check (None skips it).
     ``last_said``: their latest message; a year they corrected in it ("twenty ten... twenty
-    twenty") becomes the one they settled on, whatever the model passed."""
+    twenty") becomes the one they settled on, whatever the model passed. ``unsure``: the caller
+    said they don't know the model (or answered Mia's sedan/SUV/pickup question), so a body
+    type may be quoted as an estimate."""
     _note_vehicle_count(state, said)
     if last_said:
         year = grounding.corrected_year(year, last_said)
@@ -416,7 +425,10 @@ async def save_vehicle(
         if named >= 2 and named > (state.expected_vehicles or 0):
             state.expected_vehicles = named  # so Mia asks for the one the model skipped
     # What the caller already said of this vehicle (an earlier turn), if the model left it out.
-    if state.partial_vehicle and not (vehicle_type and not make):
+    # Always, even with a vehicle_type: gpt-oss sent save_vehicle(year, vehicle_type="sedan")
+    # without the Toyota it had heard (scenario estimate_after_unsure).
+    unsure = unsure or bool(state.partial_vehicle.get("model_unknown"))
+    if state.partial_vehicle:
         year = year or state.partial_vehicle.get("year")
         make = make or state.partial_vehicle.get("make")
     # Models send null for "not mentioned": only an explicit False means it doesn't run.
@@ -437,6 +449,7 @@ async def save_vehicle(
         model=model,
         vehicle_type=vehicle_type,
         operational=operational,
+        unsure=unsure,
     )
     if error:
         return error

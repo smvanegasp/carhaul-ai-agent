@@ -214,3 +214,36 @@ def test_next_question_asks_only_for_whats_missing(state):
     state.note_partial_vehicle({"year": 2020, "make": "Honda"})
     nxt = tools._next_question(state)
     assert "2020 Honda" in nxt and "What model is the 2020 Honda?" in nxt
+
+
+async def test_a_body_type_is_an_estimate_only_once_they_dont_know(state, services):
+    # CONVERSATION_DESIGN: make only -> year and model; "I don't know" -> sedan, SUV or pickup.
+    said = "Boston to San Francisco. It's a 2022 Toyota, an SUV"
+    r = await tools.save_vehicle(
+        state, services, year=2022, make="Toyota", vehicle_type="suv", said=said, unsure=False
+    )
+    assert not r["ok"] and "model" in r["next"] and "sedan" not in r["next"]
+    assert state.vehicles == []
+    r = await tools.save_vehicle(
+        state, services, year=2022, make="Toyota", vehicle_type="suv", said=said, unsure=True
+    )
+    assert r["ok"] and r["saved"]["estimate"]
+
+
+async def test_my_car_is_not_a_sedan(state, services):
+    # Stage 7 simulation: "I'm looking to ship my car" grounded vehicle_type="sedan".
+    said = "I'm looking to ship my car, it's a 2025 Honda"
+    r = await tools.save_vehicle(
+        state, services, year=2025, make="Honda", vehicle_type="sedan", said=said, unsure=True
+    )
+    assert not r["ok"] and state.vehicles == []
+
+
+async def test_the_remembered_make_fills_in_even_with_a_body_type(state, services):
+    said = "Boston to San Francisco. It's a Toyota. It's a 2022, but I don't know the model"
+    state.note_partial_vehicle({"make": "Toyota", "year": 2022})
+    r = await tools.save_vehicle(
+        state, services, year=2022, vehicle_type="sedan", said=said, unsure=True
+    )
+    # "sedan" was never said: dropped; the Toyota is kept; they don't know the model -> types
+    assert not r["ok"] and "sedan, SUV or pickup" in r["next"]

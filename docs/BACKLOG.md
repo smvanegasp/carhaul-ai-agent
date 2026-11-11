@@ -531,13 +531,34 @@ caller who accepted Mia's offer of a representative after a payment question (fi
 didn't expect it).
 
 Still open (from the transcripts):
-- [ ] "Can I leave some boxes in the trunk?" -> "Sure." (should be: up to 100 lb, below the
-      windows); FAQ answers are the model's, checked only by keywords
-- [ ] After "It's a Toyota" (no model) Mia sometimes offers "sedan, SUV or pickup?" (an
-      estimate) before asking for the model
-- [ ] Count from the vehicles named ("a 2022 RAV4 and a 2017 Civic" without "two cars"): the
-      honest read-back now catches it, but Mia could ask for the second car directly
-- [ ] Re-check gpt-oss-20b vs 120b for Mia with `MIA_LLM_MODEL` (one run each)
+- [x] "Can I leave some boxes in the trunk?" -> "Sure.": FAQ facts now come from code
+      (`faq.py`: when the caller asked an FAQ and Mia's line lacks its key fact, the canonical
+      answer goes first; never on a line with a price). Scenario `faq_personal_items` 2/5 ->
+      5/5; in the simulations FAQ misses went 3 -> 1
+- [x] Estimates only after "I don't know" (CONVERSATION_DESIGN slot rules): a bare "car" no
+      longer grounds "sedan"; the body-type question and an estimate need the caller's "don't
+      know" (or their answer to Mia offering types), and "don't know the model" is remembered so
+      Mia stops asking for it. Scenario `estimate_after_unsure` 0/5 -> 8/8
+- [x] Count from the makes named ("one's a Honda and the other's a Toyota", "a RAV4 and a 2017
+      Civic") every turn, whatever the model saves; a corrected *year* no longer hides the
+      second car; a two-car message is never a partial vehicle (a regression in
+      `partial-vehicle-memory` the simulations caught: "What's the make and model of the 2025
+      car?"). A correction word only counts right before a make ("not a Toyota"):
+      "I've actually got two vehicles" was read as a correction; two different years in one
+      message are two cars too
+- [ ] Third off-topic question: the model sometimes doesn't call `note_off_topic` (4 of 8 in
+      one run), mostly when the simulated caller makes a statement ("The Patriots won the
+      Super Bowl") instead of asking. Not ending the call is the safe failure; ending it from
+      code would need an off-topic detector we trust
+- [x] Re-check gpt-oss-20b vs 120b for Mia (2026-11-11, same code, 72 calls + scenario suite x2
+      each; runs `mia-20b` and `mia-120b`): **keep 20b**
+
+      | Mia | Passed | Dropped calls / call | Median turn | Groq / run | Scenario suite |
+      | --- | ---: | ---: | ---: | ---: | ---: |
+      | gpt-oss-20b | 71/72 (99%) | 0.71 | 594 ms | ~$0.20 | 34/34 |
+      | gpt-oss-120b | 64/72 (89%) | 0.92 | 574 ms | ~$0.40 | 31/34 |
+
+      120b invented more tool calls and missed the off-topic ending 6 times
 
 ## Ideas / later
 

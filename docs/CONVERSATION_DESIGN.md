@@ -117,6 +117,9 @@ Callers may also ask **what's on file so far** (to check details) and FAQs.
 
 ## FAQs (answer only from here; never make anything up, offer a licensed representative instead)
 
+The key facts below are also checked in code (`agent/src/mia/faq.py`): if Mia's answer lacks
+one, the canonical answer is spoken instead, followed by her question.
+
 Sources: <https://carhauler247.com/vehicle-size-weight-pricing>,
 <https://carhauler247.com/open-car-shipping>, <https://carhauler247.com/enclosed-car-shipping>
 

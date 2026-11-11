@@ -262,3 +262,15 @@ def test_a_read_back_keeps_what_mia_said_before_it():
         "Boston to San Francisco. Is that correct?"
     )
     assert guardrails.honest_read_back(told, s) == f"I've removed the Toyota. {read_back(s)}"
+
+
+def test_no_model_question_after_they_said_they_dont_know():
+    s = QuoteSession(origin=BOS, destination=SF)
+    s.note_partial_vehicle({"year": 2022, "make": "Toyota", "model_unknown": True})
+    assert guardrails.no_model_again("What model is the 2022 Toyota?", s) == (
+        "No problem. Is it a sedan, an SUV, or a pickup?"
+    )
+    assert fallback_line(s) == "No problem. Is it a sedan, an SUV, or a pickup?"
+    plain = QuoteSession(origin=BOS, destination=SF)
+    plain.note_partial_vehicle({"year": 2022, "make": "Toyota"})
+    assert guardrails.no_model_again("What model is it?", plain) == "What model is it?"

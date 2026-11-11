@@ -74,6 +74,8 @@ _NUMBER_WORDS = {
 
 VEHICLE_TYPE_ALIASES = {
     "car": "sedan",
+    "regular car": "sedan",
+    "normal car": "sedan",
     "sedan": "sedan",
     "saloon": "sedan",
     "suv": "suv",
