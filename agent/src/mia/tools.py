@@ -108,6 +108,13 @@ def _err(state: QuoteSession, code: str, next_step: str, **data: Any) -> Result:
 
 def _next_question(state: QuoteSession) -> str:
     missing = state.missing
+    if state.pending_change and state.origin and state.destination:
+        return (
+            f"They're changing the {state.pending_change['from']} to a "
+            f"{state.pending_label() or 'different vehicle'}: don't read anything back yet. Ask "
+            f'only for what is missing, e.g. "{state.pending_question()}", then call '
+            f"update_vehicle with quote_id {state.pending_change['quote_id']}."
+        )
     if not missing:
         return (
             "Everything is on file. Read it back in one sentence (each vehicle, origin city and "
@@ -601,12 +608,22 @@ async def update_vehicle(
     """The caller changed a vehicle ("actually it's a 2021", "it's a Toyota 4Runner, not the
     Civic"). Only what they changed is passed; the rest stays. A new make drops the old model
     (a Toyota isn't a Civic)."""
+    pending = state.pending_change
+    if pending and quote_id in (None, pending["quote_id"]):
+        quote_id = pending["quote_id"]
+    else:
+        pending = None
     target = _pick_vehicle(state, quote_id)
     if isinstance(target, dict):
         return target
     if last_said:
         year = grounding.corrected_year(year, last_said)
     year, make, model, vehicle_type, ignored = _grounded(said, year, make, model, vehicle_type)
+    if pending:
+        # The rest of a change already under way: "It's a Wrangler" belongs to the 2025 Jeep,
+        # not to the Honda being replaced (call 6fe7729baa7b).
+        year = year or pending.get("year")
+        make = make or pending.get("make")
     if not (year or make or model or vehicle_type) and drivable is None:
         return _err(
             state,
@@ -620,13 +637,29 @@ async def update_vehicle(
     fields, error = await _resolve_vehicle(
         state,
         services,
-        year=year or target.year,
+        # A new make is a different vehicle: its year isn't the old one's either.
+        year=year or (target.year if same_make else None),
         make=new_make,
         model=new_model,
         vehicle_type=vehicle_type or (target.vehicle_type if not model else None),
         operational=target.operational if drivable is None else drivable is not False,
+        # "They don't know the model" only if they said so (call 6fe7729baa7b: the hint said
+        # it after "my Jeep is a twenty twenty five Jeep", and the model offered body types).
+        unsure=bool(last_said and grounding.unsure(last_said)),
     )
     if error:
+        known = error.get("known") or {}
+        heard = {k: known[k] for k in ("year", "make") if known.get(k)}
+        if heard and not same_make:
+            # Remember the change under way, so Mia asks only for what's missing and doesn't
+            # read the old vehicle back as if nothing had happened.
+            state.pending_change = {"quote_id": target.quote_id, "from": target.label, **heard}
+            return _err(
+                state,
+                error["error_code"],
+                _next_question(state),
+                known=known,
+            )
         return error
     assert fields is not None
     before = target.label
@@ -750,6 +783,8 @@ async def get_quote(
             "save_vehicle or save_origin_destination. Otherwise: " + _next_question(state),
             missing=state.missing,
         )
+    if state.pending_change:
+        return _err(state, "CHANGE_IN_PROGRESS", _next_question(state))
     # Guardrail: quote only right after the caller confirmed the read-back.
     if last_said is not None and not grounding.is_confirmation(last_said):
         return _err(

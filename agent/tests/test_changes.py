@@ -327,3 +327,48 @@ async def test_removing_without_a_replacement_is_unchanged(state, services):
     )
     assert state.expected_vehicles == 1 and state.partial_vehicle == {}
     assert "say" in r  # repriced from the last quote
+
+
+# --- a change that needs another detail (call 6fe7729baa7b, 2026-11-11) ---------------------
+# "I want to change the Honda for my Jeep. My Jeep is a twenty twenty five Jeep." needed the
+# model: the Jeep was forgotten, Mia read the Honda back, and "It's a Wrangler" went to the
+# Honda ("couldn't find a 2021 Honda Civic"). Here with a Ford (the fake catalog has no Jeep).
+
+
+async def test_a_change_missing_its_model_is_kept_until_the_model_comes(state, services):
+    said = await _quoted(state, services, CIVIC, RUNNER)
+    said += " I want to change the Honda for my Ford. My Ford is a twenty twenty four Ford."
+    honda = state.vehicles[0].quote_id
+    r = await tools.update_vehicle(
+        state, services, quote_id=honda, year=2024, make="Ford", said=said, last_said=said
+    )
+    assert r["error_code"] == "MISSING_MODEL"
+    assert state.pending_change == {
+        "quote_id": honda,
+        "from": "2025 Honda Civic",
+        "year": 2024,
+        "make": "Ford",
+    }
+    assert "What model is the 2024 Ford?" in r["next"]
+    assert "sedan" not in r["next"]  # they never said they don't know the model
+    assert r["on_file"]["changing"]["to_so_far"] == "2024 Ford"
+    # Never the old car read back, and no quote, while the change is pending.
+    assert guardrails.fallback_line(state) == "What model is the 2024 Ford?"
+    assert (await tools.get_quote(state, services, last_said="Yes"))["error_code"] == (
+        "CHANGE_IN_PROGRESS"
+    )
+    # "It's an F-150": only the model, and it goes to the Ford, not the Honda.
+    said += " It's an F-150."
+    r = await tools.update_vehicle(state, services, model="F-150", said=said, last_said=said)
+    assert r["ok"], r
+    assert [v.label for v in state.vehicles] == ["2024 Ford F-150", "2020 Toyota 4Runner"]
+    assert state.pending_change is None
+
+
+async def test_removing_the_vehicle_drops_its_pending_change(state, services):
+    said = await _quoted(state, services, CIVIC, RUNNER) + " Change the Honda for my 2024 Ford."
+    honda = state.vehicles[0].quote_id
+    await tools.update_vehicle(state, services, quote_id=honda, year=2024, make="Ford", said=said)
+    assert state.pending_change
+    await tools.remove_vehicle(state, services, quote_id=honda)
+    assert state.pending_change is None

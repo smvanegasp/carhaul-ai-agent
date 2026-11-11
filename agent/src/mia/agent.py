@@ -346,6 +346,24 @@ class Mia(Agent):
                 runs_tool = True
                 called.add("save_vehicle")
                 logger.info("caller named the vehicle; running save_vehicle %s", args)
+        pending = state.pending_change
+        if (
+            not failed
+            and pending
+            and pending.get("make")
+            and "update_vehicle" not in called
+            and state.code_ran_once("update_vehicle")
+        ):
+            # The detail a pending change was waiting for ("It's a Wrangler" for the 2025 Jeep):
+            # finish the change from the caller's own words if the model doesn't.
+            asked = bool(_ASKED_MODEL.search(mia_last))
+            model = await model_from_words(self.services, pending["make"], last_said, alone=asked)
+            if model:
+                args = {"quote_id": pending["quote_id"], "model": model}
+                held.append(_call_chunk("update_vehicle", args))
+                runs_tool = True
+                called.add("update_vehicle")
+                logger.info("caller gave the missing detail; running update_vehicle %s", args)
         closing = (
             not failed
             and not state.ended
