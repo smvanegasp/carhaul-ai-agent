@@ -155,8 +155,7 @@ COLS = [
     ("Result", 11, True),
     ("Rating (1-5)", 9, True),
     ("What happened (your feedback)", 46, True),
-    ("Call ID", 20, True),
-    ("Transcript JSON (Copy JSON, then paste)", 40, True),
+    ("Call ID", 22, True),
 ]
 RESULTS = ["Pass", "Partly", "Fail", "Not run"]
 
@@ -181,22 +180,19 @@ steps = [
      "(the cards are in docs/TESTING_GUIDE.md). You don't have to follow the words exactly.",
      None),
     ("2. Call Mia from the site and play the test. Note anything odd while it happens.", None),
-    ("3. When the call ends: in Past calls, open your call, press Copy JSON and paste it into "
-     "\"Transcript JSON\". Copy the call ID too: it's shown next to the call (\"Call ID "
-     "call-...\" with a Copy button) in Past calls, and on the call page right after the call "
-     "ends.", None),
+    ("3. When the call ends, copy its call ID (\"Call ID call-...\" with a Copy button, on the "
+     "call page right after the call and in Past calls) and paste it into \"Call ID\". That's "
+     "all: the full call (transcript, what Mia did) is saved on the site under that ID.", None),
     ("4. Fill in Tester, Date, Result (pick from the list), Rating 1-5 and \"What happened\": "
      "what was good, what was wrong, what you expected instead.", None),
     ("5. Calls outside the plan go in the Extra calls sheet. Summary updates by itself.", None),
     ("", None),
     ("Cells to fill in", None),
-    ("Only the light yellow cells: Tester, Date, Result, Rating, What happened, Call ID and "
-     "Transcript JSON. The other columns describe the test; leave them as they are.", "fill"),
+    ("Only the light yellow cells: Tester, Date, Result, Rating, What happened and Call ID. "
+     "The other columns describe the test; leave them as they are.", "fill"),
     ("", None),
     ("Good to know", None),
-    ("· The call ID is the most important cell. Excel cells hold at most 32,767 characters, "
-     "so a long call's JSON may be cut off when pasted; with the call ID the full record can "
-     "still be read from the site.", None),
+    ("· The call ID is the most important cell: without it the call can't be found.", None),
     ("· Transfer tests (pink in the Tests sheet) ring Sergio's real phone: agree a time with "
      "him first. There are 10 transfers a day at most.", None),
     ("· Result: Pass = Mia did what the test expects. Partly = she got there with a problem "
@@ -230,7 +226,6 @@ example = [
      "Got the right price, but she asked for the model twice after I said \"F one fifty\". "
      "Otherwise fast and friendly."),
     ("Call ID", "call-803e7edb7473"),
-    ("Transcript JSON (Copy JSON, then paste)", "{ \"room\": \"call-803e7edb7473\", ... }"),
 ]
 for label, value in example:
     c = how.cell(r, 2, f"{label}:  {value}")
@@ -245,8 +240,7 @@ def table(ws, rows, *, extra=False):
     cols = COLS if not extra else [
         ("#", 5, False), ("What you tried", 46, True), ("Tester", 12, True), ("Date", 12, True),
         ("Result", 11, True), ("Rating (1-5)", 9, True),
-        ("What happened (your feedback)", 46, True), ("Call ID", 20, True),
-        ("Transcript JSON (Copy JSON, then paste)", 40, True),
+        ("What happened (your feedback)", 46, True), ("Call ID", 22, True),
     ]
     for j, (head, width, _is_input) in enumerate(cols, 1):
         c = ws.cell(1, j, head)
@@ -292,9 +286,10 @@ def table(ws, rows, *, extra=False):
 
 tests = wb.create_sheet("Tests")
 table(tests, [list(t) for t in TESTS])
-tests.cell(1, 14).comment = Comment(
-    "Excel cells hold up to 32,767 characters: a long call may be cut off. The Call ID is "
-    "enough to read the full record.", "Mia evaluation")
+tests.cell(1, 13).comment = Comment(
+    "Copy it with the Copy button next to \"Call ID\" (Past calls, or the call page right "
+    "after the call). The full call is saved on the site, so the ID is all that's needed.",
+    "Mia evaluation")
 N = len(TESTS) + 1  # last test row
 
 extra = wb.create_sheet("Extra calls")

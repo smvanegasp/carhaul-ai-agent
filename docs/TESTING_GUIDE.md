@@ -15,8 +15,9 @@ takes about 2 minutes.
 ## The evaluation workbook
 
 [`docs/evaluation/Mia_evaluation.xlsx`](evaluation/Mia_evaluation.xlsx) has 29 planned test
-calls (what to say, what Mia should do) with a row each for your result, rating, feedback, the
-call ID and the call's JSON (Copy JSON). The Summary sheet fills in by itself. Send the filled-in
+calls (what to say, what Mia should do) with a row each for your result, rating, feedback and
+the **call ID** (copy it with the button next to "Call ID", on the call page after the call or in
+Past calls; the whole call is saved under it). The Summary sheet fills in by itself. Send the filled-in
 copy back so the feedback can be turned into fixes. Tests in pink ring Sergio's phone: agree a
 time with him first (10 transfers a day at most).
 
