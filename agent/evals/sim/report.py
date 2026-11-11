@@ -232,7 +232,9 @@ def write_run(out: Path, meta: dict, records: list[dict], scenarios: dict | None
     folder = out / _run_name(meta)
     folder.mkdir(parents=True, exist_ok=True)
     summary = summarize(meta, records, scenarios)
-    (folder / "summary.json").write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
+    (folder / "summary.json").write_text(
+        json.dumps(summary, indent=2) + "\n", encoding="utf-8", newline="\n"
+    )
     with (folder / "transcripts.jsonl").open("w", encoding="utf-8", newline="\n") as f:
         for r in records:
             f.write(json.dumps(r, ensure_ascii=False) + "\n")
