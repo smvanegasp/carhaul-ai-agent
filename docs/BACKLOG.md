@@ -11,7 +11,7 @@ One branch and one PR per stage. ✅ done · 🔜 next · ⏳ later.
 | 4 | AWS deploy: Terraform (fit + on-demand ECS Fargate worker), Deploy workflow, SSM secrets, TESTING_GUIDE. **Teammate starts testing** | ✅ |
 | 5 | Live panel (`mia.events`), call record to DynamoDB, feedback form per call | ✅ |
 | 6 | Public dashboard: Past calls (list + detail) and Stats (KPIs, funnel, trends) | ✅ |
-| 7 | AI-vs-AI simulation: 8 personas × fragments, report by persona and path, nightly workflow | ✅ |
+| 7 | AI-vs-AI simulation: 8 personas × fragments, report by persona and path, run after big changes | ✅ |
 | 8 | Non-happy paths: self-corrections, silence, changes + trash, error matrix, FAQs, off-topic guardrail | ✅ |
 | 9 | Transfer to a licensed representative (Sergio's phone) through a Twilio SIP trunk ✅; later a phone number to call Mia | ⏳ |
 
@@ -493,8 +493,9 @@ From main's red CI after PR #22 and the first live calls on the deployed stage 8
       `agent/evals/simulations/README.md` (index) and `runs/<run>/` (`report.md`,
       `transcripts.md`, `transcripts.jsonl`, `summary.json`). Account and request IDs are
       scrubbed from errors
-- [x] Nightly workflow `simulations.yml` (08:00 UTC, also manual with inputs): the 72 calls +
-      the scenario suite 3 times, committed to main (its token starts no CI or deploy)
+- [x] Workflow `simulations.yml`: the 72 calls + the scenario suite, committed to main (its
+      token starts no CI or deploy). Nightly at first; **by hand only since 2026-11-11**
+      (Sergio: no gain from daily runs, keep it cheap; run it after big changes to Mia)
 - [x] The scenario suite's pass rates per scenario are in every report (the flaky ones:
       `faq_mid_call` 3/3 and 3/3, `off_topic_three_strikes` 3/3 then 1/3 then 4/5 alone,
       `happy_path_ngc_3v` 3/3 and 3/3)

@@ -430,7 +430,7 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--concurrency", type=int, default=2)
     ap.add_argument("--limit", type=int, help="only the first N calls (a quick check)")
     ap.add_argument("--scenario-runs", type=int, default=0)
-    ap.add_argument("--label", default="manual", help="e.g. nightly, manual")
+    ap.add_argument("--label", default="manual", help="e.g. manual, or the change being checked")
     ap.add_argument("--out", type=Path, default=RUNS_DIR)
     args = ap.parse_args(argv)
 

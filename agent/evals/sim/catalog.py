@@ -109,7 +109,7 @@ NEW_VEHICLES = ["2020 Toyota 4Runner", "2019 Toyota Corolla"]
 NEW_DESTINATIONS = [Place("Tampa", "Florida"), Place("Denver", "Colorado")]
 
 # FAQs (CONVERSATION_DESIGN.md) and what a right answer must mention: every group needs one
-# of its words. Code, not a judge: cheap and the same every night.
+# of its words. Code, not a judge: cheap and the same every run.
 FAQS = [
     ("Do you do enclosed shipping?", [["open"]]),
     ("Can I pay with a credit card?", [["cash"], ["3", "three"]]),
