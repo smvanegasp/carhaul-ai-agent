@@ -275,7 +275,9 @@ class Mia(Agent):
             for d in dropped:
                 self.services.events.dropped(d["tool"], d["args"] or "", d["why"])
         if not runs_tool:
-            spoken = guardrails.tidy_speech(text)
+            spoken = guardrails.removal_question(dropped, state, last_said) or (
+                guardrails.tidy_speech(text)
+            )
             if not spoken and dropped and grounding.is_question(last_said):
                 # The caller asked something and the model only tried tools the guardrail
                 # dropped: ask again with no tools, so the question gets an answer.

@@ -154,3 +154,28 @@ async def test_a_year_and_make_said_with_the_route_are_kept(client, resolver):
     outputs = [i.output for i in model.contexts[1].items if i.type == "function_call_output"]
     assert "What model is the 2025 Honda?" in outputs[-1]
     assert '"heard_so_far": "2025 Honda"' in outputs[-1]
+
+
+async def test_a_garbled_removal_is_asked_back_then_done(client, resolver):
+    # Sergio's call: STT heard "eliminate" as "tell him Nate"; the removal was dropped and Mia
+    # read the same three cars back three times. Now she asks, and a yes removes it.
+    state = QuoteSession(origin=BOS, destination=SF)
+    state.add_vehicle(year=2025, make="Honda", model="Civic", trim_id=1)
+    state.add_vehicle(year=2020, make="Toyota", model="4Runner", trim_id=2)
+    toyota = state.vehicles[1].quote_id
+    remove = ("remove_vehicle", f'{{"quote_id": "{toyota}"}}')
+    model = ScriptedLLM(
+        [
+            Step(calls=[remove]),  # "tell him Nate": dropped, the question is asked
+            Step(calls=[remove]),  # "Yes": runs
+            Step(text="I've removed the 2020 Toyota 4Runner. Is that correct?"),
+        ]
+    )
+    services = Services(carhauler=client, resolver=resolver, geocode=fake_city_to_zip)
+    async with new_session(state, llm=model) as session:
+        await session.start(Mia(services, greeting=GREETINGS[0]))
+        first = await session.run(user_input="No. I won't tell him Nate to tell you about that.")
+        asked = [e.item.text_content for e in first.events if isinstance(e.item, ChatMessage)]
+        assert asked[-1] == "Do you want me to remove the 2020 Toyota 4Runner?"
+        await session.run(user_input="Yes")
+    assert [v.label for v in state.vehicles] == ["2025 Honda Civic"]

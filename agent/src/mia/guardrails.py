@@ -75,7 +75,9 @@ def check_call(
         if not changed and args.get("drivable") is None:
             return "no vehicle detail the caller said"
     elif name == "remove_vehicle":
-        if not grounding.wants_removal(last_said):
+        # Their own words, or a yes to Mia asking "Do you want me to remove the ...?"
+        offered = grounding.offered_removal(mia_last) and grounding.is_confirmation(last_said)
+        if not (grounding.wants_removal(last_said) or offered):
             return "caller did not ask to remove a vehicle"
     elif name == "undo_last_change":
         if not grounding.wants_undo(last_said):
@@ -225,6 +227,25 @@ def no_model_again(spoken: str, state: QuoteSession) -> str:
     if state.partial_vehicle.get("model_unknown") and spoken and _ASKS_MODEL.search(spoken):
         return state.partial_question()
     return spoken
+
+
+def removal_question(dropped: list[dict[str, Any]], state: QuoteSession, last_said: str) -> str:
+    """When the model tried to remove a vehicle on file but the caller's words didn't say so
+    (speech-to-text heard "eliminate" as "tell him Nate"), ask instead of reading everything
+    back again: "Do you want me to remove the 2024 Toyota 4Runner?" A yes then runs it."""
+    if grounding.is_confirmation(last_said):
+        return ""  # a "yes" turn: the model invented the removal; say nothing about it
+    for d in dropped:
+        if d["tool"] != "remove_vehicle":
+            continue
+        try:
+            quote_id = (json.loads(d["args"] or "{}") or {}).get("quote_id")
+        except ValueError:
+            continue
+        found = state.find_vehicle(quote_id) if quote_id else None
+        if found:
+            return f"Do you want me to remove the {found.label}?"
+    return ""
 
 
 def keep_going(spoken: str, state: QuoteSession) -> str:

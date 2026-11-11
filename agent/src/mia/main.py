@@ -204,6 +204,55 @@ async def entrypoint(ctx: JobContext) -> None:
     # Phone transfer to a licensed representative (transfer.py), when the trunk is configured.
     phone_line = transfer.Config.from_env()
 
+    async def hear_each_other(hear: bool) -> None:
+        """Caller <-> representative audio, on or off (off while the line is screened)."""
+        rep = ctx.room.remote_participants.get(transfer.REPRESENTATIVE_IDENTITY)
+        for _ in range(20):  # its track publishes a moment after the answer
+            if rep and transfer.audio_sids(rep):
+                break
+            await asyncio.sleep(0.1)
+            rep = ctx.room.remote_participants.get(transfer.REPRESENTATIVE_IDENTITY)
+        rep_sids = transfer.audio_sids(rep) if rep else []
+        room = ctx.room.name
+        for p in list(ctx.room.remote_participants.values()):
+            if p.identity == transfer.REPRESENTATIVE_IDENTITY:
+                continue
+            try:
+                await transfer.set_hearing(ctx.api, room, p.identity, rep_sids, hear)
+                await transfer.set_hearing(
+                    ctx.api, room, transfer.REPRESENTATIVE_IDENTITY, transfer.audio_sids(p), hear
+                )
+            except Exception as err:  # never break the transfer over routing
+                logger.warning(
+                    "couldn't %s audio for %s: %s", "route" if hear else "hold", p.identity, err
+                )
+
+    async def screen_line() -> bool:
+        """The line that picked up must press 1 (transfer.screen); the caller and the line
+        can't hear each other until then."""
+        await hear_each_other(False)
+        pressed = asyncio.Event()
+
+        def on_dtmf(ev) -> None:
+            who = getattr(ev.participant, "identity", None)
+            if who == transfer.REPRESENTATIVE_IDENTITY and ev.digit == transfer.ACCEPT_DIGIT:
+                pressed.set()
+
+        async def say(text: str) -> None:
+            events.turn("assistant", text, kind="handoff")
+            handle = session.say(text, allow_interruptions=False, add_to_chat_ctx=False)
+            await handle.wait_for_playout()
+
+        ctx.room.on("sip_dtmf_received", on_dtmf)
+        try:
+            accepted = await transfer.screen(say, pressed, transfer.screening_line(state))
+        finally:
+            ctx.room.off("sip_dtmf_received", on_dtmf)
+        if accepted:
+            await hear_each_other(True)
+        logger.info("representative line %s", "accepted" if accepted else "not accepted")
+        return accepted
+
     async def run_transfer() -> None:
         """Ring the representative into this room; on answer Mia introduces the caller and
         leaves, otherwise she apologizes and the call goes on."""
@@ -212,7 +261,8 @@ async def entrypoint(ctx: JobContext) -> None:
         outcome = "limit"
         if await asyncio.to_thread(transfer.take_slot):
             outcome = await transfer.dial(ctx.api, phone_line, ctx.room.name)
-        state.transfer = outcome
+        # "screening" until the line presses 1 (transfer.screen): a voicemail also "answers".
+        state.transfer = "screening" if outcome == "connected" else outcome
         events.tool(
             "dial_representative",
             {},
@@ -222,8 +272,22 @@ async def entrypoint(ctx: JobContext) -> None:
         events.state(state.snapshot(), str(state.stage), state.quote)
         try:
             if outcome == "connected":
+                screened = asyncio.get_running_loop().time()
+                accepted = await screen_line()
+                if not accepted:
+                    await transfer.hang_up_line(ctx.api, ctx.room.name)
+                    outcome = "no_answer"
+                state.transfer = "connected" if accepted else outcome
+                events.tool(
+                    "screen_representative",
+                    {},
+                    {"ok": accepted, "outcome": "accepted" if accepted else "no 1 pressed"},
+                    (asyncio.get_running_loop().time() - screened) * 1000,
+                )
+                events.state(state.snapshot(), str(state.stage), state.quote)
+            if outcome == "connected":
                 timer.cancel()  # Mia's 6-minute limit; the phone leg has its own (10 min)
-                line = transfer.handoff_line(state)
+                line = transfer.ACCEPTED
                 events.turn("assistant", line, kind="handoff")
                 handle = session.say(line, allow_interruptions=False, add_to_chat_ctx=False)
                 handle.add_done_callback(lambda _: session.shutdown())

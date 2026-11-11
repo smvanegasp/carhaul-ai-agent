@@ -247,3 +247,22 @@ async def test_the_remembered_make_fills_in_even_with_a_body_type(state, service
     )
     # "sedan" was never said: dropped; the Toyota is kept; they don't know the model -> types
     assert not r["ok"] and "sedan, SUV or pickup" in r["next"]
+
+
+@pytest.mark.parametrize(
+    "said",
+    ["Can you actually eliminate the Toyota?", "get rid of the Toyota", "take away the Toyota"],
+)
+def test_more_ways_to_say_remove(said):
+    # Sergio's call, 2026-11-11: "eliminate" was dropped as "did not ask to remove".
+    assert grounding.wants_removal(said)
+
+
+def test_a_yes_to_mias_removal_question_removes():
+    asked = "Do you want me to remove the 2024 Toyota 4Runner?"
+    assert (
+        check_call("remove_vehicle", '{"quote_id": "Q2"}', QuoteSession(), "", "Yes", asked) is None
+    )
+    assert check_call(
+        "remove_vehicle", '{"quote_id": "Q2"}', QuoteSession(), "", "Yes", "Is that correct?"
+    )

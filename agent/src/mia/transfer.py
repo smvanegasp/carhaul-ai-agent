@@ -77,7 +77,7 @@ class Config:
 
 
 def handoff_line(state: QuoteSession) -> str:
-    """What Mia tells the representative once they pick up (the caller hears it too)."""
+    """What Mia tells the representative once they've accepted (the caller hears it too)."""
     parts = ["Hi, this is Mia from F&F. I have a caller here"]
     vehicles = [v.label for v in state.vehicles]
     if vehicles:
@@ -89,6 +89,89 @@ def handoff_line(state: QuoteSession) -> str:
     if state.quote and state.quote.get("total"):
         line += f" Their estimate was {state.quote['total']:,} dollars."
     return line + " I'll let you two talk now. Goodbye!"
+
+
+# --- screening: a person, not a voicemail ---------------------------------------------------
+# Sergio's call, 2026-11-11: nobody picked up, his voicemail answered at 29 s, and the SIP leg
+# counts that as answered, so Mia introduced the caller to the voicemail while the caller heard
+# both. Now the line that picks up must press 1 before the caller is put through; until then the
+# caller and the line can't hear each other (update_subscriptions), and without a 1 Mia hangs up
+# that line and tells the caller nobody was available.
+
+ACCEPT_DIGIT = "1"
+SCREEN_SECONDS = 12  # after the prompt; then once more, shorter
+SCREEN_AGAIN_SECONDS = 8
+PRESS_ONE = "Press 1 to take the call."
+ACCEPTED = "Thank you. I'll let you two talk now. Goodbye!"
+
+
+def screening_line(state: QuoteSession) -> str:
+    """What the line that picks up hears first: who's calling, then how to accept."""
+    intro = handoff_line(state).removesuffix(" I'll let you two talk now. Goodbye!")
+    return f"{intro} {PRESS_ONE}"
+
+
+async def screen(
+    say: Any,
+    pressed: Any,
+    line: str,
+    *,
+    wait_s: float = SCREEN_SECONDS,
+    again_s: float = SCREEN_AGAIN_SECONDS,
+) -> bool:
+    """Ask the line to press 1, and wait for it (twice). ``say`` speaks a line and returns once
+    it has played; ``pressed`` is an asyncio.Event set when the 1 arrives (even mid-sentence).
+    True: a person accepted. False: no 1 (a voicemail, or nobody)."""
+    import asyncio
+
+    for text, wait in ((line, wait_s), (PRESS_ONE, again_s)):
+        if pressed.is_set():
+            return True
+        await say(text)
+        try:
+            await asyncio.wait_for(pressed.wait(), timeout=wait)
+            return True
+        except TimeoutError:
+            continue
+    return pressed.is_set()
+
+
+def audio_sids(participant: Any) -> list[str]:
+    """The audio tracks a participant publishes (KIND_AUDIO is 1 in livekit.rtc)."""
+    from livekit import rtc
+
+    return [
+        pub.sid
+        for pub in getattr(participant, "track_publications", {}).values()
+        if pub.kind == rtc.TrackKind.KIND_AUDIO
+    ]
+
+
+async def set_hearing(
+    lkapi: Any, room: str, listener: str, track_sids: list[str], hear: bool
+) -> None:
+    """Let ``listener`` hear those tracks, or not (server-side, whatever the client does)."""
+    if not track_sids:
+        return
+    from livekit.protocol.room import UpdateSubscriptionsRequest
+
+    await lkapi.room.update_subscriptions(
+        UpdateSubscriptionsRequest(
+            room=room, identity=listener, track_sids=track_sids, subscribe=hear
+        )
+    )
+
+
+async def hang_up_line(lkapi: Any, room: str) -> None:
+    """Drop the representative's phone leg (it went to voicemail, or nobody pressed 1)."""
+    from livekit.protocol.room import RoomParticipantIdentity
+
+    try:
+        await lkapi.room.remove_participant(
+            RoomParticipantIdentity(room=room, identity=REPRESENTATIVE_IDENTITY)
+        )
+    except Exception as err:  # already gone
+        logger.info("representative leg already gone: %s", err)
 
 
 # --- the daily cap ---------------------------------------------------------------------------

@@ -77,3 +77,52 @@ def test_mia_never_names_sergio():
     # Sergio (2026-11-09): "Sergio, who built this" sounded arrogant.
     for text in (prompt.INSTRUCTIONS, transfer.CONNECTING, transfer.NO_ANSWER):
         assert "Sergio" not in text
+
+
+# --- screening: a person must press 1 (a voicemail also "answers") ---------------------------
+
+
+def test_screening_line_asks_to_press_one():
+    from mia.transfer import PRESS_ONE, screening_line
+
+    s = QuoteSession()
+    line = screening_line(s)
+    assert line.startswith("Hi, this is Mia from F&F.")
+    assert line.endswith(PRESS_ONE) and "Goodbye" not in line
+
+
+async def _screen(press_after: int | None):
+    """Run transfer.screen; the 1 arrives during the n-th spoken line (None: never)."""
+    import asyncio
+
+    from mia import transfer
+
+    pressed, said = asyncio.Event(), []
+
+    async def say(text):
+        said.append(text)
+        if press_after is not None and len(said) == press_after:
+            pressed.set()
+
+    ok = await transfer.screen(say, pressed, "intro", wait_s=0.05, again_s=0.05)
+    return ok, said
+
+
+async def test_a_person_who_presses_one_is_put_through():
+    ok, said = await _screen(press_after=1)
+    assert ok and said == ["intro"]
+
+
+async def test_one_more_prompt_then_put_through():
+    from mia.transfer import PRESS_ONE
+
+    ok, said = await _screen(press_after=2)
+    assert ok and said == ["intro", PRESS_ONE]
+
+
+async def test_a_voicemail_never_presses_one():
+    # Sergio's call, 2026-11-11: his voicemail answered and Mia introduced the caller to it.
+    from mia.transfer import PRESS_ONE
+
+    ok, said = await _screen(press_after=None)
+    assert not ok and said == ["intro", PRESS_ONE]
