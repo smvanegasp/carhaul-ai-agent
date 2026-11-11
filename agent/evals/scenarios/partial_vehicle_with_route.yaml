@@ -1,0 +1,22 @@
+# Sergio's call, 2026-11-10: the caller gave the route and half the car in one turn; Mia saved
+# the route and asked for the year, make and model again ("It's a twenty twenty Honda" twice).
+# Mia must keep the year and make and ask only for the model.
+id: partial_vehicle_with_route
+persona: G_P_V
+path: SHP
+ground_truth:
+  origin: Miami, Florida
+  destination: Chicago, Illinois
+  vehicles: [2020 Honda Civic]
+turns:
+  - user: "Yeah. Let's let's do it."
+  - user: "It's from Miami to Chicago. It's a twenty twenty Honda."
+    expect:
+      on_file: {origin: "Miami, Florida", destination: "Chicago, Illinois"}
+      judge: >-
+        Asks only for the model of the 2020 Honda. It must not ask again for the year or the
+        make (asking "what year, make and model" fails).
+  - user: "It's a Civic."
+    expect:
+      on_file: {vehicles: [2020 Honda Civic]}
+      no_tools: [get_quote]

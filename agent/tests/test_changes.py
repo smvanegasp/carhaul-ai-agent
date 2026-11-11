@@ -194,3 +194,23 @@ async def test_two_makes_in_one_sentence_expect_two_cars(state, services):
     )
     assert state.expected_vehicles == 2
     assert "vehicle 2 of 2" in state.missing
+
+
+async def test_the_model_alone_completes_the_vehicle_in_progress(state, services):
+    # "a twenty twenty five Honda" one turn, "Civic" the next: the model passes only the model.
+    said = "Boston, Massachusetts to San Francisco, California. A 2025 Honda. Civic"
+    state.note_partial_vehicle({"year": 2025, "make": "Honda"})
+    r = await tools.save_vehicle(state, services, model="Civic", said=said, last_said="Civic")
+    assert r["ok"], r
+    assert [v.label for v in state.vehicles] == ["2025 Honda Civic"]
+    assert state.partial_vehicle == {}
+
+
+def test_next_question_asks_only_for_whats_missing(state):
+    from mia.state import Place
+
+    state.origin = Place("Miami", "FL", "Florida", "33130")
+    state.destination = Place("Chicago", "IL", "Illinois", "60601")
+    state.note_partial_vehicle({"year": 2020, "make": "Honda"})
+    nxt = tools._next_question(state)
+    assert "2020 Honda" in nxt and "What model is the 2020 Honda?" in nxt

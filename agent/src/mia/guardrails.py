@@ -134,6 +134,8 @@ def fallback_line(state: QuoteSession) -> str:
         return "And where is it going?"
     expected = state.expected_vehicles or 1
     have = len(state.vehicles)
+    if have < expected and state.partial_vehicle:
+        return state.partial_question()
     if have < expected:
         if expected == 1:
             return "What's the year, make and model of the car?"

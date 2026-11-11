@@ -10,6 +10,7 @@ Every run keeps its full transcripts. Newest first:
 
 | Run (UTC) | Label | Mia | Caller | Calls | Passed | Weakest scenario | Cost | |
 | --- | --- | --- | --- | ---: | ---: | --- | ---: | --- |
+| 2026-11-11T01:02:14+00:00 | partial-vehicle | `openai/gpt-oss-20b` | `openai/gpt-oss-120b` | 72 | 65 (90%) | `api_down_at_quote` 2/2 | $0.20 | [report](runs/20261111T0102Z_partial-vehicle/report.md) |
 | 2026-11-11T00:26:07+00:00 | final | `openai/gpt-oss-20b` | `openai/gpt-oss-120b` | 72 | 68 (94%) | `change_vehicle_after_quote` 2/3 | $0.19 | [report](runs/20261111T0026Z_final/report.md) |
 | 2026-11-11T00:13:51+00:00 | stage7 | `openai/gpt-oss-20b` | `openai/gpt-oss-120b` | 72 | 60 (83%) | `off_topic_three_strikes` 2/3 | $0.19 | [report](runs/20261111T0013Z_stage7/report.md) |
 | 2026-11-11T00:01:17+00:00 | fixes | `openai/gpt-oss-20b` | `openai/gpt-oss-120b` | 72 | 60 (83%) | `remove_vehicle_after_quote` 0/3 | $0.19 | [report](runs/20261111T0001Z_fixes/report.md) |

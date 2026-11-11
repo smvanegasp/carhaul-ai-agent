@@ -471,9 +471,12 @@ From main's red CI after PR #22 and the first live calls on the deployed stage 8
   `off_topic_three_strikes`: goodbye without "only car shipping quotes") and one Groq error
   (tool name `request_human<|channel|>commentary`, gpt-oss leaking its format). Stage 7 tracks
   these
-- [ ] Seen in the same live call: "from Miami to Chicago. It's a twenty twenty Honda" saved the
+- [x] Seen in the same live call: "from Miami to Chicago. It's a twenty twenty Honda" saved the
       route but Mia then asked for "year, make and model" instead of "what model is the 2020
-      Honda?" (a partial vehicle in the same turn as the route)
+      Honda?" (a partial vehicle in the same turn as the route). Fixed in `partial-vehicle-memory`:
+      the year and make the caller says are kept (`state.partial_vehicle`), whatever tools the
+      model calls; Mia asks only for what's missing. Scenario `partial_vehicle_with_route`:
+      **7/15 before, 15/15 after**; simulation run `partial-vehicle` 65/72, scenario suite 2/2 all
 
 ## Stage 7: AI-vs-AI simulations (branch `stage-7-simulations`, 2026-11-10)
 
