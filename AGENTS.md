@@ -30,23 +30,21 @@ files rather than reinventing.
 - **Teammate** (non-technical): manual tester. From stage 4 she calls the deployed agent, acts
   out persona cards from `docs/TESTING_GUIDE.md` and leaves feedback per call.
 
-## Status (2026-11-10)
+## Status (2026-11-11)
 
 Live on AWS at https://dj7jlcxkdszj1.cloudfront.net (profile `carhaul`, account 816940506502).
-Deployed: stages 0-6, 8 and 9 (call page, live panel, Past calls, Stats with dispositions,
-voice picker, transfer to Sergio's phone through Twilio, all non-happy paths) through PR #22.
-Branch `stage-8-followups` (PR open): CI retries flaky LLM scenarios; a caller's question in a
-fully dropped step gets answered; an FAQ during the read-back re-asks to confirm (a live call
-was lost there); no duplicate vehicle after undo; silence lines logged once. The worker is on
-demand (`/api/wake` starts it, ~1 min; it exits after 10 idle minutes), so hosting is about
-$1/month.
+All stages are done: 0-6, 7 (AI-vs-AI simulations, nightly), 8 and 9 (transfer to Sergio's
+phone through Twilio), merged through PR #27: Copy JSON on every conversation, Mia keeps the
+year and make the caller already said, FAQ facts and body-type estimates checked in code.
+Mia stays on gpt-oss-20b (simulations: 20b 71/72, 120b 64/72). The worker is on demand
+(`/api/wake` starts it, ~1 min; it exits after 10 idle minutes), so hosting is about $1/month.
 
-Branch `stage-7-simulations` (PR open): the AI-vs-AI simulator, the nightly workflow and
-the first four runs (58% -> 94% of 72 calls), plus 8 Mia fixes the simulations found
-(one is a crash in #23's no-tools retry, so deploy this PR after #23). Next: the open items
-in BACKLOG stage 7 (FAQ answer quality), a custom domain (`carhaul.sergiovanegas.com`) and,
-if wanted, a phone number to call Mia (inbound; LiveKit's free number). Deploys are manual (`scripts/deploy.sh` in Git
-Bash, Sergio types `yes`); the GitHub deploy workflow is off until `DEPLOY_ENABLED` is set.
+**Group project for now:** the custom domain (`carhaul.sergiovanegas.com`, `infra/domain.tf`,
+plan checked: 2 to add, 1 to change, 0 to destroy) waits until grading ends; keep using the
+cloudfront.net address until then. A phone number to call Mia is optional and not started.
+Open items: BACKLOG, stage 7 "Still open". Deploys are manual (`scripts/deploy.sh` in Git Bash,
+Sergio types `yes`); the GitHub deploy workflow is off until `DEPLOY_ENABLED` is set. The
+nightly simulation workflow commits each run to main (`agent/evals/simulations/`).
 
 The project is by Sergio Vanegas (https://www.linkedin.com/in/sergio-vanegas/) and Belinda Hu
 (https://www.linkedin.com/in/belinda-hu/): academic, non-commercial, prices from the

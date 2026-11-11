@@ -26,6 +26,11 @@ takes about 2 minutes.
 The right half of the page shows what Mia is doing under the hood. You don't need to read it,
 but if something looks wrong there, mention it in your comment.
 
+**Copy JSON** (top of the conversation, also in Past calls) copies the whole call, with
+everything Mia did, to your clipboard. When something went wrong, paste it into your notes or a
+message along with what you noticed: it shows exactly what happened, so nothing has to be
+retyped.
+
 ## Persona cards
 
 Use a different route and car each time. There are ideas at the bottom.
