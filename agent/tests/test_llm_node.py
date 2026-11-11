@@ -429,3 +429,36 @@ def test_code_runs_once_per_message():
     assert not state.code_ran_once("save_vehicle")  # same message: no repeats
     state.caller_turns = 2
     assert state.code_ran_once("save_vehicle")  # a new message
+
+
+async def test_a_pending_change_is_finished_from_the_callers_words(client, resolver):
+    # Call 6fe7729baa7b: after "change the Honda for my 2025 Jeep" Mia read the Honda back, and
+    # "It's a Wrangler" went to the Honda. Here the model only speaks; code does the rest.
+    state = QuoteSession(origin=BOS, destination=SF)
+    state.add_vehicle(year=2025, make="Honda", model="Civic", trim_id=34547)
+    state.add_vehicle(year=2020, make="Toyota", model="4Runner", trim_id=2)
+    honda = state.vehicles[0].quote_id
+    change = ("update_vehicle", f'{{"quote_id": "{honda}", "year": 2024, "make": "Ford"}}')
+    read_back = (
+        "So that's your 2025 Honda Civic and 2020 Toyota 4Runner, shipping from Boston to San "
+        "Francisco. Does that sound right?"
+    )
+    model = ScriptedLLM(
+        [
+            Step(calls=[change]),
+            Step(text=read_back),  # what the model said in the call
+            Step(text="Got it."),  # no tool call for the model
+            Step(text="Got it."),
+        ]
+    )
+    services = Services(carhauler=client, resolver=resolver, geocode=fake_city_to_zip)
+    async with new_session(state, llm=model) as session:
+        await session.start(Mia(services, greeting=GREETINGS[0]))
+        first = await session.run(
+            user_input="I made a mistake. I want to change the Honda for my Ford. "
+            "My Ford is a twenty twenty four Ford."
+        )
+        asked = [e.item.text_content for e in first.events if isinstance(e.item, ChatMessage)]
+        assert asked[-1] == "What model is the 2024 Ford?"
+        await session.run(user_input="It's an F-150.")
+    assert [v.label for v in state.vehicles] == ["2024 Ford F-150", "2020 Toyota 4Runner"]

@@ -135,6 +135,11 @@ def fallback_line(state: QuoteSession) -> str:
         return "And where will we pick it up?"
     if not state.destination:
         return "And where is it going?"
+    if state.pending_change:
+        # A change under way: ask for its missing detail, never read the old vehicle back
+        # (call 6fe7729baa7b: "So that's your ... 2021 Honda Civic" right after "change the
+        # Honda for my Jeep").
+        return state.pending_question()
     expected = state.expected_vehicles or 1
     have = len(state.vehicles)
     if have < expected and state.partial_vehicle:
@@ -277,7 +282,7 @@ def keep_going(spoken: str, state: QuoteSession) -> str:
     2026-11-10: the caller asked about enclosed shipping right after the read-back, Mia
     answered without asking again, the caller waited, and silence ended the call before the
     quote. Not after an escalation (a failed lookup: Mia is offering a person instead)."""
-    if not state.missing and (state.quote or state.escalated):
+    if not state.missing and not state.pending_change and (state.quote or state.escalated):
         return spoken
     if (
         not spoken

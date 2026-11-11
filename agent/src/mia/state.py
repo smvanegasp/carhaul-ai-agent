@@ -117,6 +117,11 @@ class QuoteSession:
     # call, 2026-11-10: "from Miami to Chicago. It's a twenty twenty Honda", then asked for
     # the year, make and model again). Merged into the next save_vehicle, then cleared.
     partial_vehicle: dict[str, Any] = field(default_factory=dict)
+    # A change to a vehicle on file that still needs a detail (tools.update_vehicle): its
+    # quote_id, the label it had, and what was heard of the new one (year, make). Call
+    # 6fe7729baa7b, 2026-11-11: "change the Honda for my 2025 Jeep" needed the model; the
+    # Jeep was forgotten, Mia read the Honda back, and "It's a Wrangler" went to the Honda.
+    pending_change: dict[str, Any] | None = None
     # Tool calls code made itself (agent.llm_node), as "name@turn": at most once per caller
     # turn, or a failure (CarHauler down at the quote) would make code retry every step.
     code_calls: set[str] = field(default_factory=set)
@@ -174,6 +179,7 @@ class QuoteSession:
     def replace_vehicle(self, quote_id: str, **fields: Any) -> VehicleEntry:
         """The caller changed a vehicle: the old entry goes to the trash, the new one takes its
         place with a new quote ID."""
+        self._drop_pending(quote_id)
         old = self.find_vehicle(quote_id)
         assert old is not None
         i = self.vehicles.index(old)
@@ -190,6 +196,7 @@ class QuoteSession:
         return entry
 
     def remove_vehicle(self, quote_id: str) -> VehicleEntry:
+        self._drop_pending(quote_id)
         old = self.find_vehicle(quote_id)
         assert old is not None
         i = self.vehicles.index(old)
@@ -266,18 +273,32 @@ class QuoteSession:
 
     def snapshot(self) -> dict[str, Any]:
         """What's on file, compact enough to hand back to the LLM in every tool result."""
-        return {
-            "origin": self.origin.spoken if self.origin else None,
-            "destination": self.destination.spoken if self.destination else None,
-            "vehicles": [
-                {"quote_id": v.quote_id, "vehicle": v.label}
-                | ({"estimate_by_type": True} if v.is_estimate else {})
-                | ({} if v.operational else {"drivable": False})
-                for v in self.vehicles
-            ],
-            "expected_vehicles": self.expected_vehicles,
-            "missing": self.missing,
-        } | ({"heard_so_far": self.partial_label()} if self.partial_vehicle else {})
+        return (
+            {
+                "origin": self.origin.spoken if self.origin else None,
+                "destination": self.destination.spoken if self.destination else None,
+                "vehicles": [
+                    {"quote_id": v.quote_id, "vehicle": v.label}
+                    | ({"estimate_by_type": True} if v.is_estimate else {})
+                    | ({} if v.operational else {"drivable": False})
+                    for v in self.vehicles
+                ],
+                "expected_vehicles": self.expected_vehicles,
+                "missing": self.missing,
+            }
+            | ({"heard_so_far": self.partial_label()} if self.partial_vehicle else {})
+            | (
+                {
+                    "changing": {
+                        "quote_id": self.pending_change["quote_id"],
+                        "from": self.pending_change["from"],
+                        "to_so_far": self.pending_label(),
+                    }
+                }
+                if self.pending_change
+                else {}
+            )
+        )
 
     def code_ran_once(self, name: str) -> bool:
         """True the first time for the caller's current message (and remembers it), False
@@ -312,6 +333,24 @@ class QuoteSession:
         if p.get("make"):
             return f"What year and model is the {p['make']}?"
         return f"What's the make and model of the {p['year']} car?"
+
+    def _drop_pending(self, quote_id: str) -> None:
+        if self.pending_change and self.pending_change["quote_id"] == quote_id:
+            self.pending_change = None
+
+    def pending_label(self) -> str:
+        """ "2025 Jeep": what was heard of the vehicle a pending change brings in."""
+        p = self.pending_change or {}
+        return " ".join(str(p[k]) for k in ("year", "make") if p.get(k))
+
+    def pending_question(self) -> str:
+        """The question that finishes a pending change ("What model is the 2025 Jeep?")."""
+        p = self.pending_change or {}
+        if p.get("year") and p.get("make"):
+            return f"What model is the {p['year']} {p['make']}?"
+        if p.get("make"):
+            return f"What year and model is the {p['make']}?"
+        return "What's the make and model of the vehicle you'd like instead?"
 
     def note_partial_vehicle(self, heard: dict[str, Any]) -> None:
         """Keep what the caller said of the vehicle in progress (newer values win)."""
