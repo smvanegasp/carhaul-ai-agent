@@ -73,6 +73,9 @@ class TrashItem:
     at: float = field(default_factory=time.time)
 
 
+TYPE_QUESTION = "No problem. Is it a sedan, an SUV, or a pickup?"
+
+
 @dataclass
 class QuoteSession:
     origin: Place | None = None
@@ -272,8 +275,11 @@ class QuoteSession:
         return f"{p['year']} car" if p.get("year") else ""
 
     def partial_question(self) -> str:
-        """The question for what's still missing of the vehicle in progress."""
+        """The question for what's still missing of the vehicle in progress. Once they said they
+        don't know the model, it's the body type (CONVERSATION_DESIGN slot rules)."""
         p = self.partial_vehicle
+        if p.get("model_unknown"):
+            return TYPE_QUESTION
         if p.get("year") and p.get("make"):
             return f"What model is the {p['year']} {p['make']}?"
         if p.get("make"):

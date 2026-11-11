@@ -1,0 +1,21 @@
+# Stage 7 simulation: "Can I leave some boxes in the trunk?" got "Sure." The answer must carry
+# the fact (up to 100 pounds in the trunk), then go back to the vehicle.
+id: faq_personal_items
+persona: NG_P_NV
+path: QHP
+ground_truth:
+  origin: Boston, Massachusetts
+  destination: San Francisco, California
+  vehicles: [2025 Honda Civic]
+turns:
+  - user: "Yes."
+  - user: "From Boston, Massachusetts to San Francisco, California"
+    expect:
+      on_file: {origin: "Boston, Massachusetts", destination: "San Francisco, California"}
+  - user: "Can I leave some boxes in the trunk?"
+    expect:
+      no_tools: [save_vehicle, get_quote, request_human]
+      says: ["100"]
+  - user: "OK. It's a 2025 Honda Civic"
+    expect:
+      on_file: {vehicles: [2025 Honda Civic]}

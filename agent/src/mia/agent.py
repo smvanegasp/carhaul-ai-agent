@@ -23,7 +23,7 @@ from livekit.agents import (
 )
 from livekit.plugins import groq
 
-from mia import grounding, guardrails, speech, tools
+from mia import faq, grounding, guardrails, speech, tools
 from mia.prompt import INSTRUCTIONS, pick_greeting
 from mia.state import QuoteSession
 from mia.tools import Services
@@ -104,9 +104,18 @@ def _note_partial_vehicle(state: QuoteSession, last_said: str) -> None:
     through update_vehicle)."""
     if state.quote or not any(m.startswith("vehicle") for m in state.missing):
         return
+    # Two makes in one message is two cars, whatever the model saves (stage 7 simulation:
+    # "one's a Honda and the other's a Toyota" with only the route saved).
+    named = grounding.makes_named(last_said)
+    if named >= 2 and named > (state.expected_vehicles or 0):
+        state.expected_vehicles = named
     if any(v.saved_turn == state.caller_turns for v in state.vehicles):
         return
     heard = grounding.vehicle_details_in(last_said)
+    # "It's a 2022, but I don't know the model": remembered, so Mia stops asking for it
+    # (scenario estimate_after_unsure: she asked "What model is the 2022 Toyota?" again).
+    if grounding.unsure(last_said) and (heard or state.partial_vehicle):
+        heard["model_unknown"] = True
     if heard:
         state.note_partial_vehicle(heard)
 
@@ -274,7 +283,9 @@ class Mia(Agent):
                 logger.info("dropped-only step on a question; answered: %r", spoken)
             if not spoken and (dropped or failed):
                 spoken = guardrails.fallback_line(state)
+            spoken = faq.ensure_answer(spoken, last_said) if spoken else spoken
             spoken = guardrails.honest_read_back(spoken, state)
+            spoken = guardrails.no_model_again(spoken, state)
             spoken = guardrails.keep_going(spoken, state)
             if spoken and guardrails.is_goodbye(spoken) and not state.ended:
                 # She's closing the call without end_call: hang up after this line plays.
@@ -405,6 +416,8 @@ class Mia(Agent):
                 **args,
                 said=caller_said(self.chat_ctx),
                 last_said=caller_last_said(self.chat_ctx),
+                unsure=grounding.unsure(caller_last_said(self.chat_ctx))
+                or grounding.offered_types(mia_last_said(self.chat_ctx)),
             ),
         )
 

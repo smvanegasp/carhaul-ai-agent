@@ -271,8 +271,8 @@ def test_asks_for_person(text, asks):
         ("a twenty twenty-two Toyota RAV4, and a Honda Civic.", 2),
         ("a Chevy and a Ford F-150", 2),
         ("a 2025 Honda Civic", 1),
-        ("It's a Honda, not a Toyota", 0),  # a correction, one car
-        ("sorry, I mean the Toyota, the Honda's sold", 0),
+        ("It's a Honda, not a Toyota", 1),  # a correction, one car
+        ("sorry, I mean the Toyota, the Honda's sold", 1),
     ],
 )
 def test_makes_named(text, n):
@@ -294,3 +294,46 @@ def test_makes_named(text, n):
 )
 def test_vehicle_details_in(text, heard):
     assert grounding.vehicle_details_in(text) == heard
+
+
+def test_unsure_and_offered_types():
+    assert grounding.unsure("I'm not exactly sure of the model")
+    assert grounding.unsure("I don't know")
+    assert not grounding.unsure("It's a Civic")
+    assert grounding.offered_types("Is it a sedan, an SUV, or a pickup?")
+    assert not grounding.offered_types("What model is the 2020 Honda?")
+    assert not grounding.vehicle_type_said("sedan", "I'm looking to ship my car")
+    assert grounding.vehicle_type_said("sedan", "just a regular car")
+    assert grounding.vehicle_type_said("suv", "it's an SUV")
+
+
+@pytest.mark.parametrize(
+    "text, n",
+    [
+        ("a twenty ten... no sorry, twenty twenty-two Toyota RAV4 and a 2017 Honda Civic.", 2),
+        ("one's a Honda and the other's a Toyota", 2),
+        ("a Honda, no wait, a Toyota", 1),
+        ("2025 Honda Civic and 2020 Toyota 4Runner", 2),
+    ],
+)
+def test_makes_named_corrections_only_between_makes(text, n):
+    assert grounding.makes_named(text) == n
+
+
+def test_two_cars_are_not_a_partial_vehicle():
+    assert grounding.vehicle_details_in("2025 Honda Civic and 2020 Toyota 4Runner") == {}
+    assert grounding.vehicle_count_said("I've got a couple of rides to move") == 2
+
+
+def test_actually_before_a_count_is_not_a_correction():
+    said = (
+        "I've actually got two vehicles, first, a 2025 Honda Civic that's running fine, and "
+        "second, a 2020 Toyota 4Runner"
+    )
+    assert grounding.makes_named(said) == 2
+    assert grounding.vehicle_details_in(said) == {}
+    assert grounding.vehicle_details_in("a 2025 Civic and a 2020 4Runner") == {}
+    assert grounding.vehicle_details_in("a twenty ten, no sorry, twenty twenty Honda") == {
+        "year": 2020,
+        "make": "Honda",
+    }

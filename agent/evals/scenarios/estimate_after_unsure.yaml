@@ -1,0 +1,27 @@
+# CONVERSATION_DESIGN slot rules: make only -> ask the year and model; "I don't know" -> sedan,
+# SUV or pickup; then an estimate. In the simulations Mia jumped to the body type (or a "sedan"
+# from "my car") before asking for the model.
+id: estimate_after_unsure
+persona: NG_P_NV
+path: SHP
+ground_truth:
+  origin: Boston, Massachusetts
+  destination: San Francisco, California
+  vehicles: [2022 Toyota SUV]
+turns:
+  - user: "Yes."
+  - user: "From Boston, Massachusetts to San Francisco, California"
+  - user: "It's a Toyota."
+    expect:
+      no_tools: [get_quote]
+      on_file: {vehicles: []}
+      judge: >-
+        Asks for the year and/or the model of the Toyota. It must not ask whether it's a
+        sedan, SUV or pickup yet.
+  - user: "It's a 2022, but I don't know the model."
+    expect:
+      on_file: {vehicles: []}
+      judge: Asks what kind of vehicle it is (for example sedan, SUV or pickup).
+  - user: "It's an SUV."
+    expect:
+      on_file: {vehicles: [2022 Toyota SUV]}

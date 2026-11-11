@@ -216,6 +216,17 @@ def honest_read_back(spoken: str, state: QuoteSession) -> str:
     return " ".join([*sentences[:start], fallback_line(state)])
 
 
+_ASKS_MODEL = re.compile(r"\bmodel\b[^.!?]*\?", re.IGNORECASE)
+
+
+def no_model_again(spoken: str, state: QuoteSession) -> str:
+    """Once the caller said they don't know the model, Mia asks for the body type instead of
+    the model again."""
+    if state.partial_vehicle.get("model_unknown") and spoken and _ASKS_MODEL.search(spoken):
+        return state.partial_question()
+    return spoken
+
+
 def keep_going(spoken: str, state: QuoteSession) -> str:
     """After answering a question, Mia goes back to what's missing (CONVERSATION_DESIGN.md,
     per-turn logic). gpt-oss often stops after the answer ("We only quote open car shipping.")

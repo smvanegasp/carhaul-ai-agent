@@ -169,17 +169,43 @@ _CORRECTION = re.compile(r"\b(?:no|not|actually|instead|sorry|i mean|rather)\b",
 
 
 def makes_named(text: str) -> int:
-    """How many different makes one message names ("a 2022 Toyota RAV4 and a 2017 Honda
-    Civic" -> 2). 0 for a correction ("a Honda, not a Toyota"). Stage 7 simulation: two cars
-    in one sentence, the model saved one, and nothing in code knew about the second."""
-    if _CORRECTION.search(text):
-        return 0
+    """How many cars one message names by make ("a 2022 Toyota RAV4 and a 2017 Honda Civic"
+    -> 2). A correction is one car ("a Honda, not a Toyota", "I mean the Toyota, the Honda's
+    sold" -> 1), but a corrected year isn't ("a twenty ten... no sorry, twenty twenty-two RAV4
+    and a 2017 Civic" -> 2). Stage 7 simulation: two cars in one sentence, the model saved one,
+    and nothing in code knew about the second."""
+    names = {name for _, _, name in _make_hits(text)}
+    if len(names) < 2:
+        return len(names)
     words = " ".join(_words(text.replace("-", " ")))
-    found = {m for m in COMMON_MAKES if re.search(rf"\b{m.replace('-', ' ')}\b", words)}
+    about_makes = _YEAR_FIX.sub(" ", words)  # "no sorry twenty twenty two": about the year
+    # A correction word only counts right before a make ("not a Toyota", "I mean the
+    # Toyota"): "I've actually got two vehicles" is two cars (stage 7 simulation).
+    makes = "|".join(re.escape(m.replace("-", " ")) for m in (*COMMON_MAKES, *MAKE_ALIASES))
+    fixes_make = re.search(
+        rf"\b(?:no|not|actually|instead|sorry|i mean|rather)\b(?:\s+\w+){{0,2}}?\s+(?:{makes})\b",
+        about_makes,
+    )
+    return 1 if fixes_make else len(names)
+
+
+_YEAR_FIX = re.compile(
+    r"\b(?:no|not|actually|sorry|i mean|rather)(?:\s+(?:no|sorry|wait|i mean|actually))*\s+"
+    r"(?:it s\s+|a\s+)?(?:nineteen|twenty|two thousand|19\d\d|20\d\d)\b"
+)
+
+
+def _make_hits(text: str) -> list[tuple[int, int, str]]:
+    """(start, end, display name) of each make named, in order, in the normalized words."""
+    words = " ".join(_words(text.replace("-", " ")))
+    hits: list[tuple[int, int, str]] = []
+    for m in COMMON_MAKES:
+        for found in re.finditer(rf"\b{m.replace('-', ' ')}\b", words):
+            hits.append((found.start(), found.end(), _MAKE_NAMES.get(m, m.title())))
     for alias, full in MAKE_ALIASES.items():
-        if re.search(rf"\b{alias}\b", words):
-            found.add(full.lower())
-    return len(found)
+        for found in re.finditer(rf"\b{alias}\b", words):
+            hits.append((found.start(), found.end(), full))
+    return sorted(hits)
 
 
 _MAKE_NAMES = {"bmw": "BMW", "gmc": "GMC", "ram": "Ram", "mercedes-benz": "Mercedes-Benz"}
@@ -187,18 +213,8 @@ _MAKE_NAMES = {"bmw": "BMW", "gmc": "GMC", "ram": "Ram", "mercedes-benz": "Merce
 
 def makes_in(text: str) -> list[str]:
     """The makes one message names, as display names ("Honda", "Chevrolet"), in order."""
-    words = " ".join(_words(text.replace("-", " ")))
-    hits: list[tuple[int, str]] = []
-    for m in COMMON_MAKES:
-        found = re.search(rf"\b{m.replace('-', ' ')}\b", words)
-        if found:
-            hits.append((found.start(), _MAKE_NAMES.get(m, m.title())))
-    for alias, full in MAKE_ALIASES.items():
-        found = re.search(rf"\b{alias}\b", words)
-        if found:
-            hits.append((found.start(), full))
     out: list[str] = []
-    for _, name in sorted(hits):
+    for _, _, name in _make_hits(text):
         if name not in out:
             out.append(name)
     return out
@@ -209,7 +225,11 @@ def vehicle_details_in(text: str) -> dict[str, Any]:
     Honda" -> {"year": 2020, "make": "Honda"}), so Mia never asks for them again. A make only
     when exactly one is named (two makes are two cars); the year a caller corrected to wins."""
     out: dict[str, Any] = {}
+    if makes_named(text) >= 2:
+        return out  # two cars: the count is set instead (agent._note_partial_vehicle)
     years = _years_in(text)
+    if len({corrected_year(y, text) for _, _, y in years}) >= 2:
+        return out  # "a 2025 Civic and a 2020 4Runner": two cars, not one partial
     if years:
         out["year"] = corrected_year(years[0][2], text)
     makes = makes_in(text)
@@ -248,18 +268,40 @@ def vehicle_type_said(vehicle_type: str, said: str) -> bool:
     kind = normalize_vehicle_type(vehicle_type)
     if kind is None:
         return _fuzzy_in(vehicle_type, said)
+    # A bare "car" is how everyone says it ("I'm shipping my car"), not a body type: in the
+    # stage 7 simulations it grounded "sedan" for a caller who never said one.
     return any(
         normalize_vehicle_type(w) == kind
         for w in _windows(_words(said), 3)
-        if w in VEHICLE_TYPE_ALIASES or w.replace(" ", "") == kind
+        if w not in _GENERIC and (w in VEHICLE_TYPE_ALIASES or w.replace(" ", "") == kind)
     )
+
+
+_GENERIC = {"car", "vehicle", "auto"}
+_UNSURE = re.compile(
+    r"\b(?:not (?:exactly |really |totally |quite )?sure|unsure|don'?t know|do not know|"
+    r"no idea|can'?t remember|cannot remember|"
+    r"don'?t remember|forgot|not certain|no clue)\b",
+    re.IGNORECASE,
+)
+_OFFERED_TYPES = re.compile(r"\bsedan\b.*\b(?:suv|pickup|pick-up)\b", re.IGNORECASE)
+
+
+def unsure(text: str) -> bool:
+    """ "I'm not sure", "I don't know the model"."""
+    return bool(_UNSURE.search(text))
+
+
+def offered_types(mia_said: str) -> bool:
+    """Did Mia just ask whether it's a sedan, SUV or pickup?"""
+    return bool(_OFFERED_TYPES.search(mia_said))
 
 
 _COUNTS = {"two": 2, "three": 3, "four": 4, "five": 5, "six": 6, "seven": 7, "eight": 8}
 _COUNT_RE = re.compile(
     r"\b(both|couple|two|three|four|five|six|seven|eight|[2-8])\s+(?:of\s+)?"
     r"(?:(?:my|our|the)\s+)?"
-    r"(?:\w+\s+)?(cars|vehicles|autos|trucks|suvs|vans)\b"
+    r"(?:\w+\s+)?(cars|vehicles|autos|trucks|suvs|vans|rides)\b"
 )
 
 

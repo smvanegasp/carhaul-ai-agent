@@ -62,7 +62,8 @@ async def test_an_empty_retry_falls_back(client, resolver):
     state = QuoteSession(origin=BOS, destination=SF)
     steps = [Step(calls=[("save_vehicle", "{}")]), Step(text="")]
     spoken, _ = await _reply(steps, state, "can you do enclosed?", client, resolver)
-    assert spoken == "What's the year, make and model of the car?"
+    # The FAQ still gets its answer from code (faq.py), then the next question.
+    assert spoken == f"{ENCLOSED} What's the year, make and model of the car?"
 
 
 async def test_an_answer_during_the_read_back_asks_to_confirm_again(client, resolver):
@@ -86,7 +87,8 @@ async def test_a_failed_retry_falls_back_without_crashing_the_turn(client, resol
         Step(error="Tool choice is none, but model called a tool"),
     ]
     spoken, calls = await _reply(steps, state, "do you do enclosed?", client, resolver)
-    assert spoken == "What's the year, make and model of the car?"
+    # The FAQ still gets its answer from code (faq.py), then the next question.
+    assert spoken == f"{ENCLOSED} What's the year, make and model of the car?"
     assert len(calls) == 2  # one attempt, no retries
 
 

@@ -1,0 +1,239 @@
+{
+  "started": "2026-11-11T01:38:37+00:00",
+  "minutes": 6.0,
+  "label": "mia-20b",
+  "mia_model": "openai/gpt-oss-20b",
+  "caller_model": "openai/gpt-oss-120b",
+  "commit": "a8192c2",
+  "n": 72,
+  "passed": 71,
+  "pass_rate": 0.9861111111111112,
+  "errors": 0,
+  "outcomes": {
+    "ended": 48,
+    "transferred": 16,
+    "off_topic_end": 7,
+    "caller_done": 1
+  },
+  "by_path": {
+    "SHP": {
+      "n": 8,
+      "passed": 8,
+      "quoted": 8,
+      "avg_turns": 5,
+      "dropped_per_call": 0.62,
+      "p50_ms": 536
+    },
+    "SHP_transfer": {
+      "n": 8,
+      "passed": 8,
+      "quoted": 8,
+      "avg_turns": 5.4,
+      "dropped_per_call": 0.88,
+      "p50_ms": 678
+    },
+    "QHP": {
+      "n": 8,
+      "passed": 8,
+      "quoted": 8,
+      "avg_turns": 7.9,
+      "dropped_per_call": 1.0,
+      "p50_ms": 544
+    },
+    "NHP_correction": {
+      "n": 8,
+      "passed": 8,
+      "quoted": 8,
+      "avg_turns": 4.6,
+      "dropped_per_call": 0.62,
+      "p50_ms": 657
+    },
+    "NHP_change_vehicle": {
+      "n": 8,
+      "passed": 8,
+      "quoted": 8,
+      "avg_turns": 6.8,
+      "dropped_per_call": 0.25,
+      "p50_ms": 604
+    },
+    "NHP_change_route": {
+      "n": 8,
+      "passed": 8,
+      "quoted": 8,
+      "avg_turns": 6.9,
+      "dropped_per_call": 0.88,
+      "p50_ms": 594
+    },
+    "NHP_person": {
+      "n": 8,
+      "passed": 8,
+      "quoted": 0,
+      "avg_turns": 2.6,
+      "dropped_per_call": 0.62,
+      "p50_ms": 441
+    },
+    "AP_two": {
+      "n": 8,
+      "passed": 8,
+      "quoted": 8,
+      "avg_turns": 7.9,
+      "dropped_per_call": 0.88,
+      "p50_ms": 626
+    },
+    "AP_three": {
+      "n": 8,
+      "passed": 7,
+      "quoted": 1,
+      "avg_turns": 3.8,
+      "dropped_per_call": 0.62,
+      "p50_ms": 540
+    }
+  },
+  "by_persona": {
+    "NG_P_NV": {
+      "n": 9,
+      "passed": 9,
+      "quoted": 7,
+      "avg_turns": 6.3,
+      "dropped_per_call": 1.0,
+      "p50_ms": 938
+    },
+    "NG_P_V": {
+      "n": 9,
+      "passed": 9,
+      "quoted": 7,
+      "avg_turns": 6.7,
+      "dropped_per_call": 1.33,
+      "p50_ms": 584
+    },
+    "NG_C_NV": {
+      "n": 9,
+      "passed": 9,
+      "quoted": 7,
+      "avg_turns": 5.7,
+      "dropped_per_call": 1.56,
+      "p50_ms": 545
+    },
+    "NG_C_V": {
+      "n": 9,
+      "passed": 9,
+      "quoted": 7,
+      "avg_turns": 5.4,
+      "dropped_per_call": 0.89,
+      "p50_ms": 589
+    },
+    "G_P_NV": {
+      "n": 9,
+      "passed": 8,
+      "quoted": 8,
+      "avg_turns": 6.2,
+      "dropped_per_call": 0.33,
+      "p50_ms": 566
+    },
+    "G_P_V": {
+      "n": 9,
+      "passed": 9,
+      "quoted": 7,
+      "avg_turns": 5.3,
+      "dropped_per_call": 0.22,
+      "p50_ms": 586
+    },
+    "G_C_NV": {
+      "n": 9,
+      "passed": 9,
+      "quoted": 7,
+      "avg_turns": 4.8,
+      "dropped_per_call": 0.22,
+      "p50_ms": 525
+    },
+    "G_C_V": {
+      "n": 9,
+      "passed": 9,
+      "quoted": 7,
+      "avg_turns": 4.7,
+      "dropped_per_call": 0.11,
+      "p50_ms": 603
+    }
+  },
+  "failed_checks": {
+    "no_quote": 1,
+    "off_topic_end": 1
+  },
+  "usage": {
+    "mia_in": 1963297,
+    "mia_out": 29372,
+    "caller_in": 237526,
+    "caller_out": 14669
+  },
+  "cost_usd": 0.2005,
+  "scenarios": {
+    "api_down_at_quote": {
+      "runs": 2,
+      "passed": 2
+    },
+    "change_route_after_quote": {
+      "runs": 2,
+      "passed": 2
+    },
+    "change_vehicle_after_quote": {
+      "runs": 2,
+      "passed": 2
+    },
+    "city_not_found": {
+      "runs": 2,
+      "passed": 2
+    },
+    "estimate_after_unsure": {
+      "runs": 2,
+      "passed": 2
+    },
+    "faq_during_read_back": {
+      "runs": 2,
+      "passed": 2
+    },
+    "faq_mid_call": {
+      "runs": 2,
+      "passed": 2
+    },
+    "faq_personal_items": {
+      "runs": 2,
+      "passed": 2
+    },
+    "faq_stt_closed_shipping": {
+      "runs": 2,
+      "passed": 2
+    },
+    "happy_path_ngc_1v": {
+      "runs": 2,
+      "passed": 2
+    },
+    "happy_path_ngc_2v": {
+      "runs": 2,
+      "passed": 2
+    },
+    "happy_path_ngc_3v": {
+      "runs": 2,
+      "passed": 2
+    },
+    "off_topic_three_strikes": {
+      "runs": 2,
+      "passed": 2
+    },
+    "partial_vehicle_with_route": {
+      "runs": 2,
+      "passed": 2
+    },
+    "remove_vehicle_after_quote": {
+      "runs": 2,
+      "passed": 2
+    },
+    "self_correction_year": {
+      "runs": 2,
+      "passed": 2
+    },
+    "undo_vehicle_change": {
+      "runs": 2,
+      "passed": 2
+    }
+  }
+}

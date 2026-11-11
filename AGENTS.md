@@ -105,6 +105,7 @@ Fargate, not Lambda. Everything else follows the fit pattern.
 | `silence.py` | What Mia does when the caller goes quiet: "are you still there?", or a goodbye and hang-up |
 | `voices.py` | The 6 American voices callers can pick (2 each: Cartesia, ElevenLabs, Deepgram; Cartesia Skylar first and default), each with a description; keys and descriptions match `backend/app/voices.py` |
 | `speech.py` | Numbers written out as words before any voice reads them (`Mia.tts_node`) |
+| `faq.py` | FAQ facts checked in code: if Mia's answer to an FAQ lacks its key fact (100 lb, cash on delivery...), the canonical answer is spoken first |
 | `catalog.py` | CarHauler catalog snapshot on disk (a week), so worker restarts don't spend API calls |
 | `latency.py` | Per-turn latency from `ChatMessage.metrics` (end of turn, LLM TTFT, TTS TTFB, e2e) |
 | `smoke.py` | `uv run python -m mia.smoke [--api http://localhost:5190] [--lines ...] [--wait 45]`: a scripted caller phones the running worker through LiveKit (`--wait`: stay silent, to test silence handling) |
@@ -175,6 +176,11 @@ docker compose up        # api :8020, web :5190, DynamoDB Local :8030, agent wor
   token-endpoint rate limit, the daily call cap and the max call length.
 
 ## 6. Decisions log
+
+- 2026-11-11: **FAQ facts and estimates in code.** Like prices, FAQ facts come from code
+  (`faq.py`); the model's wording stays when it has the fact. Body-type estimates follow the
+  design's order (year and model first; the type only after "I don't know"), and "car" alone
+  is not a body type. Vehicle counts come from the makes the caller names every turn.
 
 - 2026-11-11: **Mia keeps what the caller already said of a vehicle** (Sergio's feedback: never
   make them repeat). The year and make come from the caller's own words in code
@@ -309,4 +315,5 @@ docker compose up        # api :8020, web :5190, DynamoDB Local :8030, agent wor
 - 2026-11-08: **Model: `openai/gpt-oss-20b`** (env `MIA_LLM_MODEL` to switch). 5 runs x 3
   scenarios with the guardrails: 20b 15/15, p50 412 ms per turn; 120b 14/15, 584 ms; Qwen
   3.8 27B 15/15 with zero invented calls but 958 ms. Llama is no longer offered on Sergio's
-  Groq account. Re-check with the stage 7 persona simulations.
+  Groq account. **Re-checked with the stage 7 simulations (2026-11-11): 20b 71/72, 120b
+  64/72 at twice the cost; 20b stays.**
