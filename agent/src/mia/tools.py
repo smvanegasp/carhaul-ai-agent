@@ -619,6 +619,20 @@ async def update_vehicle(
     if last_said:
         year = grounding.corrected_year(year, last_said)
     year, make, model, vehicle_type, ignored = _grounded(said, year, make, model, vehicle_type)
+    swapping = pending or (make and make.lower() != (target.make or "").lower())
+    if (
+        year
+        and swapping
+        and last_said is not None
+        and not grounding.year_said(year, last_said)
+        and year != (pending or {}).get("year")
+    ):
+        # A different car has its own year, said for it. Call ed6205aaca08, 2026-11-11: "change
+        # the Honda for a Jeep" -> the model passed 2020, the Honda's year (said earlier in the
+        # call, so it grounded), and Mia asked "What model is the 2020 Jeep?". Dropped: Mia asks
+        # for the year and model.
+        ignored = [*ignored, f"year {year} (said for the other vehicle)"]
+        year = None
     if pending:
         # The rest of a change already under way: "It's a Wrangler" belongs to the 2025 Jeep,
         # not to the Honda being replaced (call 6fe7729baa7b).
