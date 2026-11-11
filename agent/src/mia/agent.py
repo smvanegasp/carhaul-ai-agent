@@ -26,7 +26,7 @@ from livekit.plugins import groq
 from mia import faq, grounding, guardrails, speech, tools
 from mia.prompt import INSTRUCTIONS, pick_greeting
 from mia.state import QuoteSession
-from mia.tools import Services
+from mia.tools import Services, model_from_words
 
 DEFAULT_MODEL = "openai/gpt-oss-20b"
 
@@ -139,6 +139,16 @@ def caller_said(chat_ctx: ChatContext) -> str:
     )
 
 
+def grounded_said(chat_ctx: ChatContext) -> str:
+    """What the caller said, plus Mia's last line when they just said yes to it: "Is it a
+    Ford F-150?" "Yeah, that's correct." means they said F-150 (Sergio's call, 2026-11-11:
+    four yeses and the model still wasn't accepted)."""
+    said, last = caller_said(chat_ctx), caller_last_said(chat_ctx)
+    if grounding.is_confirmation(last):
+        said = f"{said} {mia_last_said(chat_ctx)}"
+    return said
+
+
 def caller_turn_count(chat_ctx: ChatContext) -> int:
     return sum(
         1
@@ -221,12 +231,13 @@ class Mia(Agent):
         100 ms, so the caller doesn't notice.
         """
         state: QuoteSession = self.session.userdata
-        said, last_said = caller_said(chat_ctx), caller_last_said(chat_ctx)
+        said, last_said = grounded_said(chat_ctx), caller_last_said(chat_ctx)
         mia_last = mia_last_said(chat_ctx)
         state.caller_turns = caller_turn_count(chat_ctx)
         _note_partial_vehicle(state, last_said)
         held: list[llm.ChatChunk | str] = []
         text, runs_tool, dropped, failed = "", False, [], False
+        called: set[str] = set()
         try:
             async for chunk in Agent.default.llm_node(self, chat_ctx, tools, model_settings):
                 if isinstance(chunk, str):
@@ -246,6 +257,7 @@ class Mia(Agent):
                             keep.append(call)
                     chunk.delta.tool_calls = keep
                     runs_tool = runs_tool or bool(keep)
+                    called.update(c.name for c in keep)
                 held.append(chunk)
         except Exception as exc:
             # Stage 7 simulation: Groq's "Failed to parse tool call arguments as JSON" (gpt-oss
@@ -255,6 +267,40 @@ class Mia(Agent):
             held, text, runs_tool, failed = [], "", False, True
 
         logger.debug("llm step: runs_tool=%s dropped=%d text=%r", runs_tool, len(dropped), text)
+        if (
+            not runs_tool
+            and not state.missing
+            and not state.quote
+            and not state.ended
+            and grounding.is_short_yes(last_said)
+            and guardrails.is_read_back(mia_last)
+            and state.code_ran_once("get_quote")
+        ):
+            # Sergio's call, 2026-11-11: "Yep" to the read-back, the model didn't call
+            # get_quote, and Mia read everything back again.
+            held.append(_call_chunk("get_quote", {}))
+            runs_tool = True
+            logger.info("yes to the read-back; running get_quote")
+        partial = state.partial_vehicle
+        if (
+            not failed
+            and partial.get("make")
+            and "save_vehicle" not in called
+            and not state.quote
+            and any(m.startswith("vehicle") for m in state.missing)
+            and state.code_ran_once("save_vehicle")
+        ):
+            # Sergio's call, 2026-11-11: "from Chicago to Seattle ... twenty twenty one Ford f
+            # hundred and fifty" -> only the route was saved, then "What model is the 2021
+            # Ford?". Year, make and a catalog model right after the make: save it from code.
+            model = await model_from_words(self.services, partial["make"], last_said)
+            if model:
+                args = {"make": partial["make"], "model": model}
+                if partial.get("year"):
+                    args["year"] = partial["year"]
+                held.append(_call_chunk("save_vehicle", args))
+                runs_tool = True
+                logger.info("caller named the whole vehicle; running save_vehicle %s", args)
         if not runs_tool and dropped and grounding.asks_for_person(last_said):
             # Stage 7 simulation, 2026-11-10: "could you connect me to a live representative?"
             # -> the model called note_off_topic (dropped) and Mia asked for the car again.
@@ -372,7 +418,7 @@ class Mia(Agent):
             "save_origin_destination",
             args,
             tools.save_origin_destination(
-                context.userdata, self.services, **args, said=caller_said(self.chat_ctx)
+                context.userdata, self.services, **args, said=grounded_said(self.chat_ctx)
             ),
         )
 
@@ -416,7 +462,7 @@ class Mia(Agent):
                 context.userdata,
                 self.services,
                 **args,
-                said=caller_said(self.chat_ctx),
+                said=grounded_said(self.chat_ctx),
                 last_said=caller_last_said(self.chat_ctx),
                 unsure=grounding.unsure(caller_last_said(self.chat_ctx))
                 or grounding.offered_types(mia_last_said(self.chat_ctx)),
@@ -462,7 +508,7 @@ class Mia(Agent):
                 context.userdata,
                 self.services,
                 **args,
-                said=caller_said(self.chat_ctx),
+                said=grounded_said(self.chat_ctx),
                 last_said=caller_last_said(self.chat_ctx),
             ),
         )

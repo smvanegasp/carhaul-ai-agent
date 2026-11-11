@@ -196,6 +196,11 @@ _READ_BACK = re.compile(
 )
 
 
+def is_read_back(spoken: str) -> bool:
+    """Is this Mia's read-back ("...will ship from ... Is that correct?")."""
+    return bool(spoken) and bool(_READ_BACK.search(spoken))
+
+
 def honest_read_back(spoken: str, state: QuoteSession) -> str:
     """If Mia is reading the details back, say what's actually on file: the code's read-back
     when everything is there, otherwise the question for what's missing."""

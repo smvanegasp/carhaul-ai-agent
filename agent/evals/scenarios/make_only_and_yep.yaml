@@ -1,0 +1,22 @@
+# Sergio's calls, 2026-11-11: "it's my Jeep" -> save_vehicle(model="Jeep") -> "couldn't find
+# that model" (call-d380e5879f63); "Yep" to the read-back -> read back again (call-10385c8b156e).
+id: make_only_and_yep
+persona: NG_P_NV
+path: SHP
+ground_truth:
+  origin: Boston, Massachusetts
+  destination: San Francisco, California
+  vehicles: [2021 Ford F-150]
+turns:
+  - user: "Yeah. Let's start."
+  - user: "From Boston, Massachusetts to San Francisco, California, it's my Ford."
+    expect:
+      judge: >-
+        Asks for the year and/or model of the Ford. It must not say it couldn't find the
+        model.
+  - user: "It's a twenty twenty one F one fifty."
+    expect:
+      on_file: {vehicles: [2021 Ford F-150]}
+  - user: "Yep."
+    expect:
+      tools: [get_quote]

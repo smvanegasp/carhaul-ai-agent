@@ -179,3 +179,41 @@ async def test_a_garbled_removal_is_asked_back_then_done(client, resolver):
         assert asked[-1] == "Do you want me to remove the 2020 Toyota 4Runner?"
         await session.run(user_input="Yes")
     assert [v.label for v in state.vehicles] == ["2025 Honda Civic"]
+
+
+async def test_a_detail_mia_proposed_and_the_caller_confirmed_counts(client, resolver):
+    # Sergio's call: "Is it a Ford F-150?" "Yeah. That's correct." -> save_vehicle(F-150) was
+    # refused four times because "F-150" wasn't in the caller's own words.
+    state = QuoteSession(origin=BOS, destination=SF)
+    f150 = ("save_vehicle", '{"year": 2021, "make": "Ford", "model": "F-150"}')
+    model = ScriptedLLM(
+        [
+            Step(text="I'm sorry, I didn't catch the model. Is it a Ford F-150?"),
+            Step(calls=[f150]),
+            Step(text="Got it."),
+        ]
+    )
+    services = Services(carhauler=client, resolver=resolver, geocode=fake_city_to_zip)
+    async with new_session(state, llm=model) as session:
+        await session.start(Mia(services, greeting=GREETINGS[0]))
+        await session.run(user_input="It's a twenty twenty one Ford, it suffered one hundred")
+        await session.run(user_input="Yeah. That's correct.")
+    assert [v.label for v in state.vehicles] == ["2021 Ford F-150"]
+
+
+async def test_a_yes_to_the_read_back_gets_the_quote(client, resolver):
+    # Sergio's call: "Yep" to the read-back, no get_quote, and Mia read it all back again.
+    state = QuoteSession(origin=BOS, destination=SF)
+    state.add_vehicle(year=2025, make="Honda", model="Civic", trim_id=34547)
+    read_back = (
+        "Just to confirm, your 2025 Honda Civic will ship from Boston to SF. Is that correct?"
+    )
+    model = ScriptedLLM(
+        [Step(text=read_back), Step(text=read_back), Step(text="Your estimated cost is $1,291.")]
+    )
+    services = Services(carhauler=client, resolver=resolver, geocode=fake_city_to_zip)
+    async with new_session(state, llm=model) as session:
+        await session.start(Mia(services, greeting=GREETINGS[0]))
+        await session.run(user_input="It's a 2025 Honda Civic")
+        await session.run(user_input="Yep.")
+    assert state.quote and state.quote["total"] == 1291
