@@ -64,7 +64,7 @@ def create_call_token(request: Request, body: CallRequest | None = None) -> Call
     # Like fit: the daily counter only counts calls that passed the per-IP limit, so one
     # caller hammering the button can't use up everyone's calls for the day.
     if ratelimit.hit(f"call-ip#{ratelimit.client_ip(request)}", 3600) > _limit(
-        "CALLS_PER_IP_PER_HOUR", 6
+        "CALLS_PER_IP_PER_HOUR", 20
     ):
         raise ratelimit.too_many("That's a lot of calls in a short time. Try again in a bit.")
     if ratelimit.hit("call-all", 86400) > _limit("CALLS_PER_DAY", 60):

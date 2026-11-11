@@ -45,7 +45,7 @@ def test_dial_request(env):
     assert req.room_name == "call-abc" and req.sip_call_to == "+15555550100"
     assert req.sip_number == "+15555550199"  # the caller ID the phone shows
     assert req.trunk.hostname == "carhaul-mia.pstn.twilio.com"
-    assert req.wait_until_answered and req.play_dialtone
+    assert req.wait_until_answered and not req.play_dialtone  # hold music instead
     assert req.ringing_timeout.seconds == transfer.RING_SECONDS
     assert req.max_call_duration.seconds == transfer.MAX_TRANSFER_MINUTES * 60
 
@@ -75,7 +75,7 @@ def test_daily_cap_without_dynamodb(monkeypatch):
 
 def test_mia_never_names_sergio():
     # Sergio (2026-11-09): "Sergio, who built this" sounded arrogant.
-    for text in (prompt.INSTRUCTIONS, transfer.CONNECTING, transfer.NO_ANSWER):
+    for text in (prompt.INSTRUCTIONS, transfer.CONNECTING, transfer.NOBODY_AFTER_QUOTE):
         assert "Sergio" not in text
 
 
@@ -126,3 +126,33 @@ async def test_a_voicemail_never_presses_one():
 
     ok, said = await _screen(press_after=None)
     assert not ok and said == ["intro", PRESS_ONE]
+
+
+def test_the_ring_stops_before_voicemail_answers():
+    # Sergio's voicemail picked up after ~25-29 s on 2026-11-11.
+    assert transfer.RING_SECONDS <= 20
+
+
+def test_nobody_available_closes_a_quoted_call_and_keeps_an_unquoted_one_going():
+    quoted = QuoteSession(origin=BOS, destination=SF)
+    quoted.quote = {"total": 1291}
+    line, closes = transfer.nobody_line(quoted)
+    assert closes and "no licensed representative available" in line
+    assert "call us again later" in line and line.endswith("have a nice day!")
+    line, closes = transfer.nobody_line(QuoteSession(), "Where is it going?")
+    assert not closes and line.endswith("I can still get you a quote. Where is it going?")
+
+
+def test_own_tracks_by_name():
+    class Pub:
+        def __init__(self, sid, name):
+            self.sid, self.name = sid, name
+
+    class Me:
+        track_publications = {
+            "a": Pub("TR_voice", transfer.VOICE_TRACK),
+            "b": Pub("TR_music", transfer.BACKGROUND_TRACK),
+        }
+
+    assert transfer.own_tracks(Me(), transfer.VOICE_TRACK) == ["TR_voice"]
+    assert transfer.own_tracks(Me(), transfer.BACKGROUND_TRACK) == ["TR_music"]

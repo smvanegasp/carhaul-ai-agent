@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
 import os
+import re
 import time
 import uuid
 from collections.abc import AsyncIterable, Awaitable
@@ -97,6 +99,38 @@ ANSWER_ONLY = (
 )
 
 
+# Mia just asked for the model ("What model is the 2020 Toyota?", "Did you mean a Corolla,
+# Camry Solara, or GR Corolla?"): a one-word answer is then the model.
+_ASKED_MODEL = re.compile(r"\bmodel\b[^.!]*\?|\bdid you mean\b", re.IGNORECASE)
+
+# A question in the same message as details (call 02784d4eb839, 2026-11-11: "I want to know if
+# you offer enclosed like, shippings, and I'm sending my car from Miami to Chicago" -> the route
+# was saved and the question ignored). The tool's `next` then starts with this.
+ANSWER_FIRST = (
+    "The caller also asked a question in this message: answer it first in one short sentence "
+    "(only from your instructions; offer a licensed representative if they don't cover it), "
+    "then: "
+)
+_ANSWER_FIRST_TOOLS = {"save_origin_destination", "save_vehicle", "update_vehicle"}
+
+
+def _answer_first(name: str, result: dict[str, Any], last_said: str | None) -> dict[str, Any]:
+    """Put the caller's question first in a tool's `next`, so it isn't lost behind the slot."""
+    if (
+        name not in _ANSWER_FIRST_TOOLS
+        or not last_said
+        or not isinstance(result.get("next"), str)
+        or not grounding.is_question(last_said)
+        or grounding.is_short_yes(last_said)
+    ):
+        return result
+    known = faq.asked_about(last_said)
+    hint = ANSWER_FIRST
+    if known:
+        hint = f'The caller also asked a question: answer it first ("{known.answer}"), then: '
+    return {**result, "next": hint + result["next"]}
+
+
 def _note_partial_vehicle(state: QuoteSession, last_said: str) -> None:
     """While a vehicle is missing, keep the year and make the caller just said, whatever tools
     the model calls (in Sergio's call it called none for "It's a twenty twenty Honda"). Not
@@ -184,12 +218,14 @@ async def _run_tool(
     name: str,
     args: dict[str, Any],
     run: Awaitable[dict[str, Any]],
+    last_said: str | None = None,
 ) -> str:
-    """Run one tool and report it (with its timing and what's on file after) as events."""
+    """Run one tool and report it (with its timing and what's on file after) as events.
+    ``last_said``: the caller's message, so a question in it is answered first."""
     started = time.perf_counter()
     result: dict[str, Any] | None = None
     try:
-        result = await run
+        result = _answer_first(name, await run, last_said)
         return _json(result)
     finally:
         events = services.events
@@ -209,6 +245,7 @@ class Mia(Agent):
         self.services = services
         self.greeting = greeting or pick_greeting()
         self._speak_greeting = speak_greeting
+        self._vehicle_lock = asyncio.Lock()
         ctx = chat_ctx or ChatContext()
         # The greeting is always Mia's first line, so the model knows the call already started.
         ctx.add_message(role="assistant", content=self.greeting)
@@ -281,26 +318,62 @@ class Mia(Agent):
             held.append(_call_chunk("get_quote", {}))
             runs_tool = True
             logger.info("yes to the read-back; running get_quote")
-        partial = state.partial_vehicle
+        route = grounding.route_in(last_said)
         if (
             not failed
-            and partial.get("make")
-            and "save_vehicle" not in called
+            and route
+            and not state.origin
+            and not state.destination
+            and "save_origin_destination" not in called
+            and state.code_ran_once("save_origin_destination")
+        ):
+            # Scenario question_with_route (2026-11-11): with a question in the same message
+            # the model answered it and skipped the route 4 times in 5. "from X to Y" in the
+            # caller's own words is certain enough to save; the answer comes next (`next`).
+            held.append(_call_chunk("save_origin_destination", route))
+            runs_tool = True
+            called.add("save_origin_destination")
+            logger.info("caller gave the route; running save_origin_destination %s", route)
+        if (
+            not failed
             and not state.quote
             and any(m.startswith("vehicle") for m in state.missing)
             and state.code_ran_once("save_vehicle")
         ):
-            # Sergio's call, 2026-11-11: "from Chicago to Seattle ... twenty twenty one Ford f
-            # hundred and fifty" -> only the route was saved, then "What model is the 2021
-            # Ford?". Year, make and a catalog model right after the make: save it from code.
-            model = await model_from_words(self.services, partial["make"], last_said)
-            if model:
-                args = {"make": partial["make"], "model": model}
-                if partial.get("year"):
-                    args["year"] = partial["year"]
+            for args in await self._vehicles_said(state, last_said, mia_last, held):
                 held.append(_call_chunk("save_vehicle", args))
                 runs_tool = True
-                logger.info("caller named the whole vehicle; running save_vehicle %s", args)
+                called.add("save_vehicle")
+                logger.info("caller named the vehicle; running save_vehicle %s", args)
+        closing = (
+            not failed
+            and not state.ended
+            and state.transfer not in ("pending", "screening", "connected")
+            and "end_call" not in called
+            and (
+                grounding.is_farewell(last_said)
+                or (
+                    state.quote
+                    and grounding.offered_person(mia_last)
+                    and grounding.declines(last_said)
+                )
+            )
+        )
+        if closing and state.code_ran_once("end_call"):
+            # The caller is done: "Cool. Thank you. Bye." (call 97f388f57b75, 2026-11-11: no
+            # end_call, Mia read the details back twice), or "No, thanks" to the
+            # representative after the quote (Sergio: close the call, no "anything else?").
+            # Nothing else the model planned runs; the closing line comes from end_call.
+            for chunk in held:
+                if isinstance(chunk, llm.ChatChunk) and chunk.delta and chunk.delta.tool_calls:
+                    dropped.extend(
+                        {"tool": c.name, "args": c.arguments, "why": "the caller is done"}
+                        for c in chunk.delta.tool_calls
+                    )
+                    chunk.delta.tool_calls = []
+            held.append(_call_chunk("end_call", {}))
+            runs_tool = True
+            logger.info("caller is done (%r); running end_call", last_said)
         if (
             not runs_tool
             and state.off_topic == OFF_TOPIC_LIMIT - 1
@@ -358,6 +431,61 @@ class Mia(Agent):
                 state.hang_up_after_speech = True
             if spoken:
                 yield spoken
+
+    async def _vehicles_said(
+        self,
+        state: QuoteSession,
+        last_said: str,
+        mia_last: str,
+        held: list[llm.ChatChunk | str],
+    ) -> list[dict[str, Any]]:
+        """Vehicles the caller fully named in this message that the model didn't save; code
+        saves them (the caller's own words make them certain).
+
+        - Several cars in one message: each with its year, make and a catalog model (call
+          2cd0a119e59d, 2026-11-11: "Atlanta to Portland with a twenty twenty two Toyota RAV
+          four and a two thousand seventeen Honda Civic" -> only the route was saved).
+        - One car: the year and make heard so far plus the model right after the make (Sergio's
+          call: "twenty twenty one Ford f hundred and fifty" -> "What model is the 2021 Ford?"),
+          or the model alone when Mia just asked for it (call 2f6b9240a6da: "Corolla." to "Did
+          you mean a Corolla...?" was never saved, so the quote failed)."""
+        by_model: list[str] = []  # makes the model's own save_vehicle calls cover this step
+        for chunk in held:
+            if isinstance(chunk, llm.ChatChunk) and chunk.delta:
+                for call in chunk.delta.tool_calls:
+                    if call.name in ("save_vehicle", "update_vehicle"):
+                        try:
+                            make = (json.loads(call.arguments or "{}") or {}).get("make")
+                        except ValueError:
+                            make = None
+                        by_model.append(str(make or "").lower())
+        on_file = {
+            (v.year, (v.make or "").lower(), (v.model or "").lower()) for v in state.vehicles
+        }
+        if grounding.makes_named(last_said) >= 2:
+            out = []
+            for mention in grounding.vehicle_mentions(last_said):
+                make, year = mention["make"], mention["year"]
+                if make.lower() in by_model:
+                    by_model.remove(make.lower())
+                    continue
+                if not year:
+                    continue
+                model = await model_from_words(self.services, make, mention["words"])
+                if model and (year, make.lower(), model.lower()) not in on_file:
+                    out.append({"year": year, "make": make, "model": model})
+            return out
+        partial = state.partial_vehicle
+        if not partial.get("make") or by_model:
+            return []
+        asked_model = bool(_ASKED_MODEL.search(mia_last))
+        model = await model_from_words(self.services, partial["make"], last_said, alone=asked_model)
+        if not model:
+            return []
+        args: dict[str, Any] = {"make": partial["make"], "model": model}
+        if partial.get("year"):
+            args["year"] = partial["year"]
+        return [args]
 
     async def _words_only(self, chat_ctx: llm.ChatContext) -> str:
         """The model's reply with no tools on offer. Live check, 2026-11-10: STT heard "do
@@ -436,6 +564,7 @@ class Mia(Agent):
             tools.save_origin_destination(
                 context.userdata, self.services, **args, said=grounded_said(self.chat_ctx)
             ),
+            last_said=caller_last_said(self.chat_ctx),
         )
 
     @function_tool
@@ -469,21 +598,26 @@ class Mia(Agent):
             "drivable": drivable,
             "total_vehicles": total_vehicles,
         }
-        return await _run_tool(
-            self.services,
-            context.userdata,
-            "save_vehicle",
-            args,
-            tools.save_vehicle(
-                context.userdata,
+        # One at a time, in the order they were called: two saves in one step ran together and
+        # the faster lookup became vehicle 1 (live run, 2026-11-11: "a 2025 Honda Civic and a
+        # 2020 Toyota 4Runner" was saved Toyota first). asyncio.Lock is first come, first served.
+        async with self._vehicle_lock:
+            return await _run_tool(
                 self.services,
-                **args,
-                said=grounded_said(self.chat_ctx),
+                context.userdata,
+                "save_vehicle",
+                args,
+                tools.save_vehicle(
+                    context.userdata,
+                    self.services,
+                    **args,
+                    said=grounded_said(self.chat_ctx),
+                    last_said=caller_last_said(self.chat_ctx),
+                    unsure=grounding.unsure(caller_last_said(self.chat_ctx))
+                    or grounding.offered_types(mia_last_said(self.chat_ctx)),
+                ),
                 last_said=caller_last_said(self.chat_ctx),
-                unsure=grounding.unsure(caller_last_said(self.chat_ctx))
-                or grounding.offered_types(mia_last_said(self.chat_ctx)),
-            ),
-        )
+            )
 
     @function_tool
     async def update_vehicle(
@@ -527,6 +661,7 @@ class Mia(Agent):
                 said=grounded_said(self.chat_ctx),
                 last_said=caller_last_said(self.chat_ctx),
             ),
+            last_said=caller_last_said(self.chat_ctx),
         )
 
     @function_tool

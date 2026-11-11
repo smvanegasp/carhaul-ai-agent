@@ -189,8 +189,11 @@ def is_goodbye(speech: str) -> bool:
 # Stage 7 simulation, 2026-11-10: the caller said "2022 Toyota RAV4 and 2017 Honda Civic",
 # the model saved only the RAV4, then read back both cars; the caller said yes and got a
 # one-car price. So a read-back Mia speaks is rebuilt from what's on file.
+# "ship" or a "from ... to": scenario no_representative_after_quote, 2026-11-11, read back "Your
+# 2025 Honda Civic from Boston, Massachusetts to San Francisco, California. Is that correct?";
+# the "Yep" that followed wasn't taken as a yes to a read-back, so no quote.
 _READ_BACK = re.compile(
-    r"\bship\w*\b.*\b(?:is that (?:all )?(?:correct|right)|does that sound right|"
+    r"\b(?:ship\w*|from\b.*\bto)\b.*\b(?:is that (?:all )?(?:correct|right)|does that sound right|"
     r"is this correct|correct\?|right\?)",
     re.IGNORECASE | re.DOTALL,
 )

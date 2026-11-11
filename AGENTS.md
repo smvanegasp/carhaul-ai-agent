@@ -183,6 +183,19 @@ docker compose up        # api :8020, web :5190, DynamoDB Local :8030, agent wor
 
 ## 6. Decisions log
 
+- 2026-11-11 (Belinda's calls): **The caller's words drive more in code.** A question anywhere
+  in a message (or "I want to know if...") is answered first: tool results say so, and FAQ
+  facts are added by code. "from X to Y", every car named with year + make + model, and a bare
+  model right after Mia asked for it are saved by code when the model skips them. A goodbye,
+  or a plain no to the representative after the quote, runs end_call, which closes with "Feel
+  free to call us again if you'd like another quote. Have a nice day!" (no "anything else?").
+  **Interruptions need a transcribed word** (noise has none); LiveKit's adaptive detector is
+  opt-in (`MIA_INTERRUPTION=adaptive`) because the worker died silently with it in a local
+  call. **Transfers**: hold music instead of silence, a 20 s ring (Sergio's voicemail answers
+  at ~25-29 s), the caller doesn't hear the "press 1" screening, and if nobody takes it Mia
+  says no representative is available, please call again later (and closes a quoted call).
+  Per-IP call limit 6 -> 20 an hour; the 60-a-day cap stays.
+
 - 2026-11-11 (Sergio): **Scenarios against the real APIs** before PRs that change Mia (fakes
   stay in CI: free and fast). The first real run (81 CarHauler requests) failed 7 of 23 that
   passed on fakes: CarHauler's quote **rate limit** (two- and three-car quotes; a rate limit now

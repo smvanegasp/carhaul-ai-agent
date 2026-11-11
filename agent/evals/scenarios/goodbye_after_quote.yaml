@@ -1,0 +1,23 @@
+# Call 97f388f57b75 (Belinda, 2026-11-11): "Cool. Thank you. Bye." right after the price; no
+# end_call, and Mia read the details back twice.
+id: goodbye_after_quote
+persona: NG_C_NV
+path: SHP
+ground_truth:
+  origin: Boston, Massachusetts
+  destination: San Francisco, California
+  vehicles: [2025 Honda Civic]
+turns:
+  - user: "My 2025 Honda Civic, from Boston, Massachusetts to San Francisco, California."
+    expect:
+      on_file: {vehicles: [2025 Honda Civic]}
+  - user: "Yep"
+    expect:
+      tools: [get_quote]
+      says: ["$1,291"]
+  - user: "Cool. Thank you. Bye."
+    expect:
+      tools: [end_call]
+      no_tools: [request_human]
+      ended: true
+      judge: Says a short goodbye; doesn't read the details back or ask anything.

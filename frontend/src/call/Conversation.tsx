@@ -40,6 +40,15 @@ export function Conversation({
     }
   }, [live, shown.length]);
 
+  // When a call ends, the live box is replaced by this one, which would start at the top: the
+  // end of the call and the feedback form jumped out of view (Belinda, 2026-11-11). Start at
+  // the bottom instead, where the caller was. Only this box moves, never the page.
+  const ended = !live && footer != null;
+  useEffect(() => {
+    const el = box.current;
+    if (ended && el && el.scrollHeight > el.clientHeight) el.scrollTop = el.scrollHeight;
+  }, [ended]);
+
   return (
     <section
       aria-label="Conversation"

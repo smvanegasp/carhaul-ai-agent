@@ -16,7 +16,7 @@ import re
 from difflib import SequenceMatcher
 from typing import Any
 
-from mia.geo import canonicalize_state
+from mia.geo import _state_aliases, canonicalize_state
 from mia.vehicles import MAKE_ALIASES, VEHICLE_TYPE_ALIASES, normalize, normalize_vehicle_type
 
 MATCH_CUTOFF = 0.75
@@ -238,6 +238,154 @@ def vehicle_details_in(text: str) -> dict[str, Any]:
     if len(makes) == 1:
         out["make"] = makes[0]
     return out
+
+
+def vehicle_mentions(text: str) -> list[dict[str, Any]]:
+    """Each car one message names, in order: its make, the year said just before it, and the
+    words that follow it (where its model is). "Atlanta to Portland with a twenty twenty two
+    Toyota RAV four and a two thousand seventeen Honda Civic" -> [{2022, Toyota, "toyota rav
+    four and a two thousand"}, {2017, Honda, "honda civic"}]. Call 2cd0a119e59d, 2026-11-11:
+    the model saved only the route and asked for "the first vehicle" (the caller: "I already
+    gave you that information")."""
+    words = _words(text)
+    joined = " ".join(words)
+    hits: list[tuple[int, str]] = []
+    last_end = -1
+    for start, end, name in _make_hits(text):
+        if start < last_end or (hits and hits[-1][1] == name and start <= last_end + 1):
+            last_end = max(last_end, end)  # "mercedes benz": one make, matched twice
+            continue
+        hits.append((joined[:start].count(" "), name))
+        last_end = end
+    years = _years_in(text)
+    out: list[dict[str, Any]] = []
+    for n, (index, make) in enumerate(hits):
+        before = hits[n - 1][0] + 1 if n else 0
+        after = hits[n + 1][0] if n + 1 < len(hits) else len(words)
+        # The year right before this make (and after the previous one), corrected if they
+        # fixed it ("a twenty ten... no, twenty twenty-two RAV4").
+        own = [y for (s, e, y) in years if before <= s and e <= index]
+        year = corrected_year(own[0], " ".join(words[before:index])) if own else None
+        out.append({"make": make, "year": year, "words": " ".join(words[index:after])})
+    return out
+
+
+_BARE_FILLER = {
+    "it",
+    "s",
+    "its",
+    "is",
+    "a",
+    "an",
+    "the",
+    "uh",
+    "um",
+    "yes",
+    "yeah",
+    "yep",
+    "oh",
+    "sorry",
+    "i",
+    "mean",
+    "meant",
+    "like",
+    "so",
+    "ok",
+    "okay",
+    "one",
+    "model",
+}
+
+
+def model_alone(model: str, said: str) -> bool:
+    """The caller answered with just the model ("Corolla.", "It's a Corolla", "Yeah, the
+    Corolla"), after Mia asked for it. Call 2f6b9240a6da, 2026-11-11: "Corolla." to "Did you
+    mean a Corolla, Camry Solara, or GR Corolla?" was never saved, so the quote failed with
+    everything said. Only short answers, and the model must be all that's left once filler
+    words are taken out."""
+    words = [w for w in _words(said) if w not in _BARE_FILLER]
+    if not words or len(words) > 4:
+        return False
+    return normalize(" ".join(words)) == normalize(model)
+
+
+# "from Miami to Chicago", "from Boston, Massachusetts to San Francisco, California". Used when
+# the model answers a question and skips the route the caller gave in the same breath
+# (scenario question_with_route, 2026-11-11: 4 runs in 5).
+_ROUTE = re.compile(
+    r"\bfrom\s+(?P<a>[A-Za-z][A-Za-z .'-]*?(?:,\s*[A-Za-z .]+?)?)\s+to\s+"
+    r"(?P<b>[A-Za-z][A-Za-z .'-]*?(?:,\s*[A-Za-z .]+?)?)\s*(?:[.!?;,]|$)",
+)
+_PLACE_STOP = {
+    "and",
+    "with",
+    "but",
+    "so",
+    "next",
+    "in",
+    "on",
+    "by",
+    "this",
+    "around",
+    "soon",
+    "tomorrow",
+    "today",
+    "please",
+    "for",
+    "it",
+    "it's",
+    "its",
+    "i",
+    "we",
+    "my",
+    "the",
+    "a",
+    "an",
+    "because",
+}
+
+
+def _place(text: str) -> tuple[str, str | None] | None:
+    """ "San Francisco, California" -> ("San Francisco", "California"); words after the place
+    ("Chicago next week") are cut. None if it doesn't look like a place."""
+    city, _, state = text.partition(",")
+    words = []
+    for w in city.split():
+        if w.lower() in _PLACE_STOP:
+            break
+        words.append(w)
+    # Speech-to-text capitalizes places: "from bad to worse" isn't a route.
+    if not words or len(words) > 3 or not all(w[0].isupper() for w in words):
+        return None
+    state = state.strip(" .") or None
+    if state and not canonicalize_state(state):
+        state = None
+    return " ".join(words), state
+
+
+def _is_state(name: str) -> bool:
+    """A state's full name or code ("California", "CA"), said where a city goes. Exact only:
+    "Boston" is no state, however close a fuzzy match gets."""
+    norm = re.sub(r"[^a-z0-9]+", " ", name.lower()).strip()
+    return norm in _state_aliases()
+
+
+def route_in(text: str) -> dict[str, str | None] | None:
+    """Origin and destination the caller said as "from X to Y", or None."""
+    found = _ROUTE.search(text)
+    if not found:
+        return None
+    a, b = _place(found["a"]), _place(found["b"])
+    if not a or not b or _is_state(a[0]) or _is_state(b[0]):
+        # "From Miami to California": a state, not a city; the model asks "Which city in
+        # California?" (scenario state_without_city), so code stays out of it.
+        return None
+    return {
+        "origin_city": a[0],
+        "origin_state": a[1],
+        "destination_city": b[0],
+        "destination_state": b[1],
+    }
 
 
 def model_named(model: str, make: str, said: str) -> bool:
@@ -565,8 +713,60 @@ _QUESTION_START = re.compile(
 )
 
 
+# Asking without a question form (Belinda's call, 2026-11-11: "I want to know if you offer
+# enclosed like, shippings, and I'm sending my car from Miami to Chicago" got only the route
+# saved and the vehicle question; the caller had to say "You didn't answer my question").
+_ASKING = re.compile(
+    r"\b(?:i (?:want|wanted|would like|d like) to (?:know|ask)|i (?:was|am|m) wondering|"
+    r"wondering (?:if|whether|about)|(?:can|could) you tell me|tell me (?:if|whether|how|what)|"
+    r"i have a question|quick question|curious (?:if|whether|about))\b",
+    re.IGNORECASE,
+)
+_SENTENCES = re.compile(r"(?<=[.!?])\s+")
+
+
 def is_question(text: str) -> bool:
     """Is the caller asking something ("do you do enclosed shipping?", "how long does it
-    take")? "Yeah, sure" and "a 2020 Honda" are not."""
+    take")? Any sentence of the message counts ("I'm moving to Chicago. Do you do enclosed?"),
+    and so does "I want to know if...". "Yeah, sure" and "a 2020 Honda" are not."""
     text = text.strip()
-    return bool(text) and (text.endswith("?") or bool(_QUESTION_START.search(text)))
+    if not text:
+        return False
+    if _ASKING.search(text):
+        return True
+    return any(
+        s.endswith("?") or _QUESTION_START.search(s)
+        for s in (x.strip() for x in _SENTENCES.split(text))
+        if s
+    )
+
+
+# The caller ending the call ("Cool. Thank you. Bye.", "What? Goodbye."). Belinda's call,
+# 2026-11-11: two goodbyes, no end_call; Mia read the details back twice instead.
+_FAREWELL = re.compile(r"\b(?:good ?bye|bye(?: bye)?|bye-bye|see you|see ya)\b", re.IGNORECASE)
+
+
+def is_farewell(text: str) -> bool:
+    """A short message that says goodbye. Not a long one that also asks or adds something
+    ("bye the way" isn't a thing STT writes, but "say bye to the old car, it's a..." is)."""
+    words = _words(text)
+    return bool(words) and len(words) <= 8 and bool(_FAREWELL.search(text))
+
+
+# A plain "no" to Mia's offer of a licensed representative ("No, thanks", "I'm good").
+_PLAIN_NO = re.compile(
+    r"^\W*(?:(?:no|nope|nah|no thanks|no thank you|not now|not right now|not really|"
+    r"i m good|i am good|i m fine|that s all|that s it|that s everything|all good|"
+    r"no i m good|no that s all|no that s it|no that s everything|nothing else|"
+    r"thanks|thank you|okay|ok|cool|great|perfect|alright|all right)\W*)+$",
+    re.IGNORECASE,
+)
+
+
+def declines(text: str) -> bool:
+    """A plain no, with nothing else in it ("No, thank you.", "Nope, I'm good."). Something
+    that only thanks ("Thank you") isn't a no; "no, but how long does it take?" is a question."""
+    flat = " ".join(_words(text.replace("'", " ")))
+    if not flat or not _PLAIN_NO.match(flat):
+        return False
+    return bool(re.search(r"\b(?:no|nope|nah|not|good|fine|all|it|everything|nothing)\b", flat))
