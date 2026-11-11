@@ -119,6 +119,11 @@ class QuoteSession:
     # Tool calls code made itself (agent.llm_node), as "name@turn": at most once per caller
     # turn, or a failure (CarHauler down at the quote) would make code retry every step.
     code_calls: set[str] = field(default_factory=set)
+    # Which wording each varied line used last (phrases.py): key -> (caller turn, text).
+    phrases: dict[str, tuple[int, str]] = field(default_factory=dict)
+    # Each vehicle's priced quote from the last get_quote (pricing.VehicleQuote), so removing a
+    # vehicle reprices from what's left instead of quoting again (tools.remove_vehicle).
+    priced: list[Any] = field(default_factory=list, repr=False)
     _next_id: int = 1
 
     # --- quote IDs and the trash ---------------------------------------------------------

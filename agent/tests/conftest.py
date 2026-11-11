@@ -6,6 +6,7 @@ import respx
 from fake_carhauler import BASE, FakeCarHauler
 from moto import mock_aws
 
+from mia import phrases
 from mia.carhauler import CarHaulerClient
 from mia.vehicles import VehicleResolver
 
@@ -57,3 +58,10 @@ def table(monkeypatch):
         )
         yield boto3.resource("dynamodb", region_name="us-east-1").Table("carhaul-test")
     records._table.cache_clear()
+
+
+@pytest.fixture(autouse=True)
+def first_wording(monkeypatch):
+    """Varied lines (phrases.py) take the first wording that's allowed, so tests can assert
+    exact text: the first wording first, then the next one when it would repeat."""
+    monkeypatch.setattr(phrases, "choose", lambda options: options[0])

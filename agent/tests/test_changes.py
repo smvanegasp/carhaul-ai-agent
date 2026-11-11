@@ -88,9 +88,29 @@ async def test_with_several_vehicles_mia_asks_which(state, services):
 async def test_removing_a_vehicle(state, services):
     await _quoted(state, services, CIVIC, RUNNER)
     state.expected_vehicles = 2
+    first = state.quote
     r = await tools.remove_vehicle(state, services, quote_id=state.vehicles[1].quote_id)
     assert r["ok"] and [v.label for v in state.vehicles] == ["2025 Honda Civic"]
-    assert state.expected_vehicles == 1 and state.quote is None
+    assert state.expected_vehicles == 1
+    # Belinda, 2026-11-11: each vehicle was already priced, so what's left is repriced from the
+    # last quote and read out at once; no read-back, no new quote.
+    civic = next(p["price"] for p in first["per_vehicle"] if p["quote_id"] == "Q1")
+    assert state.quote["total"] == civic and r["total"] == civic
+    assert r["say"] == f"Your new estimated cost for the Honda is ${civic:,}."
+    assert "Read `say`" in r["next"] and "removed the 2020 Toyota 4Runner" in r["next"]
+    assert state.trash[-1].kind == "quote"  # the two-vehicle quote is kept in the trash
+
+
+async def test_removing_a_vehicle_before_the_quote_asks_to_confirm(state, services):
+    said = "a 2025 Honda Civic and a 2020 Toyota 4Runner"
+    await tools.save_origin_destination(
+        state, services, origin_city="Boston", destination_city="San Francisco"
+    )
+    for year, make, model in ((2025, "Honda", "Civic"), (2020, "Toyota", "4Runner")):
+        await tools.save_vehicle(state, services, year=year, make=make, model=model, said=said)
+    r = await tools.remove_vehicle(state, services, quote_id=state.vehicles[1].quote_id)
+    assert r["ok"] and "say" not in r and state.quote is None
+    assert "Read it back" in r["next"]
 
 
 async def test_the_only_vehicle_cant_be_removed(state, services):

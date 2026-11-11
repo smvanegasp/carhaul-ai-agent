@@ -26,8 +26,9 @@ turns:
       tools: [remove_vehicle]
       no_tools: [get_quote]
       on_file: {vehicles: [2025 Honda Civic]}
-      judge: Says the Toyota was removed and asks the caller to confirm the Honda Civic and route.
-  - user: "Yes"
-    expect:
-      tools: [get_quote]
+      # Belinda, 2026-11-11: each car was already priced, so the new total comes at once from
+      # the last quote (no read-back, no second quote).
       says: ["$1,291"]
+      judge: >-
+        Says the Toyota was removed, gives the new estimated cost for the Honda and offers to
+        connect the caller with a licensed representative.

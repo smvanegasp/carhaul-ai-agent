@@ -248,11 +248,16 @@ async def entrypoint(ctx: JobContext) -> None:
             except Exception as err:  # never break the transfer over routing
                 logger.warning("couldn't route Mia's audio for %s: %s", p.identity, err)
 
+    told_line: list[str] = []  # what Mia said to the line while screening (not to the caller)
+
     async def screen_line() -> bool:
         """The line that picked up must press 1 (transfer.screen); the caller and the line
-        can't hear each other until then."""
+        can't hear each other until then. What Mia tells the line isn't a turn of the call:
+        the caller doesn't hear it, so it's not transcribed either (Belinda, 2026-11-11: the
+        "Press 1" lines showed up in her chat). It goes in screen_representative's event."""
         await hear_each_other(False)
         await route_mia(screening=True)
+        session.output.set_transcription_enabled(False)
         pressed = asyncio.Event()
 
         def on_dtmf(ev) -> None:
@@ -261,7 +266,7 @@ async def entrypoint(ctx: JobContext) -> None:
                 pressed.set()
 
         async def say(text: str) -> None:
-            events.turn("assistant", text, kind="handoff")
+            told_line.append(text)
             handle = session.say(text, allow_interruptions=False, add_to_chat_ctx=False)
             await handle.wait_for_playout()
 
@@ -271,6 +276,7 @@ async def entrypoint(ctx: JobContext) -> None:
         finally:
             ctx.room.off("sip_dtmf_received", on_dtmf)
             stop_music()
+            session.output.set_transcription_enabled(True)
             await route_mia(screening=False)
         if accepted:
             await hear_each_other(True)
@@ -328,7 +334,11 @@ async def entrypoint(ctx: JobContext) -> None:
                 events.tool(
                     "screen_representative",
                     {},
-                    {"ok": accepted, "outcome": "accepted" if accepted else "no 1 pressed"},
+                    {
+                        "ok": accepted,
+                        "outcome": "accepted" if accepted else "no 1 pressed",
+                        "told_line": told_line,
+                    },
                     (asyncio.get_running_loop().time() - screened) * 1000,
                 )
                 events.state(state.snapshot(), str(state.stage), state.quote)

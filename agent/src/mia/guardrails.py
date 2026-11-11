@@ -19,7 +19,7 @@ import json
 import re
 from typing import Any
 
-from mia import grounding
+from mia import grounding, phrases
 from mia.state import QuoteSession
 
 ORDINALS = ["first", "second", "third", "fourth", "fifth", "sixth", "seventh", "eighth"]
@@ -123,7 +123,8 @@ def read_back(state: QuoteSession) -> str:
     vehicles = f"your {_join(labels)}" if labels else "your vehicle"
     origin = state.origin.spoken if state.origin else "the pickup city"
     destination = state.destination.spoken if state.destination else "the delivery city"
-    return f"Just to confirm, {vehicles} will ship from {origin} to {destination}. Is that correct?"
+    template = phrases.pick(state, "read_back", phrases.READ_BACK)
+    return template.format(vehicles=vehicles, origin=origin, destination=destination)
 
 
 def fallback_line(state: QuoteSession) -> str:
@@ -200,7 +201,8 @@ _READ_BACK = re.compile(
 
 
 _READ_BACK_START = re.compile(
-    r"\b(?:just to confirm|to confirm|will ship|you(?: want|'d like|'re| are)? (?:to )?ship)\b",
+    r"\b(?:just to confirm|to confirm|let me make sure|so that's|will ship|"
+    r"you(?: want|'d like|'re| are)? (?:to )?ship)\b",
     re.IGNORECASE,
 )
 
