@@ -14,7 +14,7 @@ Settings (repo-root .env locally, SSM ``/carhaul/agent/`` on AWS):
   goes straight to voicemail (seen on the first test call, 2026-11-09).
 
 Limits, because the site is public and every transfer rings a real phone: at most
-``TRANSFERS_PER_DAY`` (5) a day, ``RING_SECONDS`` of ringing, ``MAX_TRANSFER_MINUTES`` (10) on
+``TRANSFERS_PER_DAY`` (10) a day, ``RING_SECONDS`` of ringing, ``MAX_TRANSFER_MINUTES`` (10) on
 the phone. The trunk details travel inline with each call (``CreateSIPParticipantRequest.trunk``),
 so there's no LiveKit trunk ID to keep in sync. The SDK's ``outbound_trunk_config=`` helper
 fails on assignment in livekit-api 1.x, so the request sets ``trunk`` itself.
@@ -32,7 +32,8 @@ from mia.state import QuoteSession
 
 logger = logging.getLogger("mia.transfer")
 
-TRANSFERS_PER_DAY = int(os.environ.get("MIA_TRANSFERS_PER_DAY") or 5)
+# 10 a day (Sergio, 2026-11-11: 5 was too few with two testers); MIA_TRANSFERS_PER_DAY overrides.
+TRANSFERS_PER_DAY = int(os.environ.get("MIA_TRANSFERS_PER_DAY") or 10)
 RING_SECONDS = 30
 MAX_TRANSFER_MINUTES = 10
 REPRESENTATIVE_IDENTITY = "representative"
