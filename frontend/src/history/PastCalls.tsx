@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 
+import { CallId } from "../call/CallId";
 import { Conversation } from "../call/Conversation";
 import { ErrorBoundary } from "../call/ErrorBoundary";
 import { Insights } from "../call/Insights";
@@ -261,6 +262,7 @@ function CallDetail({ room, onBack }: { room: string; onBack: () => void }) {
           {formatDuration(call.duration_s)} long
         </span>
         <span className="text-muted">{outcomeLabel(call)}</span>
+        <CallId room={call.room} />
         {rating && (
           <span className="text-muted">
             Caller rated it{" "}
