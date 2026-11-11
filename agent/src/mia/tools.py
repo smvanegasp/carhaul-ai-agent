@@ -522,6 +522,16 @@ async def save_vehicle(
         unsure=unsure,
     )
     if error:
+        # Keep the year and make it did hear, whenever the vehicle became missing. Call
+        # 9ea951ab02c2 (2026-11-11): "I no longer need the Jeep, I want to send my twenty
+        # twenty four Honda" -> the Jeep was removed in the same step, so the turn started with
+        # nothing missing and the 2024 Honda wasn't noted; Mia asked "What's the year, make and
+        # model of the second car?" and the caller had to say it again.
+        known = error.get("known") or {}
+        heard = {k: known[k] for k in ("year", "make") if known.get(k)}
+        if heard:
+            state.note_partial_vehicle(heard)
+            error["on_file"] = state.snapshot()
         if ignored and error.get("error_code", "").startswith("MISSING"):
             # A detail they gave was dropped as not said (e.g. a model the guardrail didn't
             # match). Ask as usual, but count it: asking forever is worse than a person
@@ -631,9 +641,14 @@ async def update_vehicle(
 
 
 async def remove_vehicle(
-    state: QuoteSession, services: Services, *, quote_id: str | None = None
+    state: QuoteSession,
+    services: Services,
+    *,
+    quote_id: str | None = None,
+    last_said: str | None = None,
 ) -> Result:
-    """The caller isn't shipping one of their vehicles after all."""
+    """The caller isn't shipping one of their vehicles after all. ``last_said``: their
+    message, which may name the vehicle they're sending instead."""
     if len(state.vehicles) == 1 and (not quote_id or state.find_vehicle(quote_id)):
         return _err(
             state,
@@ -647,6 +662,19 @@ async def remove_vehicle(
     priced = state.priced if state.quote else []
     state.remove_vehicle(target.quote_id)
     removed = {"vehicle": target.label, "quote_id": target.quote_id}
+    instead = _replacement(state, target, last_said)
+    if instead:
+        # Scenario replace_vehicle_partial, 2026-11-11: "I no longer need the Toyota. I want to
+        # send my twenty twenty four Ford instead." -> the model removed the Toyota and never
+        # saved the Ford (2 runs in 3), so the read-back dropped it. The Ford is now expected,
+        # with what was heard of it, and the next question asks for the rest.
+        state.expected_vehicles = len(state.vehicles) + 1
+        state.note_partial_vehicle(instead)
+        return _ok(
+            state,
+            f"Tell them you've removed the {target.label}. " + _next_question(state),
+            removed=removed,
+        )
     # Belinda, 2026-11-11 (call fa3b77253965): after the quote, removing the Toyota made Mia
     # read everything back and quote again, but each vehicle was already priced on its own for
     # this route. What's left is repriced from that quote: no read-back, no new API call.
@@ -671,6 +699,21 @@ async def remove_vehicle(
         f"Tell them you've removed the {target.label}. " + _next_question(state),
         removed=removed,
     )
+
+
+def _replacement(state: QuoteSession, removed: Any, last_said: str | None) -> dict[str, Any]:
+    """The vehicle the caller wants to send instead of the one removed, as heard in the same
+    message (year and make), or {}. Not a make still on file: "Remove the Toyota, just the
+    Honda please" keeps the Honda, it doesn't add one."""
+    if not last_said:
+        return {}
+    taken = {(removed.make or "").lower()} | {(v.make or "").lower() for v in state.vehicles}
+    mentions = grounding.vehicle_mentions(last_said)
+    others = [m for m in mentions if m["make"].lower() not in taken]
+    if not others:
+        return {}
+    last = others[-1]
+    return {k: v for k, v in (("year", last["year"]), ("make", last["make"])) if v}
 
 
 async def undo_last_change(state: QuoteSession, services: Services) -> Result:

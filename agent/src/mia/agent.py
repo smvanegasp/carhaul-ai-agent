@@ -679,7 +679,12 @@ class Mia(Agent):
             context.userdata,
             "remove_vehicle",
             {"quote_id": quote_id},
-            tools.remove_vehicle(context.userdata, self.services, quote_id=quote_id),
+            tools.remove_vehicle(
+                context.userdata,
+                self.services,
+                quote_id=quote_id,
+                last_said=caller_last_said(self.chat_ctx),
+            ),
         )
 
     @function_tool
