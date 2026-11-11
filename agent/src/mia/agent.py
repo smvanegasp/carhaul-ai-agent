@@ -271,6 +271,7 @@ class Mia(Agent):
         said, last_said = grounded_said(chat_ctx), caller_last_said(chat_ctx)
         mia_last = mia_last_said(chat_ctx)
         state.caller_turns = caller_turn_count(chat_ctx)
+        state.last_said = last_said
         _note_partial_vehicle(state, last_said)
         held: list[llm.ChatChunk | str] = []
         text, runs_tool, dropped, failed = "", False, [], False
