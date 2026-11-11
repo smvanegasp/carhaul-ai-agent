@@ -33,6 +33,8 @@ build-backend = "uv_build"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+# agent/ too, so tests can import evals/ (the stage 7 simulator).
+pythonpath = ["."]
 # Live tests call paid APIs (Google Maps, CarHauler) and llm tests call Groq. Both are skipped
 # by default; run them on purpose with `uv run pytest -m live` or `-m llm`.
 addopts = "-m 'not live and not llm'"

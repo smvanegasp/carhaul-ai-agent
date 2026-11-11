@@ -6,6 +6,7 @@ import json
 import logging
 import os
 import time
+import uuid
 from collections.abc import AsyncIterable, Awaitable
 from typing import Any
 
@@ -13,9 +14,10 @@ from livekit.agents import (
     NOT_GIVEN,
     Agent,
     AgentSession,
+    APIConnectOptions,
     ChatContext,
-    ModelSettings,
     RunContext,
+    SessionConnectOptions,
     function_tool,
     llm,
 )
@@ -74,8 +76,34 @@ def make_llm(model: str | None = None) -> GroqLLM:
 
 def new_session(state: QuoteSession, llm=None, **kwargs: Any) -> AgentSession[QuoteSession]:
     """The session settings every entry point shares (text chat, tests, voice worker)."""
+    kwargs.setdefault("conn_options", CONN_OPTIONS)
     return AgentSession[QuoteSession](
         llm=llm or make_llm(), userdata=state, max_tool_steps=MAX_TOOL_STEPS, **kwargs
+    )
+
+
+# One quick LLM retry, not LiveKit's 3 at 2 s apart: a step that fails (gpt-oss's broken tool
+# JSON, stage 7) is answered with the fallback line within about a second instead of 6+ s of
+# silence. STT and TTS keep LiveKit's defaults.
+CONN_OPTIONS = SessionConnectOptions(
+    llm_conn_options=APIConnectOptions(max_retry=1, retry_interval=0.5, timeout=10.0)
+)
+
+
+ANSWER_ONLY = (
+    "Answer the caller's last question in one or two short sentences, only from your "
+    "instructions (offer a licensed representative if they don't cover it). No tools "
+    "this time: just speak."
+)
+
+
+def _call_chunk(name: str, args: dict[str, Any]) -> llm.ChatChunk:
+    """A tool call added by code (see ``Mia.llm_node``)."""
+    call = llm.FunctionToolCall(
+        name=name, arguments=json.dumps(args), call_id=f"mia_{uuid.uuid4().hex[:12]}"
+    )
+    return llm.ChatChunk(
+        id=call.call_id, delta=llm.ChoiceDelta(role="assistant", tool_calls=[call])
     )
 
 
@@ -174,26 +202,42 @@ class Mia(Agent):
         mia_last = mia_last_said(chat_ctx)
         state.caller_turns = caller_turn_count(chat_ctx)
         held: list[llm.ChatChunk | str] = []
-        text, runs_tool, dropped = "", False, []
-        async for chunk in Agent.default.llm_node(self, chat_ctx, tools, model_settings):
-            if isinstance(chunk, str):
-                text += chunk
-            elif isinstance(chunk, llm.ChatChunk) and chunk.delta:
-                text += chunk.delta.content or ""
-                keep = []
-                for call in chunk.delta.tool_calls:
-                    reason = guardrails.check_call(
-                        call.name, call.arguments, state, said, last_said, mia_last
-                    )
-                    if reason:
-                        dropped.append({"tool": call.name, "args": call.arguments, "why": reason})
-                    else:
-                        keep.append(call)
-                chunk.delta.tool_calls = keep
-                runs_tool = runs_tool or bool(keep)
-            held.append(chunk)
+        text, runs_tool, dropped, failed = "", False, [], False
+        try:
+            async for chunk in Agent.default.llm_node(self, chat_ctx, tools, model_settings):
+                if isinstance(chunk, str):
+                    text += chunk
+                elif isinstance(chunk, llm.ChatChunk) and chunk.delta:
+                    text += chunk.delta.content or ""
+                    keep = []
+                    for call in chunk.delta.tool_calls:
+                        reason = guardrails.check_call(
+                            call.name, call.arguments, state, said, last_said, mia_last
+                        )
+                        if reason:
+                            dropped.append(
+                                {"tool": call.name, "args": call.arguments, "why": reason}
+                            )
+                        else:
+                            keep.append(call)
+                    chunk.delta.tool_calls = keep
+                    runs_tool = runs_tool or bool(keep)
+                held.append(chunk)
+        except Exception as exc:
+            # Stage 7 simulation: Groq's "Failed to parse tool call arguments as JSON" (gpt-oss
+            # wrote broken JSON) ended 3 of 72 calls after LiveKit's retries. Nothing from the
+            # failed step runs; the caller hears the fallback line and the call goes on.
+            logger.warning("llm step failed, using the fallback line: %s", exc)
+            held, text, runs_tool, failed = [], "", False, True
 
         logger.debug("llm step: runs_tool=%s dropped=%d text=%r", runs_tool, len(dropped), text)
+        if not runs_tool and dropped and grounding.asks_for_person(last_said):
+            # Stage 7 simulation, 2026-11-10: "could you connect me to a live representative?"
+            # -> the model called note_off_topic (dropped) and Mia asked for the car again.
+            # The caller plainly asked for a person, so that's the call that runs.
+            held.append(_call_chunk("request_human", {"reason": "caller asked for a person"}))
+            runs_tool = True
+            logger.info("dropped-only step on a request for a person; running request_human")
         # Speak only in steps that don't run a tool, and only the tidied text.
         for chunk in held:
             if isinstance(chunk, str):
@@ -213,8 +257,9 @@ class Mia(Agent):
                 # dropped: ask again with no tools, so the question gets an answer.
                 spoken = guardrails.tidy_speech(await self._words_only(chat_ctx))
                 logger.info("dropped-only step on a question; answered: %r", spoken)
-            if not spoken and dropped:
+            if not spoken and (dropped or failed):
                 spoken = guardrails.fallback_line(state)
+            spoken = guardrails.honest_read_back(spoken, state)
             spoken = guardrails.keep_going(spoken, state)
             if spoken and guardrails.is_goodbye(spoken) and not state.ended:
                 # She's closing the call without end_call: hang up after this line plays.
@@ -225,17 +270,34 @@ class Mia(Agent):
                 yield spoken
 
     async def _words_only(self, chat_ctx: llm.ChatContext) -> str:
-        """The model's reply with no tools on offer (tool_choice "none" makes GroqLLM send
-        none). Live check, 2026-11-10: STT heard "do you do a closed shipping?", the model
-        only called a tool the guardrail dropped, and the fallback line repeated the vehicle
-        question, so the FAQ went unanswered. One extra model step (~300 ms), only then."""
+        """The model's reply with no tools on offer. Live check, 2026-11-10: STT heard "do
+        you do a closed shipping?", the model only called a tool the guardrail dropped, and the
+        fallback line repeated the vehicle question, so the FAQ went unanswered.
+
+        One attempt, short timeout, and "" on any error (the caller then gets the fallback
+        line): the stage 7 simulations showed gpt-oss calling a tool even with none offered,
+        which Groq rejects ("Tool choice is none, but model called a tool"); with LiveKit's
+        default retries that crashed the turn after 4 tries."""
+        model = self.llm if isinstance(self.llm, llm.LLM) else self.session.llm
+        # Without the tool calls in its history gpt-oss stops reaching for tools (the first
+        # simulation run: 8 of these retries failed with "model called a tool").
+        ctx = chat_ctx.copy(exclude_function_call=True)
+        ctx.add_message(role="system", content=ANSWER_ONLY)
         text = ""
-        settings = ModelSettings(tool_choice="none")
-        async for chunk in Agent.default.llm_node(self, chat_ctx, [], settings):
-            if isinstance(chunk, str):
-                text += chunk
-            elif isinstance(chunk, llm.ChatChunk) and chunk.delta:
-                text += chunk.delta.content or ""
+        try:
+            stream = model.chat(
+                chat_ctx=ctx,
+                tools=None,
+                tool_choice="none",
+                conn_options=APIConnectOptions(max_retry=0, timeout=5.0),
+            )
+            async with stream:
+                async for chunk in stream:
+                    if chunk.delta:
+                        text += chunk.delta.content or ""
+        except Exception as exc:
+            logger.warning("words-only step failed, using the fallback line: %s", exc)
+            return ""
         return text
 
     async def tts_node(self, text: AsyncIterable[str], model_settings):
@@ -294,7 +356,9 @@ class Mia(Agent):
         make: str | None = None,
         model: str | None = None,
         vehicle_type: str | None = None,
-        drivable: bool = True,
+        # bool | None: gpt-oss sends null for "not mentioned", and Groq rejects a null
+        # boolean (stage 7 simulation: the turn crashed). None means it runs.
+        drivable: bool | None = None,
         total_vehicles: int | None = None,
     ) -> str:
         """Save one vehicle. Call once per vehicle with whatever the caller said about it.

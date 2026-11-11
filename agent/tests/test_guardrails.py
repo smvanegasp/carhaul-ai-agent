@@ -231,3 +231,34 @@ def test_keep_going_reads_back_when_all_is_on_file_but_not_quoted():
     assert out == f"We only quote open car shipping. {read_back(s)}"
     s.escalated = True  # a failed lookup: Mia is offering a person, not the quote
     assert keep_going("A representative can help.", s) == "A representative can help."
+
+
+def test_a_read_back_says_what_is_on_file():
+    # Stage 7 simulation: RAV4 and Civic said, only the RAV4 saved, both read back.
+    s = QuoteSession(origin=BOS, destination=SF)
+    s.add_vehicle(year=2022, make="Toyota", model="RAV4", trim_id=1)
+    told = (
+        "You want to ship a 2022 Toyota RAV4 and a 2017 Honda Civic from Boston. Is that correct?"
+    )
+    assert guardrails.honest_read_back(told, s) == read_back(s)
+    s.expected_vehicles = 2  # they said two cars: ask for the second instead
+    assert guardrails.honest_read_back(told, s) == fallback_line(s)
+    other = "We only quote open car shipping. What's the car?"
+    assert guardrails.honest_read_back(other, s) == other
+
+
+def test_a_question_that_starts_with_sure_can_be_off_topic():
+    asked = "Sure, Mia, can you tell me a joke about cats?"
+    assert check_call("note_off_topic", "{}", QuoteSession(), asked, asked) is None
+    assert check_call("note_off_topic", "{}", QuoteSession(), "Sure", "Sure")
+
+
+def test_a_read_back_keeps_what_mia_said_before_it():
+    # remove_vehicle_after_quote: "I've removed the Toyota." must stay.
+    s = QuoteSession(origin=BOS, destination=SF)
+    s.add_vehicle(year=2025, make="Honda", model="Civic", trim_id=1)
+    told = (
+        "I've removed the Toyota. Just to confirm, your 2025 Honda Civic will ship from "
+        "Boston to San Francisco. Is that correct?"
+    )
+    assert guardrails.honest_read_back(told, s) == f"I've removed the Toyota. {read_back(s)}"

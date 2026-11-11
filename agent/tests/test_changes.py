@@ -184,3 +184,13 @@ async def test_two_of_the_same_car_when_the_caller_said_two(state, services):
     )
     await tools.save_vehicle(state, services, year=2025, make="Honda", model="Civic", said=said)
     assert [v.label for v in state.vehicles] == ["2025 Honda Civic", "2025 Honda Civic"]
+
+
+async def test_two_makes_in_one_sentence_expect_two_cars(state, services):
+    # Stage 7 simulation: "2022 Toyota RAV4 and 2017 Honda Civic", only the RAV4 was saved.
+    said = "Boston to San Francisco. 2025 Honda Civic and 2020 Toyota 4Runner"
+    await tools.save_vehicle(
+        state, services, year=2025, make="Honda", model="Civic", said=said, last_said=said
+    )
+    assert state.expected_vehicles == 2
+    assert "vehicle 2 of 2" in state.missing

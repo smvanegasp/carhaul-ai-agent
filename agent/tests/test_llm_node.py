@@ -75,3 +75,60 @@ async def test_an_answer_during_the_read_back_asks_to_confirm_again(client, reso
     )
     assert spoken.startswith(f"{ENCLOSED} Just to confirm, your 2025 Honda Civic")
     assert spoken.endswith("Is that correct?")
+
+
+async def test_a_failed_retry_falls_back_without_crashing_the_turn(client, resolver):
+    # Stage 7 simulation: with no tools offered gpt-oss still called one and Groq rejected it
+    # ("Tool choice is none, but model called a tool"); 4 retries later the turn crashed.
+    state = QuoteSession(origin=BOS, destination=SF)
+    steps = [
+        Step(calls=[("save_vehicle", "{}")]),
+        Step(error="Tool choice is none, but model called a tool"),
+    ]
+    spoken, calls = await _reply(steps, state, "do you do enclosed?", client, resolver)
+    assert spoken == "What's the year, make and model of the car?"
+    assert len(calls) == 2  # one attempt, no retries
+
+
+async def test_a_plain_request_for_a_person_runs_request_human(client, resolver):
+    # Stage 7 simulation: "could you connect me to a live representative?" -> the model called
+    # note_off_topic (dropped) and Mia asked for the car again.
+    state = QuoteSession(origin=BOS, destination=SF)
+    steps = [
+        Step(calls=[("note_off_topic", '{"topic": "representative"}')]),
+        Step(text="Sure, I'll connect you with a licensed representative now."),
+    ]
+    said = "Sure, but could you connect me to a live representative? I'd rather talk to a person."
+    spoken, _ = await _reply(steps, state, said, client, resolver)
+    assert state.human_requested
+    assert "representative" in spoken
+
+
+async def test_a_mention_of_someone_never_rings_the_phone(client, resolver):
+    state = QuoteSession(origin=BOS, destination=SF)
+    steps = [Step(calls=[("save_vehicle", "{}")])]
+    spoken, _ = await _reply(steps, state, "Someone else will drop it off", client, resolver)
+    assert not state.human_requested
+    assert spoken == "What's the year, make and model of the car?"
+
+
+async def test_the_retry_sees_no_tool_calls_in_its_history(client, resolver):
+    # With tool calls in its history gpt-oss kept calling tools even with none offered.
+    state = QuoteSession(origin=BOS, destination=SF)
+    model = ScriptedLLM([Step(calls=[("save_vehicle", "{}")]), Step(text=ENCLOSED)])
+    services = Services(carhauler=client, resolver=resolver, geocode=fake_city_to_zip)
+    async with new_session(state, llm=model) as session:
+        await session.start(Mia(services, greeting=GREETINGS[0]))
+        await session.run(user_input="do you do enclosed?")
+    retry = model.contexts[1]
+    assert not [i for i in retry.items if i.type in ("function_call", "function_call_output")]
+    assert "No tools" in retry.items[-1].text_content
+
+
+async def test_a_failed_model_step_keeps_the_call_going(client, resolver):
+    # Stage 7 simulation: "Failed to parse tool call arguments as JSON" ended 3 of 72 calls.
+    state = QuoteSession(origin=BOS, destination=SF)
+    steps = [Step(error="Failed to parse tool call arguments as JSON")]
+    spoken, calls = await _reply(steps, state, "It's a 2025 Honda Civic", client, resolver)
+    assert spoken == "What's the year, make and model of the car?"
+    assert len(calls) == 1  # not retryable: no second attempt

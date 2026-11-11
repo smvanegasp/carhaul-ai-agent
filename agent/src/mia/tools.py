@@ -407,6 +407,9 @@ async def save_vehicle(
     _note_vehicle_count(state, said)
     if last_said:
         year = grounding.corrected_year(year, last_said)
+        named = grounding.makes_named(last_said)
+        if named >= 2 and named > (state.expected_vehicles or 0):
+            state.expected_vehicles = named  # so Mia asks for the one the model skipped
     # Models send null for "not mentioned": only an explicit False means it doesn't run.
     operational = drivable is not False
     year, make, model, vehicle_type, ignored = _grounded(said, year, make, model, vehicle_type)
