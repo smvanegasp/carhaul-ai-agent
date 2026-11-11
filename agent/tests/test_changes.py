@@ -372,3 +372,40 @@ async def test_removing_the_vehicle_drops_its_pending_change(state, services):
     assert state.pending_change
     await tools.remove_vehicle(state, services, quote_id=honda)
     assert state.pending_change is None
+
+
+async def test_a_different_car_needs_its_own_year(state, services):
+    # Call ed6205aaca08: "Now I actually want to change the Honda for a Jeep." -> the model
+    # passed 2020, the Honda's year (said earlier, so it grounded): "What model is the 2020
+    # Jeep?". A new make's year must be said for it.
+    said = await _quoted(state, services, CIVIC, RUNNER)
+    last = "Now I actually want to change the Honda for a Ford."
+    said += " " + last
+    honda = state.vehicles[0].quote_id
+    r = await tools.update_vehicle(
+        state, services, quote_id=honda, make="Ford", year=2025, said=said, last_said=last
+    )
+    assert r["error_code"] == "MISSING_MODEL"
+    assert state.pending_change == {"quote_id": honda, "from": "2025 Honda Civic", "make": "Ford"}
+    assert "What year and model is the Ford?" in r["next"]
+    # The next message gives both; the old year passed again would still be dropped.
+    last = "It's a twenty twenty four F-150."
+    said += " " + last
+    r = await tools.update_vehicle(
+        state, services, year=2024, model="F-150", said=said, last_said=last
+    )
+    assert r["ok"], r
+    assert state.vehicles[0].label == "2024 Ford F-150"
+
+
+async def test_the_same_car_keeps_its_year(state, services):
+    # A change to the same make ("it's an Accord, not a Civic") keeps the year on file.
+    said = await _quoted(state, services, CIVIC) + " Actually it's an Accord, not a Civic."
+    r = await tools.update_vehicle(
+        state,
+        services,
+        model="Accord",
+        said=said,
+        last_said="Actually it's an Accord, not a Civic.",
+    )
+    assert r["ok"] and state.vehicles[0].label == "2025 Honda Accord"

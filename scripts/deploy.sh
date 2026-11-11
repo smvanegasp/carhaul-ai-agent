@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Deploy to AWS: images -> ECR, Terraform apply, frontend -> S3, CloudFront invalidation. The
-# on-demand worker uses the new image the next time it starts. Merges into main deploy code
+# running worker is stopped, so the next call starts one with the new image. Merges into main deploy code
 # automatically (.github/workflows/deploy.yml); run
 # this by hand for the first deploy and for infrastructure changes.
 # Run from Git Bash in the repo root:  scripts/deploy.sh
@@ -49,5 +49,17 @@ echo "== Building the frontend"
 
 echo "== Uploading the frontend"
 scripts/upload_frontend.sh "$bucket" "$distribution"
+
+# A worker that's already running keeps the old image until it exits (10 idle minutes, and
+# every call resets that): call ed6205aaca08 (2026-11-11), two minutes after a deploy, still ran
+# the previous code. Stop it, so the next call wakes a worker with the new image. A call in
+# progress right now would be cut off.
+echo "== Stopping the running worker (the next call starts one with the new image)"
+cluster=$(tf output -raw agent_cluster)
+for task in $(aws ecs list-tasks --cluster "$cluster" --family carhaul-agent \
+  --desired-status RUNNING --query 'taskArns[]' --output text); do
+  aws ecs stop-task --cluster "$cluster" --task "$task" \
+    --reason "deploy: new image" --query 'task.taskArn' --output text
+done
 
 echo "== Done: $(tf output -raw url)"

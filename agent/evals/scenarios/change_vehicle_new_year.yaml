@@ -1,0 +1,27 @@
+# Call ed6205aaca08 (Belinda, 2026-11-11): "Now I actually want to change the Honda for a Jeep."
+# Mia took the Honda's year for the Jeep ("What model is the 2020 Jeep?"). A different car needs
+# its own year and model. (A Ford here: the fake catalog has no Jeep.)
+id: change_vehicle_new_year
+persona: NG_C_NV
+path: NHP
+ground_truth:
+  origin: Boston, Massachusetts
+  destination: San Francisco, California
+  vehicles: [2024 Ford F-150, 2020 Toyota 4Runner]
+turns:
+  - user: >-
+      I need to send my two cars from Boston, Massachusetts to San Francisco, California. A 2025
+      Honda Civic and a 2020 Toyota 4Runner.
+    expect:
+      on_file: {vehicles: [2025 Honda Civic, 2020 Toyota 4Runner]}
+      no_tools: [get_quote]
+  - user: "Now I actually want to change the Honda for a Ford."
+    expect:
+      no_tools: [get_quote]
+      judge: >-
+        Asks for the Ford's year and model (or its year, or its model, as long as it doesn't
+        assume a year for the Ford). It must not say or assume 2025 or 2020 for the Ford.
+  - user: "It's a twenty twenty four F-150."
+    expect:
+      on_file: {vehicles: [2024 Ford F-150, 2020 Toyota 4Runner]}
+      no_tools: [get_quote]
