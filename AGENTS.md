@@ -30,23 +30,21 @@ files rather than reinventing.
 - **Teammate** (non-technical): manual tester. From stage 4 she calls the deployed agent, acts
   out persona cards from `docs/TESTING_GUIDE.md` and leaves feedback per call.
 
-## Status (2026-11-10)
+## Status (2026-11-11)
 
 Live on AWS at https://dj7jlcxkdszj1.cloudfront.net (profile `carhaul`, account 816940506502).
-Deployed: stages 0-6, 8 and 9 (call page, live panel, Past calls, Stats with dispositions,
-voice picker, transfer to Sergio's phone through Twilio, all non-happy paths) through PR #22.
-Branch `stage-8-followups` (PR open): CI retries flaky LLM scenarios; a caller's question in a
-fully dropped step gets answered; an FAQ during the read-back re-asks to confirm (a live call
-was lost there); no duplicate vehicle after undo; silence lines logged once. The worker is on
-demand (`/api/wake` starts it, ~1 min; it exits after 10 idle minutes), so hosting is about
-$1/month.
+All stages are done and deployed through PR #27: 0-6, 7 (AI-vs-AI simulations), 8 and 9
+(transfer to Sergio's phone through Twilio), plus Copy JSON on every conversation, Mia keeping
+the year and make the caller already said, and FAQ facts and body-type estimates checked in
+code. Mia stays on gpt-oss-20b (simulations: 20b 71/72, 120b 64/72). The worker is on demand
+(`/api/wake` starts it, ~1 min; it exits after 10 idle minutes), so hosting is about $1/month.
+**Keep it cheap**: simulations run only after big changes, by hand.
 
-Branch `stage-7-simulations` (PR open): the AI-vs-AI simulator, the nightly workflow and
-the first four runs (58% -> 94% of 72 calls), plus 8 Mia fixes the simulations found
-(one is a crash in #23's no-tools retry, so deploy this PR after #23). Next: the open items
-in BACKLOG stage 7 (FAQ answer quality), a custom domain (`carhaul.sergiovanegas.com`) and,
-if wanted, a phone number to call Mia (inbound; LiveKit's free number). Deploys are manual (`scripts/deploy.sh` in Git
-Bash, Sergio types `yes`); the GitHub deploy workflow is off until `DEPLOY_ENABLED` is set.
+**Group project for now:** the custom domain (`carhaul.sergiovanegas.com`, `infra/domain.tf`,
+plan checked: 2 to add, 1 to change, 0 to destroy) waits until grading ends; keep using the
+cloudfront.net address until then. A phone number to call Mia is optional and not started.
+Open items: BACKLOG, stage 7 "Still open". Deploys are manual (`scripts/deploy.sh` in Git Bash,
+Sergio types `yes`); the GitHub deploy workflow is off until `DEPLOY_ENABLED` is set.
 
 The project is by Sergio Vanegas (https://www.linkedin.com/in/sergio-vanegas/) and Belinda Hu
 (https://www.linkedin.com/in/belinda-hu/): academic, non-commercial, prices from the
@@ -157,8 +155,9 @@ docker compose up        # api :8020, web :5190, DynamoDB Local :8030, agent wor
   paths (72 calls, ~10 min, cents of Groq; no CarHauler or Google calls). `--personas`,
   `--paths`, `--repeat`, `--limit`, `--scenario-runs N` (the scenario suite N times, for pass
   rates). Each run is saved to `evals/simulations/runs/` and listed in
-  `evals/simulations/README.md`: commit it, the transcripts are the project's record. The
-  nightly workflow (`simulations.yml`, 08:00 UTC) does the same and pushes to main. Use
+  `evals/simulations/README.md`: commit it, the transcripts are the project's record.
+  **Run it only after big changes to Mia** (Sergio wants it cheap; no schedule). The
+  `simulations.yml` workflow does the same on GitHub, by hand only, and pushes to main. Use
   `--out <scratch dir>` for throwaway tries.
 - Offline tests use `tests/fake_carhauler.py` (respx), which mimics the real API's quirks.
   **Never assert live prices**; they change weekly.
@@ -177,6 +176,10 @@ docker compose up        # api :8020, web :5190, DynamoDB Local :8030, agent wor
 
 ## 6. Decisions log
 
+- 2026-11-11: **Simulations by hand, after big changes; no nightly run** (Sergio: no gain from
+  running them every day, keep the project super cheap). The workflow stays, manual only. One
+  branch on GitHub: `main` (merged and stale branches deleted).
+
 - 2026-11-11: **FAQ facts and estimates in code.** Like prices, FAQ facts come from code
   (`faq.py`); the model's wording stays when it has the fact. Body-type estimates follow the
   design's order (year and model first; the type only after "I don't know"), and "car" alone
@@ -188,9 +191,9 @@ docker compose up        # api :8020, web :5190, DynamoDB Local :8030, agent wor
   call; `save_vehicle` merges them and the next question asks only for what's missing.
 
 - 2026-11-10 (stage 7): **Simulations are a record, not just a test.** Every run (report and
-  full transcripts) is committed to `agent/evals/simulations/`, public, nightly. The runner
+  full transcripts) is committed to `agent/evals/simulations/`, public. The runner
   scripts *when* fragments happen and a model plays the caller (gpt-oss-120b); scoring is code
-  against ground truth, so it's cheap (~$0.20 a run), the same every night and re-scorable
+  against ground truth, so it's cheap (~$0.20 a run), the same every run and re-scorable
   from saved records. Groq's 250k TPM caps it at 2 calls at once. First run: 58%, mostly
   rate limits; it found a crash in #23's no-tools retry and a read-back naming a car that
   wasn't on file (now rebuilt from state, `honest_read_back`).

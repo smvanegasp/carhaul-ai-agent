@@ -89,8 +89,9 @@ mid-sentence and, once, a 3 s Groq response.
    checks the whole call end to end, with timings.
 4. AI-vs-AI simulation: 8 caller personas (generous or not, complete or partial, verbose or not)
    x 9 paths (happy, questions, changes, a person, off-topic), a model playing the caller and
-   code scoring every call against its ground truth. It runs every night and **every run's
-   transcripts are kept** in [agent/evals/simulations/](agent/evals/simulations/README.md).
+   code scoring every call against its ground truth. It runs after big changes to Mia, and
+   **every run's transcripts are kept** in
+   [agent/evals/simulations/](agent/evals/simulations/README.md).
 5. Human testing with per-call feedback.
 
 ## Run locally

@@ -1,15 +1,16 @@
 name: Simulations
 
-# Stage 7: every night, Mia talks to a simulated caller (8 personas x 9 paths, fake CarHauler
-# and geocoder, so only Groq tokens: a few cents a run), and the scenario suite runs 3 times
-# for per-scenario pass rates. The run's transcripts and report are committed to
+# Stage 7: Mia talks to a simulated caller (8 personas x 9 paths, fake CarHauler and
+# geocoder, so only Groq tokens: about $0.20 a run), and the scenario suite runs for
+# per-scenario pass rates. The run's transcripts and report are committed to
 # agent/evals/simulations/ on main, so the repo keeps every run (public on purpose).
+#
+# **By hand only** (GitHub > Actions > Simulations > Run workflow), after a big change to Mia.
+# It ran nightly at first; Sergio (2026-11-11): no gain from daily runs, keep it cheap.
 #
 # The push uses this workflow's GITHUB_TOKEN, which never starts other workflows: no CI run and
 # no deploy. Needs the GROQ_API_KEY repository secret; skipped (with a notice) without it.
 on:
-  schedule:
-    - cron: "0 8 * * *" # 08:00 UTC, 3 am in Boston
   workflow_dispatch:
     inputs:
       repeat:
@@ -17,7 +18,7 @@ on:
         default: "1"
       scenario_runs:
         description: "Times the scenario suite runs (0: skip)"
-        default: "3"
+        default: "1"
       paths:
         description: "Only these paths (comma-separated; empty: all)"
         default: ""
@@ -52,9 +53,9 @@ jobs:
         run: uv sync --frozen
       - if: env.GROQ_API_KEY != ''
         env:
-          LABEL: ${{ github.event_name == 'schedule' && 'nightly' || 'manual' }}
+          LABEL: manual
           REPEAT: ${{ inputs.repeat || '1' }}
-          SCENARIO_RUNS: ${{ inputs.scenario_runs || '3' }}
+          SCENARIO_RUNS: ${{ inputs.scenario_runs || '1' }}
           PATHS: ${{ inputs.paths }}
         run: >-
           uv run python -m evals.sim.run --label "$LABEL" --repeat "$REPEAT"

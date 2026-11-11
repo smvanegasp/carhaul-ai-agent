@@ -249,9 +249,9 @@ INDEX_HEAD = """# Simulation runs
 
 AI-vs-AI simulations of Mia (stage 7): a model plays one of 8 caller personas through one of 9
 paths (happy, questions, changes, a person, off-topic), against fake CarHauler and geocoding
-APIs, and code scores every call against its ground truth. A nightly GitHub workflow
-(`.github/workflows/simulations.yml`) adds a run here; `uv run python -m evals.sim.run` (in
-`agent/`) runs one locally. How it works: [`agent/evals/sim/`](../sim/).
+APIs, and code scores every call against its ground truth. Runs happen after big changes to
+Mia: `uv run python -m evals.sim.run` (in `agent/`), or the Simulations workflow on GitHub (by
+hand). How it works: [`agent/evals/sim/`](../sim/).
 
 Every run keeps its full transcripts. Newest first:
 
