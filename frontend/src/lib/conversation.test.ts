@@ -141,3 +141,12 @@ describe("screening lines (call-7334ef371604)", () => {
     expect(ids).toEqual(["a", "d"]);
   });
 });
+
+it("hides Mia's goodbye to the line in older records (call-fde275e6bce5)", () => {
+  const events = [
+    turn(1, "mia", "Please stay on the line.", 1000),
+    turn(2, "mia", "Thank you. I'll let you two talk now. Goodbye!", 5000, { kind: "handoff" }),
+  ];
+  const texts = buildConversation([], events).map((i) => (i.kind === "line" ? i.text : ""));
+  expect(texts).toEqual(["Please stay on the line."]);
+});
