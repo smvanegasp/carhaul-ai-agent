@@ -273,6 +273,10 @@ async def entrypoint(ctx: JobContext) -> None:
         ctx.room.on("sip_dtmf_received", on_dtmf)
         try:
             accepted = await transfer.screen(say, pressed, transfer.screening_line(state))
+            if accepted:
+                # Still screened: only the representative hears it (Belinda, 2026-11-11, call
+                # fde275e6bce5: the caller heard and saw "I'll let you two talk now").
+                await say(transfer.ACCEPTED)
         finally:
             ctx.room.off("sip_dtmf_received", on_dtmf)
             stop_music()
@@ -344,10 +348,8 @@ async def entrypoint(ctx: JobContext) -> None:
                 events.state(state.snapshot(), str(state.stage), state.quote)
             if outcome == "connected":
                 timer.cancel()  # Mia's 6-minute limit; the phone leg has its own (10 min)
-                line = transfer.ACCEPTED
-                events.turn("assistant", line, kind="handoff")
-                handle = session.say(line, allow_interruptions=False, add_to_chat_ctx=False)
-                handle.add_done_callback(lambda _: session.shutdown())
+                # She already told the line goodbye while screening; now she just leaves.
+                session.shutdown()
                 asyncio.get_running_loop().call_later(
                     transfer.MAX_TRANSFER_MINUTES * 60 + 60, lambda: ctx.delete_room()
                 )

@@ -103,7 +103,7 @@ class Config:
 
 
 def handoff_line(state: QuoteSession) -> str:
-    """What Mia tells the representative once they've accepted (the caller hears it too)."""
+    """Who is calling and why, for the representative (the caller never hears it)."""
     parts = ["Hi, this is Mia from F&F. I have a caller here"]
     vehicles = [v.label for v in state.vehicles]
     if vehicles:

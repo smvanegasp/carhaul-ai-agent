@@ -48,7 +48,7 @@ const NOTES: Record<string, string> = {
  * 2026-11-11). Newer calls don't log it as a turn at all; this hides it in older records.
  */
 export function isScreening(t: TurnEvent): boolean {
-  return t.kind === "handoff" && /press 1 to take the call/i.test(t.text);
+  return t.kind === "handoff" && /press 1 to take the call|let you two talk now/i.test(t.text);
 }
 
 function eventTime(e: MiaEvent): number {
