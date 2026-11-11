@@ -404,3 +404,28 @@ async def _reply_with(model, state, said, client, resolver):
         if isinstance(e.item, ChatMessage) and e.item.role == "assistant"
     ]
     return " ".join(spoken), model.calls
+
+
+async def test_an_early_try_on_a_partial_transcript_doesnt_block_the_final_one(client, resolver):
+    # Call fc039e1f645f: LiveKit's preemptive generation tried "...my twenty twenty Toyota"
+    # first and used up the turn's save_vehicle; "Toyota Corolla" in the final message was then
+    # never saved and Mia asked "What model is the 2020 Toyota?".
+    state = QuoteSession()
+    state.caller_turns, state.last_said = 1, "I need to set up my twenty twenty Toyota"
+    assert state.code_ran_once("save_vehicle")  # the early try, thrown away
+    route = '{"origin_city": "Boston", "destination_city": "San Francisco"}'
+    model = ScriptedLLM(
+        [Step(calls=[("save_origin_destination", route)]), Step(text="Is that correct?")]
+    )
+    said = "I need to set up my twenty twenty Toyota Corolla from Boston to San Francisco, please."
+    await _reply_with(model, state, said, client, resolver)
+    assert [v.label for v in state.vehicles] == ["2020 Toyota Corolla"]
+
+
+def test_code_runs_once_per_message():
+    state = QuoteSession()
+    state.caller_turns, state.last_said = 1, "a 2020 Toyota Corolla"
+    assert state.code_ran_once("save_vehicle")
+    assert not state.code_ran_once("save_vehicle")  # same message: no repeats
+    state.caller_turns = 2
+    assert state.code_ran_once("save_vehicle")  # a new message

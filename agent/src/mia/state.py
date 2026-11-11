@@ -112,6 +112,7 @@ class QuoteSession:
     # Tool calls the output guardrail dropped (invented details, unconfirmed quote).
     dropped_calls: list[dict[str, Any]] = field(default_factory=list)
     caller_turns: int = 0  # how many times the caller has spoken
+    last_said: str = ""  # the caller's latest message, as the model sees it
     # Year and make the caller said for the vehicle in progress, before its model (Sergio's
     # call, 2026-11-10: "from Miami to Chicago. It's a twenty twenty Honda", then asked for
     # the year, make and model again). Merged into the next save_vehicle, then cleared.
@@ -279,8 +280,15 @@ class QuoteSession:
         } | ({"heard_so_far": self.partial_label()} if self.partial_vehicle else {})
 
     def code_ran_once(self, name: str) -> bool:
-        """True the first time this turn (and remembers it), False after that."""
-        key = f"{name}@{self.caller_turns}"
+        """True the first time for the caller's current message (and remembers it), False
+        after that.
+
+        Keyed by the message's words as well as the turn: LiveKit starts a reply early from a
+        partial transcript (preemptive generation, on by default, up to 3 tries a turn) and
+        throws it away if the caller keeps talking. Call fc039e1f645f, 2026-11-11: a try on
+        "...my twenty twenty Toyota" used up the turn's save_vehicle before "Corolla" arrived,
+        so the final message's "Toyota Corolla" wasn't saved and Mia asked for the model."""
+        key = f"{name}@{self.caller_turns}@{self.last_said}"
         if key in self.code_calls:
             return False
         self.code_calls.add(key)
