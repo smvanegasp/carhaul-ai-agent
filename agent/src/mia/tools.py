@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import asyncio
 import inspect
+import re
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from typing import Any
@@ -22,13 +23,14 @@ from typing import Any
 from mia import grounding, transfer
 from mia.carhauler import CarHaulerClient, CarHaulerError, ErrorCode
 from mia.events import CallEvents
-from mia.geo import CityToZipError, city_to_zip
+from mia.geo import CityToZipError, canonicalize_state, city_to_zip
 from mia.pricing import QuoteRequest, quote_vehicles, summarize
 from mia.state import Place, QuoteSession, Stage
 from mia.vehicles import (
     VehicleError,
     VehicleErrorCode,
     VehicleResolver,
+    normalize,
     normalize_vehicle_type,
     normalize_year,
 )
@@ -153,7 +155,30 @@ _GEO_HINTS = {
 }
 
 
+# Nicknames the geocoder doesn't know (Sergio's call, 2026-11-11: "From LA to New York" ->
+# "I couldn't find LA").
+CITY_NICKNAMES = {
+    "la": ("Los Angeles", "CA"),
+    "l a": ("Los Angeles", "CA"),
+    "nyc": ("New York", "NY"),
+    "sf": ("San Francisco", "CA"),
+    "san fran": ("San Francisco", "CA"),
+    "philly": ("Philadelphia", "PA"),
+    "vegas": ("Las Vegas", "NV"),
+    "dc": ("Washington", "DC"),
+    "d c": ("Washington", "DC"),
+    "nola": ("New Orleans", "LA"),
+    "atl": ("Atlanta", "GA"),
+    "chi town": ("Chicago", "IL"),
+    "the bay": ("San Francisco", "CA"),
+}
+
+
 async def _geocode(services: Services, city: str, state: str | None) -> Place:
+    key = " ".join(re.findall(r"[a-z]+", city.lower()))
+    if key in CITY_NICKNAMES:
+        city, nick_state = CITY_NICKNAMES[key]
+        state = state if state and key not in ("la", "l a") else nick_state
     r = await asyncio.to_thread(services.geocode, city, state)
     return Place(city=r["city"], state=r["state"], state_name=r["state_name"], zip=r["zip"])
 
@@ -209,6 +234,12 @@ async def save_origin_destination(
     if failure:
         side, city, st, exc = failure
         hint = _GEO_HINTS.get(exc.code, "Ask them to repeat the {side} city and state.")
+        if canonicalize_state(city):
+            # "I'm moving to Oregon" (Sergio's call, 2026-11-11): a state, not a city.
+            hint = (
+                f"They named the state, {city}, not a city. Ask which city in {city} "
+                "(don't say you couldn't find it)."
+            )
         state.set_route(places["origin"], places["destination"])
         return _failed(
             state,
@@ -399,6 +430,19 @@ def _already_on_file(state: QuoteSession, fields: dict[str, Any]) -> bool:
     return any(all(getattr(v, k) == fields.get(k) for k in same) for v in state.vehicles)
 
 
+async def model_from_words(services: Services, make: str, said: str) -> str | None:
+    """The catalog model of ``make`` the caller named, longest name first ("Civic del Sol"
+    before "Civic"); None if none or the catalog can't be read."""
+    try:
+        names = await services.resolver.model_names(make)
+    except Exception:
+        return None
+    for name in sorted(names, key=len, reverse=True):
+        if grounding.model_named(name, make, said):
+            return name
+    return None
+
+
 async def save_vehicle(
     state: QuoteSession,
     services: Services,
@@ -433,9 +477,15 @@ async def save_vehicle(
         make = make or state.partial_vehicle.get("make")
     # Models send null for "not mentioned": only an explicit False means it doesn't run.
     operational = drivable is not False
+    if make and model and normalize(model) == normalize(make):
+        model = None  # "a Jeep" -> save_vehicle(make="Jeep", model="Jeep") (2026-11-11)
     year, make, model, vehicle_type, ignored = _grounded(said, year, make, model, vehicle_type)
     if ignored and not (year or make or model or vehicle_type):
         return _err(state, "NOT_SAID_BY_CALLER", NOT_SAID, ignored=ignored)
+    if make and not model and not vehicle_type and said:
+        # The caller said the model but the LLM left it out ("my twenty twenty Honda Civic"
+        # -> save_vehicle(2020, Honda): Mia asked "What model is the 2020 Honda?").
+        model = await model_from_words(services, make, said)
     # The count only if the caller said it ("two cars"): with "it's a twenty ten, twenty twenty
     # 4Runner" gpt-oss passed total_vehicles=2 and Mia asked for a second car (stage 8 test).
     if total_vehicles and total_vehicles > 0:
@@ -452,6 +502,20 @@ async def save_vehicle(
         unsure=unsure,
     )
     if error:
+        if ignored and error.get("error_code", "").startswith("MISSING"):
+            # A detail they gave was dropped as not said (e.g. a model the guardrail didn't
+            # match). Ask as usual, but count it: asking forever is worse than a person
+            # (13 tries on 2026-11-11). The third time in a row, offer a representative.
+            state.failures["vehicle"] = state.failures.get("vehicle", 0) + 1
+            error["ignored_not_said"] = ignored
+            if state.failures["vehicle"] >= MAX_FAILURES:
+                return _err(
+                    state,
+                    error["error_code"],
+                    STILL_NOT_FOUND,
+                    ignored_not_said=ignored,
+                    attempts=state.failures["vehicle"],
+                )
         return error
     assert fields is not None
     if _already_on_file(state, _entry_fields(fields)):

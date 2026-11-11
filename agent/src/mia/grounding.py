@@ -92,7 +92,7 @@ def spoken_years(year: int) -> list[str]:
     return out
 
 
-def _windows(words: list[str], max_len: int = 4) -> list[str]:
+def _windows(words: list[str], max_len: int = 5) -> list[str]:
     return [" ".join(words[i : i + n]) for n in range(1, max_len + 1) for i in range(len(words))]
 
 
@@ -236,6 +236,22 @@ def vehicle_details_in(text: str) -> dict[str, Any]:
     if len(makes) == 1:
         out["make"] = makes[0]
     return out
+
+
+def model_named(model: str, make: str, said: str) -> bool:
+    """This exact model name right after the make in the caller's words ("Honda Civic",
+    "Honda, the Civic"): used when code fills in a model the LLM left out. Next to the make
+    and exact, so "it doesn't fit" is never a Honda Fit."""
+    v, m = normalize(model), normalize(make)
+    words = _words(said)
+    for i in range(len(words)):
+        if normalize(words[i]) != m and normalize(" ".join(words[i : i + 2])) != m:
+            continue
+        start = i + (1 if normalize(words[i]) == m else 2)
+        after = [w for w in words[start : start + 6] if w not in ("the", "a", "an", "it", "s")]
+        if any(normalize(" ".join(after[:n])) == v for n in range(1, 5)):
+            return True
+    return False
 
 
 def make_said(make: str, said: str) -> bool:

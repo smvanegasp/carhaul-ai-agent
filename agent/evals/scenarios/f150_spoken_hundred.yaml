@@ -1,0 +1,16 @@
+# Sergio's call, 2026-11-11 (call-302cc4214c61): "Ford f hundred and fifty" -> the F-150 wasn't
+# accepted; Mia asked "Is it a Ford F-150?", he said yes four times, 13 refused saves.
+id: f150_spoken_hundred
+persona: G_C_NV
+path: SHP
+ground_truth:
+  origin: Chicago, Illinois
+  destination: Seattle, Washington
+  vehicles: [2021 Ford F-150]
+turns:
+  - user: "Hi. I need a quote, uh, from Chicago to Seattle from twenty twenty one Ford f hundred and fifty."
+    expect:
+      on_file: {vehicles: [2021 Ford F-150]}
+  - user: "Yeah. That's correct."
+    expect:
+      tools: [get_quote]

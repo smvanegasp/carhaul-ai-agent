@@ -1,0 +1,258 @@
+{
+  "started": "2026-11-11T04:20:30+00:00",
+  "minutes": 5.5,
+  "label": "call-feedback-nov11",
+  "mia_model": "openai/gpt-oss-20b",
+  "caller_model": "openai/gpt-oss-120b",
+  "commit": "8bd2a6e",
+  "n": 72,
+  "passed": 70,
+  "pass_rate": 0.9722222222222222,
+  "errors": 0,
+  "outcomes": {
+    "ended": 50,
+    "transferred": 16,
+    "off_topic_end": 6
+  },
+  "by_path": {
+    "SHP": {
+      "n": 8,
+      "passed": 8,
+      "quoted": 8,
+      "avg_turns": 4.8,
+      "dropped_per_call": 0.62,
+      "p50_ms": 626
+    },
+    "SHP_transfer": {
+      "n": 8,
+      "passed": 8,
+      "quoted": 8,
+      "avg_turns": 5,
+      "dropped_per_call": 0.38,
+      "p50_ms": 788
+    },
+    "QHP": {
+      "n": 8,
+      "passed": 8,
+      "quoted": 8,
+      "avg_turns": 6.6,
+      "dropped_per_call": 0.62,
+      "p50_ms": 604
+    },
+    "NHP_correction": {
+      "n": 8,
+      "passed": 8,
+      "quoted": 8,
+      "avg_turns": 4.5,
+      "dropped_per_call": 0.88,
+      "p50_ms": 758
+    },
+    "NHP_change_vehicle": {
+      "n": 8,
+      "passed": 8,
+      "quoted": 8,
+      "avg_turns": 7,
+      "dropped_per_call": 0.75,
+      "p50_ms": 735
+    },
+    "NHP_change_route": {
+      "n": 8,
+      "passed": 8,
+      "quoted": 8,
+      "avg_turns": 7.5,
+      "dropped_per_call": 1.25,
+      "p50_ms": 741
+    },
+    "NHP_person": {
+      "n": 8,
+      "passed": 8,
+      "quoted": 0,
+      "avg_turns": 2.4,
+      "dropped_per_call": 0.38,
+      "p50_ms": 571
+    },
+    "AP_two": {
+      "n": 8,
+      "passed": 8,
+      "quoted": 8,
+      "avg_turns": 7.1,
+      "dropped_per_call": 1.25,
+      "p50_ms": 767
+    },
+    "AP_three": {
+      "n": 8,
+      "passed": 6,
+      "quoted": 2,
+      "avg_turns": 4.4,
+      "dropped_per_call": 0.5,
+      "p50_ms": 576
+    }
+  },
+  "by_persona": {
+    "NG_P_NV": {
+      "n": 9,
+      "passed": 8,
+      "quoted": 8,
+      "avg_turns": 7.1,
+      "dropped_per_call": 1.56,
+      "p50_ms": 524
+    },
+    "NG_P_V": {
+      "n": 9,
+      "passed": 8,
+      "quoted": 8,
+      "avg_turns": 8,
+      "dropped_per_call": 1.67,
+      "p50_ms": 682
+    },
+    "NG_C_NV": {
+      "n": 9,
+      "passed": 9,
+      "quoted": 7,
+      "avg_turns": 5.7,
+      "dropped_per_call": 1.33,
+      "p50_ms": 634
+    },
+    "NG_C_V": {
+      "n": 9,
+      "passed": 9,
+      "quoted": 7,
+      "avg_turns": 4.7,
+      "dropped_per_call": 0.67,
+      "p50_ms": 812
+    },
+    "G_P_NV": {
+      "n": 9,
+      "passed": 9,
+      "quoted": 7,
+      "avg_turns": 5.4,
+      "dropped_per_call": 0.56,
+      "p50_ms": 768
+    },
+    "G_P_V": {
+      "n": 9,
+      "passed": 9,
+      "quoted": 7,
+      "avg_turns": 4.7,
+      "dropped_per_call": 0.11,
+      "p50_ms": 894
+    },
+    "G_C_NV": {
+      "n": 9,
+      "passed": 9,
+      "quoted": 7,
+      "avg_turns": 4.1,
+      "dropped_per_call": 0.0,
+      "p50_ms": 749
+    },
+    "G_C_V": {
+      "n": 9,
+      "passed": 9,
+      "quoted": 7,
+      "avg_turns": 4.1,
+      "dropped_per_call": 0.0,
+      "p50_ms": 671
+    }
+  },
+  "failed_checks": {
+    "no_quote": 2,
+    "off_topic_end": 2
+  },
+  "usage": {
+    "mia_in": 1874678,
+    "mia_out": 28387,
+    "caller_in": 229862,
+    "caller_out": 14374
+  },
+  "cost_usd": 0.1922,
+  "scenarios": {
+    "api_down_at_quote": {
+      "runs": 1,
+      "passed": 1
+    },
+    "change_route_after_quote": {
+      "runs": 1,
+      "passed": 1
+    },
+    "change_vehicle_after_quote": {
+      "runs": 1,
+      "passed": 1
+    },
+    "city_not_found": {
+      "runs": 1,
+      "passed": 0
+    },
+    "eliminate_vehicle": {
+      "runs": 1,
+      "passed": 1
+    },
+    "estimate_after_unsure": {
+      "runs": 1,
+      "passed": 1
+    },
+    "f150_spoken_hundred": {
+      "runs": 1,
+      "passed": 1
+    },
+    "faq_during_read_back": {
+      "runs": 1,
+      "passed": 1
+    },
+    "faq_mid_call": {
+      "runs": 1,
+      "passed": 1
+    },
+    "faq_personal_items": {
+      "runs": 1,
+      "passed": 1
+    },
+    "faq_stt_closed_shipping": {
+      "runs": 1,
+      "passed": 1
+    },
+    "happy_path_ngc_1v": {
+      "runs": 1,
+      "passed": 1
+    },
+    "happy_path_ngc_2v": {
+      "runs": 1,
+      "passed": 1
+    },
+    "happy_path_ngc_3v": {
+      "runs": 1,
+      "passed": 1
+    },
+    "make_only_and_yep": {
+      "runs": 1,
+      "passed": 1
+    },
+    "off_topic_three_strikes": {
+      "runs": 1,
+      "passed": 1
+    },
+    "partial_vehicle_with_route": {
+      "runs": 1,
+      "passed": 1
+    },
+    "remove_vehicle_after_quote": {
+      "runs": 1,
+      "passed": 1
+    },
+    "self_correction_year": {
+      "runs": 1,
+      "passed": 1
+    },
+    "spoken_model_number": {
+      "runs": 1,
+      "passed": 1
+    },
+    "state_as_city_and_model": {
+      "runs": 1,
+      "passed": 1
+    },
+    "undo_vehicle_change": {
+      "runs": 1,
+      "passed": 1
+    }
+  }
+}

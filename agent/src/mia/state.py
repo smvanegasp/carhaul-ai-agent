@@ -113,6 +113,9 @@ class QuoteSession:
     # call, 2026-11-10: "from Miami to Chicago. It's a twenty twenty Honda", then asked for
     # the year, make and model again). Merged into the next save_vehicle, then cleared.
     partial_vehicle: dict[str, Any] = field(default_factory=dict)
+    # Tool calls code made itself (agent.llm_node), as "name@turn": at most once per caller
+    # turn, or a failure (CarHauler down at the quote) would make code retry every step.
+    code_calls: set[str] = field(default_factory=set)
     _next_id: int = 1
 
     # --- quote IDs and the trash ---------------------------------------------------------
@@ -266,6 +269,14 @@ class QuoteSession:
             "expected_vehicles": self.expected_vehicles,
             "missing": self.missing,
         } | ({"heard_so_far": self.partial_label()} if self.partial_vehicle else {})
+
+    def code_ran_once(self, name: str) -> bool:
+        """True the first time this turn (and remembers it), False after that."""
+        key = f"{name}@{self.caller_turns}"
+        if key in self.code_calls:
+            return False
+        self.code_calls.add(key)
+        return True
 
     def partial_label(self) -> str:
         """ "2020 Honda", "2020 car", "Honda": what the caller said of the next vehicle."""

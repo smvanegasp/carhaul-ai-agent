@@ -1,0 +1,18 @@
+# Sergio's call, 2026-11-11 (call-fb4d44e2ee6f): "moving to Oregon" -> "I couldn't find Oregon";
+# "my twenty twenty Honda Civic" -> saved without the Civic, then "What model is the 2020 Honda?"
+id: state_as_city_and_model
+persona: G_C_V
+path: SHP
+ground_truth:
+  origin: Miami, Florida
+  destination: Portland, Oregon
+  vehicles: [2020 Honda Civic]
+turns:
+  - user: "Yeah. You know, I'm moving to Oregon. To move my daughter to college. So I need to send my twenty twenty Honda Civic there from Miami."
+    expect:
+      judge: >-
+        Asks which city (in Oregon) the car is going to (asking for the state too is fine).
+        It must not claim that Oregon isn't in the system, and must not ask for the car's model.
+  - user: "Yeah. Portland."
+    expect:
+      on_file: {destination: "Portland, Oregon", vehicles: [2020 Honda Civic]}

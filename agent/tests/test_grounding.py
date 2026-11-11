@@ -337,3 +337,17 @@ def test_actually_before_a_count_is_not_a_correction():
         "year": 2020,
         "make": "Honda",
     }
+
+
+@pytest.mark.parametrize(
+    "model, make, said, named",
+    [
+        ("Civic", "Honda", "send my twenty twenty Honda Civic there from Miami", True),
+        ("Civic", "Honda", "a Honda, the Civic", True),
+        ("Model 3", "Tesla", "a 2021 Tesla Model 3", True),
+        ("Fit", "Honda", "a Honda, it doesn't fit in the garage", False),
+        ("Civic", "Honda", "my neighbor has a Civic, mine is a Honda", False),
+    ],
+)
+def test_model_named_right_after_the_make(model, make, said, named):
+    assert grounding.model_named(model, make, said) is named

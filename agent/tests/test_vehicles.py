@@ -196,3 +196,22 @@ async def test_make_without_models(resolver):
     with pytest.raises(VehicleError) as exc:
         await resolver.resolve(year=2020, make="SRT", model="Viper")
     assert exc.value.code == VehicleErrorCode.MODEL_NOT_FOUND
+
+
+@pytest.mark.parametrize(
+    "spoken, digits",
+    [
+        ("f hundred and fifty", "f150"),  # Sergio's call, 2026-11-11
+        ("one hundred and fifty", "150"),
+        ("f one fifty", "f150"),
+        ("fifteen hundred", "1500"),
+        ("ram twenty five hundred", "ram2500"),
+        ("twenty twenty one", "2021"),
+        ("four runner", "4runner"),
+        ("F-150", "f150"),
+    ],
+)
+def test_spoken_numbers_normalize_to_digits(spoken, digits):
+    from mia.vehicles import normalize
+
+    assert normalize(spoken) == digits

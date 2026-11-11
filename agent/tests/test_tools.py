@@ -381,3 +381,55 @@ async def test_a_vehicle_count_the_caller_never_said_is_ignored(state, services)
         last_said=said2,
     )
     assert state.expected_vehicles == 2
+
+
+# --- from Sergio's calls of 2026-11-11 ----------------------------------------------------------
+
+
+async def test_city_nicknames_are_looked_up_by_their_name(state, services):
+    said = "From NYC to Boston, Massachusetts"
+    r = await tools.save_origin_destination(
+        state,
+        services,
+        origin_city="NYC",
+        destination_city="Boston",
+        destination_state="Massachusetts",
+        said=said,
+    )
+    assert r["ok"] and state.origin.city == "New York"
+
+
+async def test_a_state_said_as_a_city_asks_which_city(state, services):
+    # "I'm moving to Oregon": Mia said she couldn't find Oregon.
+    said = "I'm moving to Oregon from Miami"
+    r = await tools.save_origin_destination(
+        state, services, origin_city="Miami", destination_city="Oregon", said=said
+    )
+    assert not r["ok"] and "which city in Oregon" in r["next"]
+    assert state.origin and state.origin.city == "Miami"
+
+
+async def test_a_model_that_is_the_make_is_no_model(state, services):
+    # "it's my Jeep" -> save_vehicle(make="Jeep", model="Jeep") -> "couldn't find that model".
+    r = await tools.save_vehicle(state, services, make="Honda", model="Honda", said="my Honda")
+    assert r["error_code"] == "MISSING_MAKE_AND_MODEL" or r["error_code"].startswith("MISSING")
+    assert "find" not in r["next"]
+
+
+async def test_the_model_the_caller_said_is_filled_in(state, services):
+    # "my twenty twenty Honda Civic" -> save_vehicle(2020, Honda): Mia asked for the model.
+    said = "So I need to send my twenty twenty Honda Civic there from Miami."
+    r = await tools.save_vehicle(state, services, year=2020, make="Honda", said=said)
+    assert r["ok"] and state.vehicles[0].label == "2020 Honda Civic"
+
+
+async def test_a_detail_dropped_again_and_again_offers_a_person(state, services):
+    # 13 tries on 2026-11-11: the model was F-150, the caller's words didn't match.
+    said = "It's a twenty twenty one Ford, the one I told you"
+    codes = []
+    for _ in range(3):
+        r = await tools.save_vehicle(
+            state, services, year=2021, make="Ford", model="Mustang", said=said
+        )
+        codes.append(r["next"])
+    assert "representative" not in codes[0] and "representative" in codes[2]

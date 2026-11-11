@@ -576,6 +576,21 @@ Still open (from the transcripts):
       Scenario `spoken_model_number` **0/5 -> 5/5**
 - Scenario suite 19/19 after the changes
 
+## Fixes from Sergio's test calls of 2026-11-11, evening (branch `call-feedback-nov11`)
+
+| Call | Problem | Fix |
+| --- | --- | --- |
+| call-302cc4214c61 | "Ford f hundred and fifty": F-150 never accepted; Mia asked "Is it a Ford F-150?", he said yes 4 times, 13 refused saves | Spoken numbers parsed ("hundred and fifty" = 150); a detail Mia read out and the caller confirmed counts as said (`agent.grounded_said`); a dropped detail 3 times in a row offers a representative; when the caller names year, make and a catalog model and the LLM skips the car, code saves it |
+| call-d380e5879f63 | "From LA to New York" -> "couldn't find LA"; "it's my Jeep" -> save_vehicle(model="Jeep") -> "couldn't find that model" | City nicknames (LA, NYC, SF, Philly, Vegas, DC...) looked up by their name; a model equal to the make is no model |
+| call-10385c8b156e | "Yep" to the read-back -> read back again | A short yes right after the read-back gets the quote from code (once per turn: with CarHauler down it would retry every step, caught by `api_down_at_quote`) |
+| call-fb4d44e2ee6f | "moving to Oregon" -> "couldn't find Oregon"; "my twenty twenty Honda Civic" saved as a 2020 Honda, then "What model is the 2020 Honda?" | A state said as a city -> "which city in Oregon?"; the model the caller named right after the make is filled in from the catalog (exact, next to the make: "it doesn't fit" is not a Honda Fit) |
+
+Scenarios from those calls (`f150_spoken_hundred`, `state_as_city_and_model`, `make_only_and_yep`):
+before 1 of 3 passing in each of 5 runs; after 3/3 in 4 of 5 runs, then 3/3 three times once
+the once-per-turn guard was in (the other miss was the judge wanting "city" without "state").
+- [ ] Some calls were said to have no call ID; on the live site every call since 03:00 UTC
+      showed one in Past calls. Waiting for an example
+
 ## Ideas / later
 
 

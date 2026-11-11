@@ -179,10 +179,58 @@ class ResolvedVehicle:
 # --- matching ----------------------------------------------------------------------------
 
 
+_UNIT_VALUES = {w: int(d) for w, d in _NUMBER_WORDS.items() if d != "00"}
+
+
+def _small(run: list[str]) -> int:
+    """'twenty five' -> 25, 'fifteen' -> 15, [] -> 0."""
+    return sum(_UNIT_VALUES[w] for w in run)
+
+
+def _spoken_number(run: list[str]) -> str:
+    """The digits of one spoken number. 'one hundred and fifty' / 'hundred and fifty' -> 150,
+    'fifteen hundred' -> 1500, 'one fifty' -> 150, 'twenty twenty' -> 2020, 'four' -> 4."""
+    if "hundred" in run:
+        k = run.index("hundred")
+        return str((_small(run[:k]) or 1) * 100 + _small(run[k + 1 :]))
+    groups: list[int] = []
+    for w in run:  # tens followed by a unit make one group: "twenty five" -> 25
+        v = _UNIT_VALUES[w]
+        if groups and groups[-1] % 10 == 0 and 20 <= groups[-1] <= 90 and v < 10:
+            groups[-1] += v
+        else:
+            groups.append(v)
+    return "".join(str(g) for g in groups)
+
+
 def normalize(text: str) -> str:
-    """'4 Runner' / 'four runner' / '4-Runner' → '4runner'; 'CR-V' → 'crv'."""
+    """'4 Runner' / 'four runner' / '4-Runner' → '4runner'; 'CR-V' → 'crv'; spoken numbers
+    become digits ('F one fifty', 'F hundred and fifty' → 'f150'; Sergio's calls, 2026-11-11:
+    the F-150 wasn't recognized and Mia asked for the model again and again)."""
     words = re.findall(r"[a-z0-9]+", text.lower())
-    return "".join(_NUMBER_WORDS.get(w, w) for w in words)
+    out: list[str] = []
+    i = 0
+    while i < len(words):
+        if words[i] in _UNIT_VALUES or words[i] == "hundred":
+            run: list[str] = []
+            while i < len(words) and (
+                words[i] in _UNIT_VALUES
+                or words[i] == "hundred"
+                or (
+                    words[i] == "and"
+                    and run
+                    and i + 1 < len(words)
+                    and words[i + 1] in _UNIT_VALUES
+                )
+            ):
+                if words[i] != "and":
+                    run.append(words[i])
+                i += 1
+            out.append(_spoken_number(run))
+        else:
+            out.append(words[i])
+            i += 1
+    return "".join(out)
 
 
 @dataclass(frozen=True)
@@ -286,6 +334,12 @@ class VehicleResolver:
             if exc.code == ErrorCode.BAD_RESPONSE:
                 return []
             raise
+
+    async def model_names(self, make: str) -> list[str]:
+        """The catalog's model names for a make (cached), e.g. to find the one the caller
+        said when the LLM left it out."""
+        make_row, _ = await self._match_make(make)
+        return [m["name"] for m in await self._models(make_row["id"])]
 
     async def model_index(self) -> list[dict[str, Any]]:
         """Every (make, model) in the catalog, for callers who name only the model.

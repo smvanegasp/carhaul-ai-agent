@@ -176,6 +176,12 @@ docker compose up        # api :8020, web :5190, DynamoDB Local :8030, agent wor
 
 ## 6. Decisions log
 
+- 2026-11-11 (evening calls): **Code may call a tool the LLM skipped**, when the caller's own
+  words make it certain: a yes right after the read-back -> get_quote; year, make and a
+  catalog model said together -> save_vehicle. At most once per caller turn
+  (`QuoteSession.code_ran_once`). And **a detail Mia read out that the caller confirmed counts
+  as said** for grounding ("Is it a Ford F-150?" "Yes").
+
 - 2026-11-11 (Sergio's call): **Transfers are screened: press 1.** His voicemail answered the
   transfer and the SIP leg reported it as answered, so Mia introduced the caller to a voicemail
   while the caller heard both. Now the line must press 1 (DTMF) and the two can't hear each other
