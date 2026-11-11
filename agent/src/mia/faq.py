@@ -60,9 +60,15 @@ FAQS = (
     Faq(
         "payment",
         # How they pay, not how much ("how much will I pay?" is the quote).
+        # A bare "card" isn't enough: speech-to-text hears "car" as "card" (call 9ea951ab02c2,
+        # 2026-11-11: "I want to change one card" got the payment answer). It needs a payment
+        # word next to it, or "credit/debit card", or "take/accept cards".
         _re(
             r"\bpay (?:with|by|in|using|on)\b|\bpayment (?:options?|methods?)\b|"
-            r"\b(?:credit|debit) ?card\b|\bcash\b|\bcard\b"
+            r"\b(?:credit|debit) ?cards?\b|\bcash\b|"
+            r"\b(?:pay|paying|payment)\b[^.?!]{0,30}\bcards?\b|"
+            r"\bcards?\b[^.?!]{0,20}\b(?:fees?|payments?|pay)\b|"
+            r"\b(?:take|takes|accept|accepts)\s+(?:credit\s+)?cards?\b"
         ),
         (("cash",), ("3", "three")),
         "The quote is for cash on delivery; a credit card may add about 3 percent.",
@@ -77,11 +83,14 @@ FAQS = (
 
 
 def asked_about(text: str) -> Faq | None:
-    """The FAQ the caller's message asks about, if it's a question about one."""
-    if not grounding.is_question(text):
+    """The FAQ the caller's message asks about, if it's a question about one. The topic must be
+    in the question itself, not elsewhere in the message: "Can we actually... I made a mistake.
+    I want to change one card." asks to change a car, not how to pay (call 9ea951ab02c2)."""
+    question = grounding.question_part(text)
+    if not question:
         return None
     for faq in FAQS:
-        if faq.asked.search(text):
+        if faq.asked.search(question):
             return faq
     return None
 

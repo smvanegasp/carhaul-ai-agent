@@ -59,3 +59,42 @@ def test_a_question_with_the_car_keeps_the_read_back():
     )
     out = faq.ensure_answer(read_back, "It's a Civic. Oh, and do you do enclosed shipping?")
     assert out == f"We only quote open car shipping. {read_back}"
+
+
+# Call 9ea951ab02c2 (2026-11-11): speech-to-text heard "car" as "card", in a message that also
+# asked something; Mia answered how to pay, which nobody asked.
+@pytest.mark.parametrize(
+    "said",
+    [
+        "Yes. Can we actually I think I made a mistake. I want to change one card. I I no longer "
+        "need the Jeep. I want to better send my twenty twenty four Honda.",
+        "Can you change the second card to a Honda?",
+        "Is the card going to be picked up at my house?",
+    ],
+)
+def test_card_misheard_for_car_isnt_a_payment_question(said):
+    assert faq.asked_about(said) is None
+
+
+@pytest.mark.parametrize(
+    "said",
+    [
+        "Do you take credit cards?",
+        "Can I pay with a card?",
+        "Is there a fee if I pay by card?",
+        "Do you accept cards?",
+        "What payment methods do you have?",
+        "I'm moving to Boston. Can I pay cash?",
+    ],
+)
+def test_real_payment_questions_still_count(said):
+    found = faq.asked_about(said)
+    assert found is not None and found.topic == "payment"
+
+
+def test_the_topic_must_be_in_the_question():
+    # Enclosed said outside the question isn't asked about...
+    assert faq.asked_about("I don't need enclosed. How long does it take?") is None
+    # ...but "I want to know if" carries the rest of its sentence.
+    said = "I want to know if you offer enclosed like, shippings, and I'm sending my car to Miami."
+    assert faq.asked_about(said).topic == "enclosed"
