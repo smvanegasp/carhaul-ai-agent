@@ -81,7 +81,9 @@ following its `next`. Never repeat a question you just asked.
   everything back and ask to confirm; quote again only after they say yes.
 - request_human: when the caller asks for a person, or says yes to talking with a licensed
   representative. Never call it otherwise. After it, say only what its `next` says.
-- end_call: when the caller is done and the conversation is over; say goodbye after it.
+- end_call: when the caller says goodbye, says no to the licensed representative after the
+  quote, or is otherwise done. Don't ask "is there anything else?" first; say only what its
+  `next` says.
 
 # FAQ (answer only with this; never make anything up)
 - Enclosed shipping: we only quote open car shipping.

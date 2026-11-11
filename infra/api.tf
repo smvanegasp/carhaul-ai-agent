@@ -114,7 +114,7 @@ resource "aws_lambda_function" "api" {
       SSM_PREFIX    = "${local.ssm_prefix}api/"
       ORIGIN_SECRET = random_password.origin_secret.result
       # Every call spends money (Groq, Deepgram, ElevenLabs, LiveKit, CarHauler).
-      CALLS_PER_IP_PER_HOUR = "6"
+      CALLS_PER_IP_PER_HOUR = tostring(var.calls_per_ip_per_hour)
       CALLS_PER_DAY         = tostring(var.calls_per_day)
       # The on-demand worker it starts and dispatches into calls (infra/agent.tf).
       MIA_AGENT_NAME        = "mia"

@@ -447,15 +447,18 @@ def _already_on_file(state: QuoteSession, fields: dict[str, Any]) -> bool:
     return any(all(getattr(v, k) == fields.get(k) for k in same) for v in state.vehicles)
 
 
-async def model_from_words(services: Services, make: str, said: str) -> str | None:
+async def model_from_words(
+    services: Services, make: str, said: str, *, alone: bool = False
+) -> str | None:
     """The catalog model of ``make`` the caller named, longest name first ("Civic del Sol"
-    before "Civic"); None if none or the catalog can't be read."""
+    before "Civic"); None if none or the catalog can't be read. ``alone``: also a short answer
+    that is only the model ("Corolla."), for when Mia just asked for it."""
     try:
         names = await services.resolver.model_names(make)
     except Exception:
         return None
     for name in sorted(names, key=len, reverse=True):
-        if grounding.model_named(name, make, said):
+        if grounding.model_named(name, make, said) or (alone and grounding.model_alone(name, said)):
             return name
     return None
 
@@ -744,10 +747,13 @@ async def _quote(state: QuoteSession, services: Services) -> Result:
         "estimate": any(v.is_estimate for v in state.vehicles),
     }
     state.advance(Stage.QUOTED)
+    # Sergio, 2026-11-11: after a "no" to the representative, don't ask "anything else?";
+    # close the call (end_call's `next` has the closing line). A question still gets answered.
     after = (
         "Read `say` to the caller word for word (don't change any numbers). Then ask if they'd "
         "like to be connected with a licensed representative who can assist them further. If "
-        "they say no, ask if there's anything else; when they're done, call end_call."
+        "they say no, or say goodbye, call end_call (don't ask if there's anything else). If "
+        "they ask a question, answer it first."
     )
     if state.quote["estimate"]:
         after = "Mention the price is an estimate based on the vehicle type. " + after
@@ -804,7 +810,15 @@ async def end_call(state: QuoteSession, services: Services) -> Result:
     agent.py after the goodbye has been spoken, so the caller hears it."""
     state.ended = True
     state.end_reason = state.end_reason or "mia"
-    return _ok(state, "Say a short, friendly goodbye.")
+    return _ok(state, f'Say exactly this and nothing else: "{CLOSING}"')
+
+
+# Sergio, 2026-11-11: "Sure, let us know. Feel free to call again if you want to get another
+# quote. Have a nice day."
+CLOSING = (
+    "Thanks for calling F&F! Feel free to call us again if you'd like another quote. Have a "
+    "nice day!"
+)
 
 
 # --- off-topic (stage 8) -----------------------------------------------------------------

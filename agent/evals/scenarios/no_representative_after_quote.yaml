@@ -1,0 +1,25 @@
+# Sergio, 2026-11-11: after "no" to the licensed representative, close the call ("feel free to
+# call again for another quote, have a nice day"), without asking if they need anything else.
+id: no_representative_after_quote
+persona: NG_C_NV
+path: SHP
+ground_truth:
+  origin: Boston, Massachusetts
+  destination: San Francisco, California
+  vehicles: [2025 Honda Civic]
+turns:
+  - user: "My 2025 Honda Civic, from Boston, Massachusetts to San Francisco, California."
+    expect:
+      on_file: {vehicles: [2025 Honda Civic]}
+  - user: "Yep"
+    expect:
+      tools: [get_quote]
+      says: ["$1,291"]
+  - user: "No, thank you."
+    expect:
+      tools: [end_call]
+      no_tools: [request_human]
+      ended: true
+      judge: >-
+        Closes the call politely (for example, invites them to call again for another quote and
+        wishes them a nice day) without asking if there's anything else.

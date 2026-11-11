@@ -312,7 +312,7 @@ async def test_end_call_marks_ended_but_leaves_hang_up_to_the_agent(state, servi
     services.end_call = lambda: ended.append(True)
     r = await tools.end_call(state, services)
     assert state.ended and ended == []
-    assert "goodbye" in r["next"]
+    assert tools.CLOSING in r["next"]
 
 
 async def test_quote_requires_the_callers_yes(state, services):

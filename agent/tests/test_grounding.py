@@ -364,3 +364,118 @@ def test_a_make_or_a_year_is_on_topic():
     assert grounding.is_on_topic("It's a 2025 Honda Civic")
     assert grounding.is_on_topic("It's a Toyota 4Runner from 2020")
     assert not grounding.is_on_topic("Tell me a joke about cats")
+
+
+# --- Belinda's calls, 2026-11-11 ---------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    ("text", "ok"),
+    [
+        (
+            "I want to know if you offer enclosed like, shippings, and I'm sending my car from "
+            "Miami to Chicago.",
+            True,
+        ),
+        ("I'm moving to Chicago. Do you do enclosed", True),
+        ("I was wondering how long it takes", True),
+        ("Yeah, sure", False),
+        ("It's a twenty twenty Honda.", False),
+        ("Yeah. That's correct.", False),
+    ],
+)
+def test_is_question_anywhere_in_the_message(text, ok):
+    assert grounding.is_question(text) is ok
+
+
+@pytest.mark.parametrize(
+    ("text", "ok"),
+    [
+        ("Cool. Thank you. Bye.", True),
+        ("What? Goodbye.", True),
+        ("Okay, bye bye", True),
+        ("Thank you", False),
+        ("I said goodbye to my old car, now it's a 2020 Honda Civic from Miami", False),
+    ],
+)
+def test_is_farewell(text, ok):
+    assert grounding.is_farewell(text) is ok
+
+
+@pytest.mark.parametrize(
+    ("text", "ok"),
+    [
+        ("No, thank you.", True),
+        ("Nope, I'm good.", True),
+        ("No thanks, that's all", True),
+        ("Not right now, thanks", True),
+        ("Thank you", False),
+        ("Okay", False),
+        ("Yes please", False),
+        ("No, but how long does it take?", False),
+        ("No, I want to change the car", False),
+    ],
+)
+def test_declines(text, ok):
+    assert grounding.declines(text) is ok
+
+
+def test_vehicle_mentions_split_each_car():
+    said = (
+        "We're moving from Atlanta to Portland. With a twenty twenty two Toyota RAV four and a "
+        "two thousand seventeen Honda Civic."
+    )
+    found = grounding.vehicle_mentions(said)
+    assert [(m["year"], m["make"]) for m in found] == [(2022, "Toyota"), (2017, "Honda")]
+    assert found[1]["words"] == "honda civic"
+    merc = grounding.vehicle_mentions("a 2019 Mercedes-Benz C300 and a 2020 Ford F-150")
+    assert [(m["year"], m["make"]) for m in merc] == [(2019, "Mercedes-Benz"), (2020, "Ford")]
+
+
+@pytest.mark.parametrize(
+    ("said", "ok"),
+    [
+        ("Corolla.", True),
+        ("It's a Corolla", True),
+        ("Yeah, the Corolla", True),
+        ("corolla is not right it is a camry", False),
+        ("Hi there", False),
+    ],
+)
+def test_model_alone(said, ok):
+    assert grounding.model_alone("Corolla", said) is ok
+
+
+@pytest.mark.parametrize(
+    ("said", "route"),
+    [
+        (
+            "I want to know if you offer enclosed like, shippings, and I'm sending my car from "
+            "Boston, Massachusetts to San Francisco, California.",
+            ("Boston", "Massachusetts", "San Francisco", "California"),
+        ),
+        (
+            "I need to send my twenty twenty Honda from Miami to Chicago. Now",
+            ("Miami", None, "Chicago", None),
+        ),
+        (
+            "I'm moving from Boston to San Francisco next week, do you do enclosed?",
+            ("Boston", None, "San Francisco", None),
+        ),
+        ("From Miami to California.", None),  # a state: Mia asks which city
+        ("It goes from bad to worse", None),
+        ("Yeah, sure", None),
+    ],
+)
+def test_route_in(said, route):
+    found = grounding.route_in(said)
+    if route is None:
+        assert found is None
+    else:
+        assert found is not None
+        assert (
+            found["origin_city"],
+            found["origin_state"],
+            found["destination_city"],
+            found["destination_state"],
+        ) == route

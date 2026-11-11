@@ -9,7 +9,7 @@ takes about 2 minutes.
 - Open the link Sergio sent you in **Chrome or Safari**, on a laptop or a phone.
 - Use **headphones** if you can. With speakers, Mia can hear herself and get confused.
 - Find a quiet place, then press **Call Mia** and allow the microphone.
-- Calls end on their own after 6 minutes. After about 6 calls in an hour the page asks you to
+- Calls end on their own after 6 minutes. After about 20 calls in an hour the page asks you to
   wait a bit: that's a limit Sergio set on purpose.
 
 ## The evaluation workbook

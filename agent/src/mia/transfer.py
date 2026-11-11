@@ -34,20 +34,45 @@ logger = logging.getLogger("mia.transfer")
 
 # 10 a day (Sergio, 2026-11-11: 5 was too few with two testers); MIA_TRANSFERS_PER_DAY overrides.
 TRANSFERS_PER_DAY = int(os.environ.get("MIA_TRANSFERS_PER_DAY") or 10)
-RING_SECONDS = 30
+# Sergio's voicemail answers after about 25-29 s of ringing (calls on 2026-11-11 reached it
+# twice), so the ring stops before it can: a person picks up well within 20 s. Screening
+# (press 1) still catches a voicemail that answers sooner.
+RING_SECONDS = 20
 MAX_TRANSFER_MINUTES = 10
 REPRESENTATIVE_IDENTITY = "representative"
 
 # What Mia says (the tool's `next` asks for the first one; the rest are spoken by code).
 CONNECTING = "Sure, I'll connect you with a licensed representative now. Please stay on the line."
-NO_ANSWER = (
-    "I'm sorry, I couldn't reach a licensed representative right now. Is there anything else I "
-    "can help you with?"
+# Sergio, 2026-11-11: if nobody takes the call, say there's no representative available and to
+# call again later. After a quote that closes the call; before one, the quote goes on.
+NOBODY = (
+    "I'm sorry, there's no licensed representative available right now. Please call us again later."
 )
-UNAVAILABLE = (
-    "I'm sorry, a licensed representative isn't available right now. Is there anything else I "
-    "can help you with?"
-)
+NOBODY_AFTER_QUOTE = f"{NOBODY} Thanks for calling F&F, and have a nice day!"
+NOBODY_BEFORE_QUOTE = f"{NOBODY} In the meantime, I can still get you a quote."
+
+# Mia's own voice track and the background track (hold music, typing) in the room: during
+# screening the caller hears the music but not what Mia tells the line (Sergio heard the
+# "press 1" whisper on 2026-11-11), and the line hears Mia but not the music.
+VOICE_TRACK = "roomio_audio"
+BACKGROUND_TRACK = "background_audio"
+
+
+def nobody_line(state: QuoteSession, next_question: str = "") -> tuple[str, bool]:
+    """What Mia says when no representative took the call, and whether the call ends there
+    (after a quote there's nothing left to do)."""
+    if state.quote:
+        return NOBODY_AFTER_QUOTE, True
+    return f"{NOBODY_BEFORE_QUOTE} {next_question}".strip(), False
+
+
+def own_tracks(participant: Any, name: str) -> list[str]:
+    """The sids of Mia's published audio tracks with this name."""
+    return [
+        pub.sid
+        for pub in getattr(participant, "track_publications", {}).values()
+        if getattr(pub, "name", None) == name
+    ]
 
 
 @dataclass(frozen=True)
@@ -100,8 +125,8 @@ def handoff_line(state: QuoteSession) -> str:
 # that line and tells the caller nobody was available.
 
 ACCEPT_DIGIT = "1"
-SCREEN_SECONDS = 12  # after the prompt; then once more, shorter
-SCREEN_AGAIN_SECONDS = 8
+SCREEN_SECONDS = 10  # after the prompt; then once more, shorter
+SCREEN_AGAIN_SECONDS = 6
 PRESS_ONE = "Press 1 to take the call."
 ACCEPTED = "Thank you. I'll let you two talk now. Goodbye!"
 
@@ -222,7 +247,9 @@ def dial_request(config: Config, room: str) -> Any:
         sip_call_to=config.phone,
         sip_number=config.caller_id,
         wait_until_answered=True,
-        play_dialtone=True,  # the caller hears it ring
+        # The caller hears hold music instead (main.py; Sergio: fill the silence before the
+        # transfer), so no ringing tone in the room.
+        play_dialtone=False,
         ringing_timeout=timedelta(seconds=RING_SECONDS),
         max_call_duration=timedelta(minutes=MAX_TRANSFER_MINUTES),
         trunk=SIPOutboundConfig(

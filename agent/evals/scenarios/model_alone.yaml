@@ -1,0 +1,22 @@
+# Call 2f6b9240a6da (Belinda, 2026-11-11): "Corolla." answered Mia's question about the model but
+# was never saved, so the quote failed with everything said.
+id: model_alone
+persona: NG_C_NV
+path: SHP
+ground_truth:
+  origin: Boston, Massachusetts
+  destination: San Francisco, California
+  vehicles: [2020 Toyota Corolla]
+turns:
+  - user: "From Boston, Massachusetts to San Francisco, California."
+    expect:
+      on_file: {origin: "Boston, Massachusetts", destination: "San Francisco, California"}
+  - user: "It's a twenty twenty Toyota."
+    expect:
+      on_file: {vehicles: []}
+      judge: Asks for the model of the 2020 Toyota (not the year or make again).
+  - user: "Corolla."
+    expect:
+      on_file: {vehicles: [2020 Toyota Corolla]}
+      no_tools: [get_quote]
+      judge: Reads back the 2020 Toyota Corolla and the route and asks the caller to confirm.

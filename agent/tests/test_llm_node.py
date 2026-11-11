@@ -247,3 +247,160 @@ def test_the_greeting_asks_the_first_question():
     for greeting in GREETINGS:
         assert greeting.endswith("?") and "start" not in greeting.lower()
         assert "virtual assistant" in greeting
+
+
+# --- Belinda's calls, 2026-11-11 ---------------------------------------------------------------
+
+
+def _outputs(model, step):
+    return [i.output for i in model.contexts[step].items if i.type == "function_call_output"]
+
+
+async def test_two_cars_named_with_the_route_are_both_saved(client, resolver):
+    # Call 2cd0a119e59d: route and two cars in one message; the model saved only the route and
+    # asked for "the first vehicle" ("I already gave you that information").
+    state = QuoteSession()
+    route = '{"origin_city": "Boston", "destination_city": "San Francisco"}'
+    model = ScriptedLLM(
+        [Step(calls=[("save_origin_destination", route)]), Step(text="Is that correct?")]
+    )
+    services = Services(carhauler=client, resolver=resolver, geocode=fake_city_to_zip)
+    said = (
+        "We're moving from Boston to San Francisco. With a twenty twenty two Toyota RAV four "
+        "and a two thousand seventeen Honda Civic."
+    )
+    async with new_session(state, llm=model) as session:
+        await session.start(Mia(services, greeting=GREETINGS[0]))
+        await session.run(user_input=said)
+    assert [v.label for v in state.vehicles] == ["2022 Toyota RAV4", "2017 Honda Civic"]
+    assert not state.missing
+
+
+async def test_the_model_said_alone_after_did_you_mean_is_saved(client, resolver):
+    # Call 2f6b9240a6da: "Corolla." to "Did you mean a Corolla, Camry Solara, or GR Corolla?"
+    # was never saved; the quote then failed and Mia asked for the model again.
+    state = QuoteSession(origin=BOS, destination=SF)
+    model = ScriptedLLM(
+        [
+            Step(text="I couldn't find that. Did you mean a Corolla, Camry Solara, or GR Corolla?"),
+            Step(text="Got it, a 2020 Toyota Corolla. Is that everything?"),
+            Step(text="Just to confirm."),
+        ]
+    )
+    services = Services(carhauler=client, resolver=resolver, geocode=fake_city_to_zip)
+    async with new_session(state, llm=model) as session:
+        await session.start(Mia(services, greeting=GREETINGS[0]))
+        await session.run(user_input="It's a twenty twenty Toyota Acarola.")
+        await session.run(user_input="Corolla.")
+    assert [v.label for v in state.vehicles] == ["2020 Toyota Corolla"]
+
+
+async def test_a_bare_word_is_not_a_model_unless_mia_asked_for_it(client, resolver):
+    state = QuoteSession(origin=BOS, destination=SF)
+    model = ScriptedLLM([Step(text="Where is it going?"), Step(text="Okay.")])
+    services = Services(carhauler=client, resolver=resolver, geocode=fake_city_to_zip)
+    async with new_session(state, llm=model) as session:
+        await session.start(Mia(services, greeting=GREETINGS[0]))
+        await session.run(user_input="It's a twenty twenty Toyota")
+        await session.run(user_input="Corolla.")
+    assert state.vehicles == []
+
+
+async def test_goodbye_ends_the_call(client, resolver):
+    # Call 97f388f57b75: "Cool. Thank you. Bye." then "What? Goodbye." -> no end_call; Mia
+    # read the details back twice.
+    state = QuoteSession(origin=BOS, destination=SF)
+    state.add_vehicle(year=2025, make="Honda", model="Civic", trim_id=34547)
+    state.quote = {"total": 1291}
+    read_back = "Just to confirm, your 2025 Honda Civic will ship. Is that correct?"
+    model = ScriptedLLM(
+        [
+            Step(calls=[("request_human", '{"reason": "x"}')]),
+            Step(text=f'"{read_back}"'),
+            Step(text="Thanks for calling F&F! Have a nice day!"),
+        ]
+    )
+    services = Services(carhauler=client, resolver=resolver, geocode=fake_city_to_zip)
+    async with new_session(state, llm=model) as session:
+        await session.start(Mia(services, greeting=GREETINGS[0]))
+        await session.run(user_input="Cool. Thank you. Bye.")
+    assert state.ended and state.end_reason == "mia"
+    assert state.transfer is None  # the invented request_human never ran
+    assert "Thanks for calling F&F!" in _outputs(model, 1)[-1]
+
+
+async def test_no_to_the_representative_after_the_quote_ends_the_call(client, resolver):
+    # Sergio: after "no" to the licensed representative, close the call; no "anything else?".
+    state = QuoteSession(origin=BOS, destination=SF)
+    state.add_vehicle(year=2025, make="Honda", model="Civic", trim_id=34547)
+    state.quote = {"total": 1291}
+    model = ScriptedLLM(
+        [
+            Step(
+                text="Your estimated cost is $1,291. Would you like me to connect you with a "
+                "licensed representative who can assist you further?"
+            ),
+            Step(text="No problem. Is there anything else I can help you with?"),
+            Step(text="Thanks for calling F&F! Have a nice day!"),
+        ]
+    )
+    services = Services(carhauler=client, resolver=resolver, geocode=fake_city_to_zip)
+    async with new_session(state, llm=model) as session:
+        await session.start(Mia(services, greeting=GREETINGS[0]))
+        await session.run(user_input="Okay")
+        result = await session.run(user_input="No, thank you.")
+    spoken = [e.item.text_content for e in result.events if isinstance(e.item, ChatMessage)]
+    assert state.ended
+    assert not any("anything else" in s for s in spoken)
+
+
+async def test_no_before_the_quote_does_not_end_the_call(client, resolver):
+    state = QuoteSession(origin=BOS, destination=SF)
+    model = ScriptedLLM(
+        [
+            Step(text="Would you like me to connect you with a licensed representative?"),
+            Step(text="Okay. What's the year, make and model?"),
+        ]
+    )
+    services = Services(carhauler=client, resolver=resolver, geocode=fake_city_to_zip)
+    async with new_session(state, llm=model) as session:
+        await session.start(Mia(services, greeting=GREETINGS[0]))
+        await session.run(user_input="Hmm")
+        await session.run(user_input="No, thank you.")
+    assert not state.ended
+
+
+async def test_a_question_with_the_route_is_answered_first(client, resolver):
+    # Call 02784d4eb839: "I want to know if you offer enclosed like, shippings, and I'm sending
+    # my car from Miami to Chicago" -> the route was saved and the question ignored.
+    state = QuoteSession()
+    route = '{"origin_city": "Boston", "destination_city": "San Francisco"}'
+    model = ScriptedLLM(
+        [
+            Step(calls=[("save_origin_destination", route)]),
+            Step(text="Got it, Boston to San Francisco. What year, make and model is it?"),
+        ]
+    )
+    said = (
+        "I want to know if you offer enclosed like, shippings, and I'm sending my car from "
+        "Boston to San Francisco."
+    )
+    spoken, _ = await _reply_with(model, state, said, client, resolver)
+    assert '"next": "The caller also asked a question' in _outputs(model, 1)[-1]
+    assert ENCLOSED in _outputs(model, 1)[-1]
+    # And code makes sure the fact is said, whatever the model does.
+    assert spoken.startswith(ENCLOSED)
+    assert spoken.endswith("What year, make and model is it?")
+
+
+async def _reply_with(model, state, said, client, resolver):
+    services = Services(carhauler=client, resolver=resolver, geocode=fake_city_to_zip)
+    async with new_session(state, llm=model) as session:
+        await session.start(Mia(services, greeting=GREETINGS[0]))
+        result = await session.run(user_input=said)
+    spoken = [
+        e.item.text_content
+        for e in result.events
+        if isinstance(e.item, ChatMessage) and e.item.role == "assistant"
+    ]
+    return " ".join(spoken), model.calls

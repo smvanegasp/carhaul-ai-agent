@@ -33,7 +33,7 @@ from livekit.agents import (
 )
 from livekit.plugins import deepgram, silero
 
-from mia import catalog, idle, records, silence, transfer, voices
+from mia import catalog, guardrails, idle, records, silence, transfer, voices
 from mia.agent import Mia, make_llm, new_session
 from mia.carhauler import CarHaulerClient
 from mia.events import TOPIC, CallEvents
@@ -168,9 +168,17 @@ async def entrypoint(ctx: JobContext) -> None:
             # LiveKit's end-of-turn model: waits when "I want to ship my Honda from..." trails
             # off, answers fast when the sentence is complete.
             "turn_detection": inference.TurnDetector(**_turn_detector_version()),
-            # The caller can talk over Mia; a cough or "mm-hm" (< 0.5 s) doesn't stop her, and
-            # if a noise did stop her she resumes after 2 s of silence (LiveKit defaults).
-            "interruption": {"enabled": True},
+            # The caller can talk over Mia, but a sound isn't a voice (Belinda, 2026-11-11: a
+            # little background noise stopped her). With plain voice-activity detection any
+            # 0.5 s of sound interrupted her; now speech-to-text must also have heard at least
+            # one word (noise has none). If something still stops her, she resumes after 2 s
+            # of silence. LiveKit's "adaptive" detector (MIA_INTERRUPTION=adaptive) is opt-in:
+            # in a local test call (2026-11-11) the worker process died silently as it started.
+            "interruption": {
+                "enabled": True,
+                "mode": os.environ.get("MIA_INTERRUPTION") or "vad",
+                "min_words": 1,
+            },
         },
     )
 
@@ -227,10 +235,24 @@ async def entrypoint(ctx: JobContext) -> None:
                     "couldn't %s audio for %s: %s", "route" if hear else "hold", p.identity, err
                 )
 
+    async def route_mia(screening: bool) -> None:
+        """While the line is screened the caller hears the hold music but not Mia's whisper to
+        the line, and the line hears Mia but not the music; afterwards, back to normal."""
+        me, room = ctx.room.local_participant, ctx.room.name
+        voice = transfer.own_tracks(me, transfer.VOICE_TRACK)
+        music = transfer.own_tracks(me, transfer.BACKGROUND_TRACK)
+        for p in list(ctx.room.remote_participants.values()):
+            hide = voice if p.identity != transfer.REPRESENTATIVE_IDENTITY else music
+            try:
+                await transfer.set_hearing(ctx.api, room, p.identity, hide, not screening)
+            except Exception as err:  # never break the transfer over routing
+                logger.warning("couldn't route Mia's audio for %s: %s", p.identity, err)
+
     async def screen_line() -> bool:
         """The line that picked up must press 1 (transfer.screen); the caller and the line
         can't hear each other until then."""
         await hear_each_other(False)
+        await route_mia(screening=True)
         pressed = asyncio.Event()
 
         def on_dtmf(ev) -> None:
@@ -248,19 +270,44 @@ async def entrypoint(ctx: JobContext) -> None:
             accepted = await transfer.screen(say, pressed, transfer.screening_line(state))
         finally:
             ctx.room.off("sip_dtmf_received", on_dtmf)
+            stop_music()
+            await route_mia(screening=False)
         if accepted:
             await hear_each_other(True)
         logger.info("representative line %s", "accepted" if accepted else "not accepted")
         return accepted
 
+    hold = {"music": None}
+
+    def start_music() -> None:
+        """Hold music while the line rings and is screened (Sergio, 2026-11-11: fill the
+        silence before the transfer). A nicety: never blocks the transfer."""
+        try:
+            hold["music"] = background.play(
+                AudioConfig(BuiltinAudioClip.HOLD_MUSIC, volume=0.5), loop=True
+            )
+        except Exception:
+            logger.warning("hold music failed", exc_info=True)
+
+    def stop_music() -> None:
+        music, hold["music"] = hold["music"], None
+        if music is not None:
+            try:
+                music.stop()
+            except Exception:
+                logger.debug("hold music already stopped", exc_info=True)
+
     async def run_transfer() -> None:
         """Ring the representative into this room; on answer Mia introduces the caller and
-        leaves, otherwise she apologizes and the call goes on."""
+        leaves, otherwise she apologizes (and closes the call if it was quoted)."""
         session.input.set_audio_enabled(False)  # nobody to answer while it rings
         started = asyncio.get_running_loop().time()
         outcome = "limit"
         if await asyncio.to_thread(transfer.take_slot):
+            start_music()
             outcome = await transfer.dial(ctx.api, phone_line, ctx.room.name)
+            if outcome != "connected":
+                stop_music()
         # "screening" until the line presses 1 (transfer.screen): a voicemail also "answers".
         state.transfer = "screening" if outcome == "connected" else outcome
         events.tool(
@@ -296,11 +343,17 @@ async def entrypoint(ctx: JobContext) -> None:
                 )
             else:
                 session.input.set_audio_enabled(True)
-                line = transfer.NO_ANSWER if outcome == "no_answer" else transfer.UNAVAILABLE
+                line, closes = transfer.nobody_line(state, guardrails.fallback_line(state))
                 events.turn("assistant", line, kind="transfer_failed")
-                session.say(line)
+                if closes:
+                    state.ended, state.end_reason = True, "mia"
+                handle = session.say(line, allow_interruptions=not closes)
+                if closes:
+                    handle.add_done_callback(lambda _: session.shutdown())
         except RuntimeError:  # the caller hung up while it rang; the session is gone
             logger.info("transfer finished after the session closed (%s)", outcome)
+        finally:
+            stop_music()
 
     if phone_line:
         services.transfer = lambda: asyncio.ensure_future(run_transfer())

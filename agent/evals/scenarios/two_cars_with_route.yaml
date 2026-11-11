@@ -1,0 +1,22 @@
+# Call 2cd0a119e59d (Belinda, 2026-11-11): the route and two cars in the first message; only the
+# route was saved and Mia asked for "the first vehicle" ("I already gave you that information").
+id: two_cars_with_route
+persona: G_C_V
+path: SHP
+ground_truth:
+  origin: Boston, Massachusetts
+  destination: San Francisco, California
+  vehicles: [2022 Toyota RAV4, 2017 Honda Civic]
+turns:
+  - user: >-
+      We're moving from Boston, Massachusetts to San Francisco, California. With a twenty
+      twenty two Toyota RAV four and a two thousand seventeen Honda Civic.
+    expect:
+      on_file:
+        origin: "Boston, Massachusetts"
+        destination: "San Francisco, California"
+        vehicles: [2022 Toyota RAV4, 2017 Honda Civic]
+      no_tools: [get_quote]
+      judge: >-
+        Reads back both vehicles and the route and asks the caller to confirm (it doesn't ask
+        the caller to repeat a vehicle).

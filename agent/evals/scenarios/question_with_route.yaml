@@ -1,0 +1,18 @@
+# Call 02784d4eb839 (Belinda, 2026-11-11): a question and the route in one message; the route
+# was saved and the question ignored until she said "You didn't answer my question".
+id: question_with_route
+persona: G_C_V
+path: QHP
+ground_truth:
+  origin: Boston, Massachusetts
+  destination: San Francisco, California
+  vehicles: []
+turns:
+  - user: >-
+      I want to know if you offer enclosed like, shippings, and I'm sending my car from Boston,
+      Massachusetts to San Francisco, California.
+    expect:
+      on_file: {origin: "Boston, Massachusetts", destination: "San Francisco, California"}
+      judge: >-
+        First answers the question (only open car shipping is quoted), then asks for the
+        vehicle's year, make and model.
