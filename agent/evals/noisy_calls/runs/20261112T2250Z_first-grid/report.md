@@ -13,6 +13,9 @@ ends. The filter alone fixes the 12 dB rooms (stray words heard 112 -> 14 in the
 lines), though slower (7-9 s) and the details aren't always saved. The babble is clean TTS at
 the caller's own distance, harder for the filter than real people across a room.
 
+This run had a 12 s turn limit from the start; it is now 25 s, and 12 s once the call is noisy
+(real callers talk up to 24 s).
+
 ## By profile
 
 | Profile | Noisy calls | Lines answered | Route + car saved | Mia cut off (total) |

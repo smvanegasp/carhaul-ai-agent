@@ -97,9 +97,11 @@ talking nearby.
 the same way.
 
 What to watch: does Mia greet you and answer every time? Does she stop talking when nobody
-said anything to her? If the room never quiets down, she should still answer within about 12
+said anything to her? If the room never quiets down, she should still answer within about 25
 seconds, and after a few interruptions say "It sounds a bit noisy where you are, so I'll keep
-talking unless you stop me." From then on, a word or two won't stop her; a short sentence will.
+talking unless you stop me." From then on, a word or two won't stop her (a short sentence
+will) and she answers within about 12 seconds. Also try a long turn in a quiet room (two cars
+and the route in one go): she should never cut you off.
 A one-minute phone recording of a real noisy room helps us too: we can replay it in the
 automated noise test (`evals/noisy_calls.py` takes a .wav file).
 

@@ -172,9 +172,11 @@ can help you with?"
   doesn't stop her, and if a noise does, she resumes after 2 s of silence.
 - **Noisy places** (`noise.py`, 2026-11-12): background voices are filtered out of the
   caller's audio before Mia hears it. If the caller's turn never ends (a classroom never goes
-  quiet), she answers what she heard after 12 s. After 3 signs of noise (cut off, or a turn
-  that hit 12 s) she says once, before her next answer: "It sounds a bit noisy where you are,
-  so I'll keep talking unless you stop me."; from then on it takes 3 words to interrupt her.
+  quiet), she answers what she heard after 25 s (longer than any real caller's turn). After 3
+  signs of noise (cut off, or a turn that hit the limit) she says once, before her next answer:
+  "It sounds a bit noisy where you are,
+  so I'll keep talking unless you stop me."; from then on it takes 3 words to interrupt her and
+  she answers after 12 s.
 - At 6 minutes Mia stops whatever she's saying: "We've reached the time limit for this call,
   so I'll have to stop here. Thanks for calling F&F, goodbye!" and hangs up.
 - If the quote API keeps failing (seen: CarHauler 402 when the allowance ran out), Mia

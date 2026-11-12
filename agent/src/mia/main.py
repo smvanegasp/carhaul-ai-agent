@@ -433,11 +433,15 @@ async def entrypoint(ctx: JobContext) -> None:
         if noise_profile != "full":
             return
         if noise_watch.signal(state, why):
-            noise.set_min_words(session.options.interruption, noisy=True)
+            noise.go_noisy(session.options.turn_handling)
             events.tool(
                 "noisy_mode",
                 {"signals": noise_watch.signals, "last": why},
-                {"ok": True, "min_words": noise.NOISY_MIN_WORDS},
+                {
+                    "ok": True,
+                    "min_words": noise.NOISY_MIN_WORDS,
+                    "turn_limit_s": noise.NOISY_TURN_LIMIT_S,
+                },
                 0,
             )
 

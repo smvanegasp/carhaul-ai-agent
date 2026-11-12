@@ -16,10 +16,13 @@ Three layers, in order:
 2. **A turn can't last forever** (``TURN_LIMIT_S``): if the caller has been "speaking" that
    long without Mia answering, ``Mia.on_user_turn_exceeded`` ends the turn and she answers what
    she heard, with tools and guardrails as usual (LiveKit's default replies with no tools).
+   25 s normally: real callers giving two cars in one breath talk up to 24 s (48 calls, 263
+   turns, 2026-11-12: 9.9% of turns were 12 s or more, the longest 23.9 s), and those are the
+   turns worth hearing out. Belinda: don't cut off someone who's really talking.
 3. **Noisy-call mode** (``NoiseWatch``): after ``SIGNALS_FOR_NOISY`` signs of noise (Mia cut
    off, a turn that hit the limit), interrupting her takes ``NOISY_MIN_WORDS`` words instead
-   of one for the rest of the call, and she says once that it's noisy (``NOISY_LINE``, before
-   her next answer).
+   of one and the turn limit drops to ``NOISY_TURN_LIMIT_S``, for the rest of the call; she
+   says once that it's noisy (``NOISY_LINE``, before her next answer).
 
 Which layers are on is the call's *profile* (``PROFILES``): ``full`` (all three, the default),
 ``filter`` (1 only) or ``baseline`` (none: how Mia was before). ``MIA_NOISE_HANDLING`` sets it
@@ -46,9 +49,10 @@ from mia.state import QuoteSession
 
 logger = logging.getLogger("mia.noise")
 
-# A caller rarely talks 12 s without a pause; a classroom never stops. 12 s still lets someone
-# list two cars and a route in one breath.
-TURN_LIMIT_S = 12.0
+# Longer than any real caller turn seen (23.9 s); a classroom never stops, so once the call is
+# known to be noisy the limit is shorter.
+TURN_LIMIT_S = 25.0
+NOISY_TURN_LIMIT_S = 12.0
 SIGNALS_FOR_NOISY = 3
 NORMAL_MIN_WORDS = 1
 NOISY_MIN_WORDS = 3
@@ -123,7 +127,12 @@ def with_noisy_line(spoken: str, state: QuoteSession) -> str:
     return f"{NOISY_LINE} {spoken}"
 
 
-def set_min_words(interruption: dict[str, Any], noisy: bool) -> None:
-    """LiveKit reads ``session.options.interruption`` live on every interruption check, so
-    changing it mid-call takes effect at once (livekit-agents 1.8.11, agent_activity.py)."""
-    interruption["min_words"] = NOISY_MIN_WORDS if noisy else NORMAL_MIN_WORDS
+def go_noisy(turn_handling: dict[str, Any]) -> None:
+    """Noisy-call mode in the session's live options (``session.options.turn_handling``):
+    LiveKit reads ``interruption`` on every interruption check and ``user_turn_limit`` on every
+    final transcript, so changing them mid-call takes effect at once (livekit-agents 1.8.11,
+    agent_activity.py and audio_recognition.py)."""
+    turn_handling["interruption"]["min_words"] = NOISY_MIN_WORDS
+    limit = turn_handling.get("user_turn_limit")
+    if limit is not None and limit.get("max_duration") is not None:
+        limit["max_duration"] = NOISY_TURN_LIMIT_S

@@ -621,7 +621,9 @@ word in the room cut Mia off.
       on the caller's audio; BVCTelephony for a phone line. **Linux only**: on Windows it
       kills the worker ("Assertion failed! FFT_LEN == -1" in livekit_ffi.dll's resampler), so
       a Windows worker skips it
-- [x] A caller turn is capped at 12 s (`user_turn_limit`); then Mia answers what she heard
+- [x] A caller turn is capped at 25 s, 12 s once the call is noisy (`user_turn_limit`; Belinda:
+      don't cut off someone really talking; real turns: 9.9% were 12 s or more, the longest
+      23.9 s, in 48 calls); then Mia answers what she heard
       through the normal pipeline (`Mia.on_user_turn_exceeded` commits the turn; LiveKit's
       default answers with no tools)
 - [x] Noisy-call mode: 3 signs of noise -> 3 words to interrupt Mia, and one spoken notice

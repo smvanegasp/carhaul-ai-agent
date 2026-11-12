@@ -100,7 +100,7 @@ Fargate, not Lambda. Everything else follows the fit pattern.
 | `records.py` | The call record and its DynamoDB write (keys documented there; shared table with the backend) |
 | `idle.py` | On AWS the worker exits after 10 idle minutes (no call, no wake) or 2 hours, so it only costs money around calls |
 | `transfer.py` | Transfer to a licensed representative: Mia dials Sergio's phone into the call through the Twilio SIP trunk, **screens the line (press 1; a voicemail never does)** with caller and line unable to hear each other until then, introduces the caller and leaves; daily cap, ring/talk limits |
-| `noise.py` | Noisy places: background voice cancellation (LiveKit BVC; **Linux only**, it crashes on Windows), a 12 s cap on a caller turn (`Mia.on_user_turn_exceeded`), noisy-call mode (3 signs -> 3 words to interrupt + one spoken notice). Profiles `full`/`filter`/`baseline` (`MIA_NOISE_HANDLING`, or `noise` in a test call's dispatch) |
+| `noise.py` | Noisy places: background voice cancellation (LiveKit BVC; **Linux only**, it crashes on Windows), a cap on a caller turn (`Mia.on_user_turn_exceeded`: 25 s, longer than any real turn; 12 s once noisy), noisy-call mode (3 signs -> 3 words to interrupt, the 12 s cap, one spoken notice). Profiles `full`/`filter`/`baseline` (`MIA_NOISE_HANDLING`, or `noise` in a test call's dispatch) |
 | `silence.py` | What Mia does when the caller goes quiet: "are you still there?", or a goodbye and hang-up |
 | `voices.py` | The 6 American voices callers can pick (2 each: Deepgram, Cartesia, ElevenLabs; Deepgram Thalia first and default since 2026-11-12, when the Cartesia credits ran out), each with a description; keys and descriptions match `backend/app/voices.py` |
 | `speech.py` | Numbers written out as words before any voice reads them (`Mia.tts_node`) |
@@ -192,7 +192,8 @@ docker compose up        # api :8020, web :5190, DynamoDB Local :8030, agent wor
 - 2026-11-12 (Belinda's classroom demo): **Noisy places** (`noise.py`). Mia didn't talk in a
   classroom: other voices kept the caller's turn open and cut her off. Now: LiveKit's
   background voice cancellation on the caller's audio (Linux only; it crashes the worker on
-  Windows), a 12 s cap on a caller turn, and noisy-call mode (3 words to interrupt after 3
+  Windows), a cap on a caller turn (25 s, since real callers talk up to 24 s when giving two
+  cars at once; 12 s once the call is noisy), and noisy-call mode (3 words to interrupt after 3
   signs of noise). Measured with `evals/noisy_calls.py`: lines answered in noise 28% ->
   89%. **Deepgram Thalia is the default voice** (Cartesia credits spent; tests use Deepgram).
 

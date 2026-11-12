@@ -74,19 +74,29 @@ def test_the_noisy_line_is_said_once_before_the_answer():
     assert noise.with_noisy_line(ROUTE_Q, state) == ROUTE_Q
 
 
-def test_min_words_changes_in_the_live_options():
-    async def check():
-        async with new_session(QuoteSession(), llm=ScriptedLLM([])) as session:
-            opts = session.options.interruption
-            noise.set_min_words(opts, noisy=True)
-            # The same dict LiveKit reads on every interruption check.
-            assert session.options.interruption["min_words"] == noise.NOISY_MIN_WORDS
-            noise.set_min_words(opts, noisy=False)
-            assert session.options.interruption["min_words"] == noise.NORMAL_MIN_WORDS
+async def test_noisy_mode_changes_the_live_options():
+    handling = {
+        "interruption": {"min_words": noise.NORMAL_MIN_WORDS},
+        "user_turn_limit": noise.turn_limit("full"),
+    }
+    async with new_session(QuoteSession(), llm=ScriptedLLM([]), turn_handling=handling) as s:
+        assert s.options.turn_handling["user_turn_limit"]["max_duration"] == 25.0
+        noise.go_noisy(s.options.turn_handling)
+        # The same dicts LiveKit reads on every interruption check and transcript.
+        assert s.options.interruption["min_words"] == noise.NOISY_MIN_WORDS
+        assert s.options.turn_handling["user_turn_limit"]["max_duration"] == 12.0
 
-    import asyncio
 
-    asyncio.run(check())
+def test_the_normal_limit_is_longer_than_any_real_turn():
+    # 23.9 s was the longest caller turn in 48 real calls (2026-11-12): don't cut those off.
+    assert noise.TURN_LIMIT_S > 23.9
+    assert noise.NOISY_TURN_LIMIT_S < noise.TURN_LIMIT_S
+
+
+def test_no_turn_limit_stays_none():
+    handling = {"interruption": {"min_words": 1}, "user_turn_limit": {"max_duration": None}}
+    noise.go_noisy(handling)
+    assert handling["user_turn_limit"]["max_duration"] is None
 
 
 async def test_mia_says_its_noisy_before_her_next_answer(client, resolver):

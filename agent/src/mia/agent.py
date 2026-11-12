@@ -550,7 +550,8 @@ class Mia(Agent):
             yield frame
 
     async def on_user_turn_exceeded(self, ev: UserTurnExceededEvent) -> None:
-        """The caller has been "speaking" for noise.TURN_LIMIT_S without Mia answering: in a
+        """The caller has been "speaking" for noise.TURN_LIMIT_S (25 s; 12 s once the call is
+        noisy) without Mia answering: in a
         noisy room the turn never ends. End it and answer what was heard, through the normal
         pipeline (tools and guardrails); LiveKit's default replies with no tools."""
         logger.info("caller turn hit %.1f s; answering what was heard", ev.duration)
