@@ -31,7 +31,7 @@ def test_the_api_offers_exactly_the_voices_the_worker_knows():
 
 
 def test_the_page_starts_with_the_default_voice():
-    assert next(iter(voices.VOICES)) == voices.DEFAULT == "cartesia-skylar"
+    assert next(iter(voices.VOICES)) == voices.DEFAULT == "deepgram-thalia"
 
 
 def test_every_voice_is_american_and_described():

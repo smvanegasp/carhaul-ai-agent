@@ -9,6 +9,7 @@ dependencies = [
     "googlemaps>=4.10.0",
     "httpx>=0.28.1",
     "livekit-agents[cartesia,deepgram,elevenlabs,groq,silero]>=1.8.11",
+    "livekit-plugins-noise-cancellation>=0.3.3",
     "num2words>=0.5.14",
     "python-dotenv>=1.0.0",
     "tenacity>=9.2.1",

@@ -84,6 +84,25 @@ doesn't start?"*
 
 **12 Interrupter.** Talk over Mia while she's speaking, as if you already know what she'll say.
 
+### Noisy places
+
+Any card above, but somewhere loud. Call from your phone and write the place and how loud it
+was in the feedback (e.g. "classroom, people talking at the next table").
+
+**13 Classroom / crowd.** Really go to a busy room, or play a "classroom chatter" or "busy
+restaurant ambience" video on a second device about a meter away, at the volume of people
+talking nearby.
+
+**14 Subway / street.** On the train or a busy street, or play a "subway train sounds" video
+the same way.
+
+What to watch: does Mia greet you and answer every time? Does she stop talking when nobody
+said anything to her? If the room never quiets down, she should still answer within about 12
+seconds, and after a few interruptions say "It sounds a bit noisy where you are, so I'll keep
+talking unless you stop me." From then on, a word or two won't stop her; a short sentence will.
+A one-minute phone recording of a real noisy room helps us too: we can replay it in the
+automated noise test (`evals/noisy_calls.py` takes a .wav file).
+
 ## Ideas for routes and cars
 
 | From | To | Car |

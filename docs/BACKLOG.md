@@ -611,6 +611,42 @@ them); Mia should be more direct, smarter about states, and more conversational.
       another counted one, never about shipping)
 - Simulation `direct-mia-live-tests`: **71/72**; callers now give the route on their first turn
 
+## Noisy places (branch `noise-handling`, 2026-11-12)
+
+Belinda demoed Mia in a classroom with people talking and Mia didn't talk. Background voices
+are speech to the voice detector, STT and turn detector: the caller's turn never ended and any
+word in the room cut Mia off.
+
+- [x] Background voice cancellation (LiveKit Cloud's Krisp BVC, `livekit-plugins-noise-cancellation`)
+      on the caller's audio; BVCTelephony for a phone line. **Linux only**: on Windows it
+      kills the worker ("Assertion failed! FFT_LEN == -1" in livekit_ffi.dll's resampler), so
+      a Windows worker skips it
+- [x] A caller turn is capped at 12 s (`user_turn_limit`); then Mia answers what she heard
+      through the normal pipeline (`Mia.on_user_turn_exceeded` commits the turn; LiveKit's
+      default answers with no tools)
+- [x] Noisy-call mode: 3 signs of noise -> 3 words to interrupt Mia, and one spoken notice
+- [x] `evals/noisy_calls.py`: scripted calls with classroom, subway or cafe noise (or a .wav
+      recording) under the caller's mic, per profile (`baseline`/`filter`/`full`, chosen per
+      call in the dispatch metadata). Runs committed to `agent/evals/noisy_calls/`
+- [x] Deepgram Thalia is Mia's default voice (Cartesia credits spent); the runner uses it too
+
+First grid (21 calls, [report](../agent/evals/noisy_calls/runs/20261112T2250Z_first-grid/report.md)),
+lines answered on the 18 noisy calls per profile:
+
+| Profile | Lines answered | Route + car saved | Mia cut off |
+| --- | ---: | ---: | ---: |
+| baseline (before) | 5/18 (28%) | 3/6 | 8 |
+| filter | 12/18 (67%) | 4/6 | 1 |
+| full (shipped) | 16/18 (89%) | 4/6 | 4 |
+
+Still open:
+- Loud rooms (5 dB) answer late (7-9 s) and lose details; ideas: a shorter turn limit once in
+  noisy mode, or the "hold to talk" button on the call page
+- Belinda's real recording of a classroom as a `.wav` noise (the synthetic babble is harder
+  than real distant voices); her noisy-place cards in TESTING_GUIDE
+- The greeting can be cut off by chatter before the filter has settled
+- Retry LiveKit's adaptive interruption (`MIA_INTERRUPTION=adaptive`) on the Linux worker
+
 ## Ideas / later
 
 

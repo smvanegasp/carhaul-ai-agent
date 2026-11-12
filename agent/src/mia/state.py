@@ -130,6 +130,11 @@ class QuoteSession:
     # Each vehicle's priced quote from the last get_quote (pricing.VehicleQuote), so removing a
     # vehicle reprices from what's left instead of quoting again (tools.remove_vehicle).
     priced: list[Any] = field(default_factory=list, repr=False)
+    # Noisy call (noise.py): signs of noise so far (Mia cut off, a turn that hit the limit);
+    # after enough, interrupting her takes more words and she says once that it's noisy.
+    noise_signals: int = 0
+    noisy: bool = False
+    noisy_line_due: bool = False
     _next_id: int = 1
 
     # --- quote IDs and the trash ---------------------------------------------------------
@@ -373,4 +378,6 @@ class QuoteSession:
             "dropped_calls": self.dropped_calls,
             "caller_turns": self.caller_turns,
             "end_reason": self.end_reason,
+            "noisy": self.noisy,
+            "noise_signals": self.noise_signals,
         }

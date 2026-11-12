@@ -1,0 +1,8149 @@
+[
+ {
+  "case": {
+   "noise": null,
+   "snr": null,
+   "profile": "baseline"
+  },
+  "score": {
+   "greeted": true,
+   "answered": 3,
+   "lines": 3,
+   "p50_s": 1.2,
+   "route": true,
+   "vehicle": true,
+   "hung_up": false,
+   "cut_off": 0,
+   "long_turns": 0,
+   "noisy_mode": false,
+   "recall": 0.97,
+   "extra_words": 2
+  },
+  "result": {
+   "room": "smoke-ee5ec919",
+   "greeted": true,
+   "lines": [
+    "Hi, I need to ship my car from Miami, Florida to Boston, Massachusetts.",
+    "It's a 2020 Toyota Camry.",
+    "I'm just checking prices for now. I'll call back later, bye!"
+   ],
+   "responses": [
+    1.6409999998286366,
+    1.25,
+    0.8909999998286366
+   ],
+   "hung_up": false,
+   "heard": [
+    {
+     "who": "mia",
+     "text": "Hi, thanks for calling F&F. I'm Mia, a virtual assistant, and I'll get you a quote for shipping your car. Where are you shipping it from, and where is it going?",
+     "t": 9.7
+    },
+    {
+     "who": "caller",
+     "text": "Hi. I need to ship my car from Miami, Florida",
+     "t": 13.4
+    },
+    {
+     "who": "caller",
+     "text": "to Boston, Massachusetts.",
+     "t": 14.8
+    },
+    {
+     "who": "mia",
+     "text": "Got it, Miami to Boston. What year, make and model is the car?",
+     "t": 20.8
+    },
+    {
+     "who": "caller",
+     "text": "It's a twenty twenty Toyota Camry.",
+     "t": 24.0
+    },
+    {
+     "who": "mia",
+     "text": "So that's your 2020 Toyota Camry, shipping from Miami, Florida to Boston, Massachusetts. Does that sound right?",
+     "t": 32.2
+    },
+    {
+     "who": "caller",
+     "text": "I'm just checking prices for now.",
+     "t": 34.9
+    },
+    {
+     "who": "caller",
+     "text": "I'll call back later.",
+     "t": 36.3
+    },
+    {
+     "who": "caller",
+     "text": "Bye.",
+     "t": 36.9
+    },
+    {
+     "who": "mia",
+     "text": "Let me make sure I have it right: your 2020 Toyota Camry will ship from Miami, Florida to Boston, Massachusetts. Is that right?",
+     "t": 45.5
+    }
+   ],
+   "events": [
+    {
+     "type": "config",
+     "seq": 0,
+     "t": 0.0,
+     "at": 1794523844142,
+     "stt": "Deepgram nova-3",
+     "llm": "Groq openai/gpt-oss-20b",
+     "tts": "Cartesia \u00b7 Skylar",
+     "turn_detector": "LiveKit auto",
+     "noise_handling": "baseline",
+     "max_call_s": "360"
+    },
+    {
+     "type": "turn",
+     "seq": 1,
+     "t": 0.04,
+     "at": 1794523844179,
+     "role": "mia",
+     "kind": "greeting",
+     "text": "Hi, thanks for calling F&F. I'm Mia, a virtual assistant, and I'll get you a quote for shipping your car. Where are you shipping it from, and where is it going?",
+     "metrics": {},
+     "speaking_s": null,
+     "interrupted": false
+    },
+    {
+     "type": "turn",
+     "seq": 2,
+     "t": 14.84,
+     "at": 1794523858979,
+     "role": "caller",
+     "kind": "said",
+     "text": "Hi. I need to ship my car from Miami, Florida to Boston, Massachusetts.",
+     "metrics": {
+      "end_of_turn": 577,
+      "stt": 214
+     },
+     "speaking_s": 3.89,
+     "interrupted": false
+    },
+    {
+     "type": "tool",
+     "seq": 3,
+     "t": 15.36,
+     "at": 1794523859502,
+     "name": "save_origin_destination",
+     "args": {
+      "origin_city": "Miami",
+      "origin_state": "Florida",
+      "destination_city": "Boston",
+      "destination_state": "Massachusetts"
+     },
+     "result": {
+      "ok": true,
+      "saved": {
+       "origin": "Miami, Florida",
+       "destination": "Boston, Massachusetts"
+      },
+      "on_file": {
+       "origin": "Miami, Florida",
+       "destination": "Boston, Massachusetts",
+       "vehicles": [],
+       "expected_vehicles": null,
+       "missing": [
+        "vehicle"
+       ]
+      },
+      "next": "Ask for the year, make and model of the vehicle."
+     },
+     "ok": true,
+     "ms": 517
+    },
+    {
+     "type": "state",
+     "seq": 4,
+     "t": 15.36,
+     "at": 1794523859502,
+     "on_file": {
+      "origin": "Miami, Florida",
+      "destination": "Boston, Massachusetts",
+      "vehicles": [],
+      "expected_vehicles": null,
+      "missing": [
+       "vehicle"
+      ]
+     },
+     "stage": "route",
+     "quote": null
+    },
+    {
+     "type": "turn",
+     "seq": 5,
+     "t": 20.63,
+     "at": 1794523864763,
+     "role": "mia",
+     "kind": "said",
+     "text": "Got it, Miami to Boston. What year, make and model is the car?",
+     "metrics": {
+      "llm_ttft": 333,
+      "tts_ttfb": 140,
+      "e2e": 1580
+     },
+     "speaking_s": 4.78,
+     "interrupted": false
+    },
+    {
+     "type": "turn",
+     "seq": 6,
+     "t": 23.99,
+     "at": 1794523868126,
+     "role": "caller",
+     "kind": "said",
+     "text": "It's a twenty twenty Toyota Camry.",
+     "metrics": {
+      "end_of_turn": 578,
+      "stt": 298
+     },
+     "speaking_s": 1.59,
+     "interrupted": false
+    },
+    {
+     "type": "tool",
+     "seq": 7,
+     "t": 24.29,
+     "at": 1794523868424,
+     "name": "save_vehicle",
+     "args": {
+      "year": 2020,
+      "make": "Toyota",
+      "model": "Camry",
+      "vehicle_type": null,
+      "drivable": null,
+      "total_vehicles": null
+     },
+     "result": {
+      "ok": true,
+      "saved": {
+       "quote_id": "Q1",
+       "vehicle": "2020 Toyota Camry"
+      },
+      "on_file": {
+       "origin": "Miami, Florida",
+       "destination": "Boston, Massachusetts",
+       "vehicles": [
+        {
+         "quote_id": "Q1",
+         "vehicle": "2020 Toyota Camry"
+        }
+       ],
+       "expected_vehicles": null,
+       "missing": []
+      },
+      "next": "Everything is on file. Read it back in one sentence (each vehicle, origin city and state, destination city and state) and ask if it's correct. Call get_quote only after they confirm."
+     },
+     "ok": true,
+     "ms": 295
+    },
+    {
+     "type": "state",
+     "seq": 8,
+     "t": 24.29,
+     "at": 1794523868424,
+     "on_file": {
+      "origin": "Miami, Florida",
+      "destination": "Boston, Massachusetts",
+      "vehicles": [
+       {
+        "quote_id": "Q1",
+        "vehicle": "2020 Toyota Camry"
+       }
+      ],
+      "expected_vehicles": null,
+      "missing": []
+     },
+     "stage": "vehicles",
+     "quote": null
+    },
+    {
+     "type": "turn",
+     "seq": 9,
+     "t": 31.96,
+     "at": 1794523876095,
+     "role": "mia",
+     "kind": "said",
+     "text": "So that's your 2020 Toyota Camry, shipping from Miami, Florida to Boston, Massachusetts. Does that sound right?",
+     "metrics": {
+      "llm_ttft": 222,
+      "tts_ttfb": 150,
+      "e2e": 1254
+     },
+     "speaking_s": 7.29,
+     "interrupted": false
+    },
+    {
+     "type": "dropped",
+     "seq": 10,
+     "t": 34.8,
+     "at": 1794523878941,
+     "tool": "get_quote",
+     "args": "{\"\":\"\"}",
+     "why": "caller has not confirmed"
+    },
+    {
+     "type": "dropped",
+     "seq": 11,
+     "t": 36.82,
+     "at": 1794523880955,
+     "tool": "note_off_topic",
+     "args": "{\"topic\":\"price inquiry\"}",
+     "why": "caller's message is about the quote"
+    },
+    {
+     "type": "turn",
+     "seq": 12,
+     "t": 36.89,
+     "at": 1794523881025,
+     "role": "caller",
+     "kind": "said",
+     "text": "I'm just checking prices for now. I'll call back later. Bye.",
+     "metrics": {
+      "end_of_turn": 577,
+      "stt": 290
+     },
+     "speaking_s": 3.44,
+     "interrupted": false
+    },
+    {
+     "type": "turn",
+     "seq": 13,
+     "t": 45.26,
+     "at": 1794523889394,
+     "role": "mia",
+     "kind": "said",
+     "text": "Let me make sure I have it right: your 2020 Toyota Camry will ship from Miami, Florida to Boston, Massachusetts. Is that right?",
+     "metrics": {
+      "llm_ttft": 215,
+      "tts_ttfb": 141,
+      "e2e": 724
+     },
+     "speaking_s": 8.22,
+     "interrupted": false
+    }
+   ]
+  }
+ },
+ {
+  "case": {
+   "noise": null,
+   "snr": null,
+   "profile": "filter"
+  },
+  "score": {
+   "greeted": true,
+   "answered": 3,
+   "lines": 3,
+   "p50_s": 1.5,
+   "route": true,
+   "vehicle": true,
+   "hung_up": false,
+   "cut_off": 0,
+   "long_turns": 0,
+   "noisy_mode": false,
+   "recall": 0.86,
+   "extra_words": 3
+  },
+  "result": {
+   "room": "smoke-45eea73c",
+   "greeted": true,
+   "lines": [
+    "Hi, I need to ship my car from Miami, Florida to Boston, Massachusetts.",
+    "It's a 2020 Toyota Camry.",
+    "I'm just checking prices for now. I'll call back later, bye!"
+   ],
+   "responses": [
+    2.594000000040978,
+    1.5,
+    0.8909999998286366
+   ],
+   "hung_up": false,
+   "heard": [
+    {
+     "who": "mia",
+     "text": "Thanks for calling F&F. I'm Mia, a virtual assistant. Let's get your quote: what city is the car shipping from, and where to?",
+     "t": 9.6
+    },
+    {
+     "who": "caller",
+     "text": "Hi.",
+     "t": 11.4
+    },
+    {
+     "who": "caller",
+     "text": "I need to ship my car from Miami, Florida to Boston, Massachusetts.",
+     "t": 15.3
+    },
+    {
+     "who": "mia",
+     "text": "Got it, Miami to Boston. What year, make and model is the car?",
+     "t": 21.2
+    },
+    {
+     "who": "caller",
+     "text": "The twenty twenty Toyota Camry.",
+     "t": 24.4
+    },
+    {
+     "who": "mia",
+     "text": "So that's your 2020 Toyota Camry, shipping from Miami, Florida to Boston, Massachusetts. Does that sound right?",
+     "t": 31.1
+    },
+    {
+     "who": "caller",
+     "text": "I'm just checking prices for now.",
+     "t": 33.9
+    },
+    {
+     "who": "caller",
+     "text": "I'll call back later.",
+     "t": 34.9
+    },
+    {
+     "who": "caller",
+     "text": "Bye.",
+     "t": 35.6
+    },
+    {
+     "who": "mia",
+     "text": "Just to confirm, your 2020 Toyota Camry will ship from Miami, Florida to Boston, Massachusetts. Is that correct?",
+     "t": 42.9
+    }
+   ],
+   "events": [
+    {
+     "type": "config",
+     "seq": 0,
+     "t": 0.01,
+     "at": 1794523906986,
+     "stt": "Deepgram nova-3",
+     "llm": "Groq openai/gpt-oss-20b",
+     "tts": "Cartesia \u00b7 Skylar",
+     "turn_detector": "LiveKit auto",
+     "noise_handling": "filter",
+     "max_call_s": "360"
+    },
+    {
+     "type": "turn",
+     "seq": 1,
+     "t": 0.05,
+     "at": 1794523907031,
+     "role": "mia",
+     "kind": "greeting",
+     "text": "Thanks for calling F&F. I'm Mia, a virtual assistant. Let's get your quote: what city is the car shipping from, and where to?",
+     "metrics": {},
+     "speaking_s": null,
+     "interrupted": false
+    },
+    {
+     "type": "dropped",
+     "seq": 2,
+     "t": 11.82,
+     "at": 1794523918803,
+     "tool": "save_origin_destination",
+     "args": "{\"destination_city\":null,\"destination_state\":null,\"origin_city\":null,\"origin_state\":null}",
+     "why": "no city the caller said"
+    },
+    {
+     "type": "turn",
+     "seq": 3,
+     "t": 15.4,
+     "at": 1794523922376,
+     "role": "caller",
+     "kind": "said",
+     "text": "Hi. I need to ship my car from Miami, Florida to Boston, Massachusetts.",
+     "metrics": {
+      "end_of_turn": 577,
+      "stt": 199
+     },
+     "speaking_s": 4.44,
+     "interrupted": false
+    },
+    {
+     "type": "tool",
+     "seq": 4,
+     "t": 16.04,
+     "at": 1794523923021,
+     "name": "save_origin_destination",
+     "args": {
+      "origin_city": "Miami",
+      "origin_state": "Florida",
+      "destination_city": "Boston",
+      "destination_state": "Massachusetts"
+     },
+     "result": {
+      "ok": true,
+      "saved": {
+       "origin": "Miami, Florida",
+       "destination": "Boston, Massachusetts"
+      },
+      "on_file": {
+       "origin": "Miami, Florida",
+       "destination": "Boston, Massachusetts",
+       "vehicles": [],
+       "expected_vehicles": null,
+       "missing": [
+        "vehicle"
+       ]
+      },
+      "next": "Ask for the year, make and model of the vehicle."
+     },
+     "ok": true,
+     "ms": 592
+    },
+    {
+     "type": "state",
+     "seq": 5,
+     "t": 16.04,
+     "at": 1794523923021,
+     "on_file": {
+      "origin": "Miami, Florida",
+      "destination": "Boston, Massachusetts",
+      "vehicles": [],
+      "expected_vehicles": null,
+      "missing": [
+       "vehicle"
+      ]
+     },
+     "stage": "route",
+     "quote": null
+    },
+    {
+     "type": "turn",
+     "seq": 6,
+     "t": 21.01,
+     "at": 1794523927991,
+     "role": "mia",
+     "kind": "said",
+     "text": "Got it, Miami to Boston. What year, make and model is the car?",
+     "metrics": {
+      "llm_ttft": 1054,
+      "tts_ttfb": 143,
+      "e2e": 2430
+     },
+     "speaking_s": 3.76,
+     "interrupted": false
+    },
+    {
+     "type": "turn",
+     "seq": 7,
+     "t": 24.4,
+     "at": 1794523931377,
+     "role": "caller",
+     "kind": "said",
+     "text": "The twenty twenty Toyota Camry.",
+     "metrics": {
+      "end_of_turn": 577,
+      "stt": 239
+     },
+     "speaking_s": 1.74,
+     "interrupted": false
+    },
+    {
+     "type": "tool",
+     "seq": 8,
+     "t": 24.69,
+     "at": 1794523931673,
+     "name": "save_vehicle",
+     "args": {
+      "year": 2020,
+      "make": "Toyota",
+      "model": "Camry",
+      "vehicle_type": null,
+      "drivable": null,
+      "total_vehicles": null
+     },
+     "result": {
+      "ok": true,
+      "saved": {
+       "quote_id": "Q1",
+       "vehicle": "2020 Toyota Camry"
+      },
+      "on_file": {
+       "origin": "Miami, Florida",
+       "destination": "Boston, Massachusetts",
+       "vehicles": [
+        {
+         "quote_id": "Q1",
+         "vehicle": "2020 Toyota Camry"
+        }
+       ],
+       "expected_vehicles": null,
+       "missing": []
+      },
+      "next": "Everything is on file. Read it back in one sentence (each vehicle, origin city and state, destination city and state) and ask if it's correct. Call get_quote only after they confirm."
+     },
+     "ok": true,
+     "ms": 294
+    },
+    {
+     "type": "state",
+     "seq": 9,
+     "t": 24.69,
+     "at": 1794523931673,
+     "on_file": {
+      "origin": "Miami, Florida",
+      "destination": "Boston, Massachusetts",
+      "vehicles": [
+       {
+        "quote_id": "Q1",
+        "vehicle": "2020 Toyota Camry"
+       }
+      ],
+      "expected_vehicles": null,
+      "missing": []
+     },
+     "stage": "vehicles",
+     "quote": null
+    },
+    {
+     "type": "turn",
+     "seq": 10,
+     "t": 30.83,
+     "at": 1794523937807,
+     "role": "mia",
+     "kind": "said",
+     "text": "So that's your 2020 Toyota Camry, shipping from Miami, Florida to Boston, Massachusetts. Does that sound right?",
+     "metrics": {
+      "llm_ttft": 367,
+      "tts_ttfb": 139,
+      "e2e": 1388
+     },
+     "speaking_s": 5.62,
+     "interrupted": false
+    },
+    {
+     "type": "dropped",
+     "seq": 11,
+     "t": 33.81,
+     "at": 1794523940795,
+     "tool": "get_quote",
+     "args": "{}",
+     "why": "caller has not confirmed"
+    },
+    {
+     "type": "dropped",
+     "seq": 12,
+     "t": 35.46,
+     "at": 1794523942442,
+     "tool": "note_off_topic",
+     "args": "{\"topic\":\"bye\"}",
+     "why": "caller's message is about the quote"
+    },
+    {
+     "type": "turn",
+     "seq": 13,
+     "t": 35.59,
+     "at": 1794523942575,
+     "role": "caller",
+     "kind": "said",
+     "text": "I'm just checking prices for now. I'll call back later. Bye.",
+     "metrics": {
+      "end_of_turn": 577,
+      "stt": 213
+     },
+     "speaking_s": 3.24,
+     "interrupted": false
+    },
+    {
+     "type": "turn",
+     "seq": 14,
+     "t": 42.62,
+     "at": 1794523949596,
+     "role": "mia",
+     "kind": "said",
+     "text": "Just to confirm, your 2020 Toyota Camry will ship from Miami, Florida to Boston, Massachusetts. Is that correct?",
+     "metrics": {
+      "llm_ttft": 229,
+      "tts_ttfb": 141,
+      "e2e": 724
+     },
+     "speaking_s": 6.88,
+     "interrupted": false
+    }
+   ]
+  }
+ },
+ {
+  "case": {
+   "noise": null,
+   "snr": null,
+   "profile": "full"
+  },
+  "score": {
+   "greeted": true,
+   "answered": 3,
+   "lines": 3,
+   "p50_s": 1.4,
+   "route": true,
+   "vehicle": true,
+   "hung_up": true,
+   "cut_off": 0,
+   "long_turns": 0,
+   "noisy_mode": false,
+   "recall": 0.97,
+   "extra_words": 2
+  },
+  "result": {
+   "room": "smoke-fbab6d55",
+   "greeted": true,
+   "lines": [
+    "Hi, I need to ship my car from Miami, Florida to Boston, Massachusetts.",
+    "It's a 2020 Toyota Camry.",
+    "I'm just checking prices for now. I'll call back later, bye!"
+   ],
+   "responses": [
+    3.656999999890104,
+    1.3589999999385327,
+    1.1559999999590218
+   ],
+   "hung_up": true,
+   "heard": [
+    {
+     "who": "mia",
+     "text": "Hi there, this is Mia, F&F's virtual assistant. To get your car shipping quote, where is the car now, and where is it going?",
+     "t": 7.3
+    },
+    {
+     "who": "caller",
+     "text": "Hi. I need to ship my car from Miami, Florida to Boston, Massachusetts.",
+     "t": 12.5
+    },
+    {
+     "who": "mia",
+     "text": "Got it, Miami, Florida to Boston, Massachusetts. What year, make and model is the car?",
+     "t": 21.3
+    },
+    {
+     "who": "caller",
+     "text": "It's a twenty twenty Toyota Camry.",
+     "t": 24.3
+    },
+    {
+     "who": "mia",
+     "text": "Let me make sure I have it right: your 2020 Toyota Camry will ship from Miami, Florida to Boston, Massachusetts. Is that right?",
+     "t": 33.3
+    },
+    {
+     "who": "caller",
+     "text": "I'm just checking prices for now.",
+     "t": 35.9
+    },
+    {
+     "who": "caller",
+     "text": "I'll call back later.",
+     "t": 37.2
+    },
+    {
+     "who": "caller",
+     "text": "Bye.",
+     "t": 37.7
+    },
+    {
+     "who": "mia",
+     "text": "Thanks for calling F&F! Feel free to call us again if you'd like another quote. Have a nice day!",
+     "t": 44.0
+    }
+   ],
+   "events": [
+    {
+     "type": "config",
+     "seq": 0,
+     "t": 0.01,
+     "at": 1794523968239,
+     "stt": "Deepgram nova-3",
+     "llm": "Groq openai/gpt-oss-20b",
+     "tts": "Cartesia \u00b7 Skylar",
+     "turn_detector": "LiveKit auto",
+     "noise_handling": "full",
+     "max_call_s": "360"
+    },
+    {
+     "type": "turn",
+     "seq": 1,
+     "t": 0.04,
+     "at": 1794523968275,
+     "role": "mia",
+     "kind": "greeting",
+     "text": "Hi there, this is Mia, F&F's virtual assistant. To get your car shipping quote, where is the car now, and where is it going?",
+     "metrics": {},
+     "speaking_s": null,
+     "interrupted": false
+    },
+    {
+     "type": "turn",
+     "seq": 2,
+     "t": 14.43,
+     "at": 1794523982666,
+     "role": "caller",
+     "kind": "said",
+     "text": "Hi. I need to ship my car from Miami, Florida to Boston, Massachusetts.",
+     "metrics": {
+      "end_of_turn": 2499,
+      "stt": 265
+     },
+     "speaking_s": 3.89,
+     "interrupted": false
+    },
+    {
+     "type": "tool",
+     "seq": 3,
+     "t": 14.92,
+     "at": 1794523983156,
+     "name": "save_origin_destination",
+     "args": {
+      "origin_city": "Miami",
+      "origin_state": "Florida",
+      "destination_city": "Boston",
+      "destination_state": "Massachusetts"
+     },
+     "result": {
+      "ok": true,
+      "saved": {
+       "origin": "Miami, Florida",
+       "destination": "Boston, Massachusetts"
+      },
+      "on_file": {
+       "origin": "Miami, Florida",
+       "destination": "Boston, Massachusetts",
+       "vehicles": [],
+       "expected_vehicles": null,
+       "missing": [
+        "vehicle"
+       ]
+      },
+      "next": "Ask for the year, make and model of the vehicle."
+     },
+     "ok": true,
+     "ms": 485
+    },
+    {
+     "type": "state",
+     "seq": 4,
+     "t": 14.92,
+     "at": 1794523983156,
+     "on_file": {
+      "origin": "Miami, Florida",
+      "destination": "Boston, Massachusetts",
+      "vehicles": [],
+      "expected_vehicles": null,
+      "missing": [
+       "vehicle"
+      ]
+     },
+     "stage": "route",
+     "quote": null
+    },
+    {
+     "type": "turn",
+     "seq": 5,
+     "t": 21.03,
+     "at": 1794523989265,
+     "role": "mia",
+     "kind": "said",
+     "text": "Got it, Miami, Florida to Boston, Massachusetts. What year, make and model is the car?",
+     "metrics": {
+      "llm_ttft": 382,
+      "tts_ttfb": 145,
+      "e2e": 3524
+     },
+     "speaking_s": 5.57,
+     "interrupted": false
+    },
+    {
+     "type": "turn",
+     "seq": 6,
+     "t": 24.36,
+     "at": 1794523992592,
+     "role": "caller",
+     "kind": "said",
+     "text": "It's a twenty twenty Toyota Camry.",
+     "metrics": {
+      "end_of_turn": 577,
+      "stt": 214
+     },
+     "speaking_s": 1.64,
+     "interrupted": false
+    },
+    {
+     "type": "tool",
+     "seq": 7,
+     "t": 24.66,
+     "at": 1794523992891,
+     "name": "save_vehicle",
+     "args": {
+      "year": 2020,
+      "make": "Toyota",
+      "model": "Camry",
+      "vehicle_type": null,
+      "drivable": null,
+      "total_vehicles": null
+     },
+     "result": {
+      "ok": true,
+      "saved": {
+       "quote_id": "Q1",
+       "vehicle": "2020 Toyota Camry"
+      },
+      "on_file": {
+       "origin": "Miami, Florida",
+       "destination": "Boston, Massachusetts",
+       "vehicles": [
+        {
+         "quote_id": "Q1",
+         "vehicle": "2020 Toyota Camry"
+        }
+       ],
+       "expected_vehicles": null,
+       "missing": []
+      },
+      "next": "Everything is on file. Read it back in one sentence (each vehicle, origin city and state, destination city and state) and ask if it's correct. Call get_quote only after they confirm."
+     },
+     "ok": true,
+     "ms": 296
+    },
+    {
+     "type": "state",
+     "seq": 8,
+     "t": 24.66,
+     "at": 1794523992891,
+     "on_file": {
+      "origin": "Miami, Florida",
+      "destination": "Boston, Massachusetts",
+      "vehicles": [
+       {
+        "quote_id": "Q1",
+        "vehicle": "2020 Toyota Camry"
+       }
+      ],
+      "expected_vehicles": null,
+      "missing": []
+     },
+     "stage": "vehicles",
+     "quote": null
+    },
+    {
+     "type": "turn",
+     "seq": 9,
+     "t": 33.01,
+     "at": 1794524001242,
+     "role": "mia",
+     "kind": "said",
+     "text": "Let me make sure I have it right: your 2020 Toyota Camry will ship from Miami, Florida to Boston, Massachusetts. Is that right?",
+     "metrics": {
+      "llm_ttft": 258,
+      "tts_ttfb": 143,
+      "e2e": 1282
+     },
+     "speaking_s": 7.95,
+     "interrupted": false
+    },
+    {
+     "type": "dropped",
+     "seq": 10,
+     "t": 36.03,
+     "at": 1794524004267,
+     "tool": "get_quote",
+     "args": "{}",
+     "why": "caller has not confirmed"
+    },
+    {
+     "type": "turn",
+     "seq": 11,
+     "t": 37.81,
+     "at": 1794524006042,
+     "role": "caller",
+     "kind": "said",
+     "text": "I'm just checking prices for now. I'll call back later. Bye.",
+     "metrics": {
+      "end_of_turn": 577,
+      "stt": 198
+     },
+     "speaking_s": 3.24,
+     "interrupted": false
+    },
+    {
+     "type": "tool",
+     "seq": 12,
+     "t": 37.81,
+     "at": 1794524006045,
+     "name": "end_call",
+     "args": {},
+     "result": {
+      "ok": true,
+      "on_file": {
+       "origin": "Miami, Florida",
+       "destination": "Boston, Massachusetts",
+       "vehicles": [
+        {
+         "quote_id": "Q1",
+         "vehicle": "2020 Toyota Camry"
+        }
+       ],
+       "expected_vehicles": null,
+       "missing": []
+      },
+      "next": "Say exactly this and nothing else: \"Thanks for calling F&F! Feel free to call us again if you'd like another quote. Have a nice day!\""
+     },
+     "ok": true,
+     "ms": 0
+    },
+    {
+     "type": "state",
+     "seq": 13,
+     "t": 37.81,
+     "at": 1794524006045,
+     "on_file": {
+      "origin": "Miami, Florida",
+      "destination": "Boston, Massachusetts",
+      "vehicles": [
+       {
+        "quote_id": "Q1",
+        "vehicle": "2020 Toyota Camry"
+       }
+      ],
+      "expected_vehicles": null,
+      "missing": []
+     },
+     "stage": "vehicles",
+     "quote": null
+    },
+    {
+     "type": "turn",
+     "seq": 14,
+     "t": 43.88,
+     "at": 1794524012118,
+     "role": "mia",
+     "kind": "said",
+     "text": "Thanks for calling F&F! Feel free to call us again if you'd like another quote. Have a nice day!",
+     "metrics": {
+      "llm_ttft": 296,
+      "tts_ttfb": 153,
+      "e2e": 1034
+     },
+     "speaking_s": 5.62,
+     "interrupted": false
+    }
+   ]
+  }
+ },
+ {
+  "case": {
+   "noise": "classroom",
+   "snr": 12,
+   "profile": "baseline"
+  },
+  "score": {
+   "greeted": true,
+   "answered": 0,
+   "lines": 3,
+   "p50_s": null,
+   "route": true,
+   "vehicle": true,
+   "hung_up": true,
+   "cut_off": 0,
+   "long_turns": 0,
+   "noisy_mode": false,
+   "recall": 0.93,
+   "extra_words": 112
+  },
+  "result": {
+   "room": "smoke-00fd7671",
+   "greeted": true,
+   "lines": [
+    "Hi, I need to ship my car from Miami, Florida to Boston, Massachusetts.",
+    "It's a 2020 Toyota Camry.",
+    "I'm just checking prices for now. I'll call back later, bye!"
+   ],
+   "responses": [
+    null,
+    null,
+    null
+   ],
+   "hung_up": true,
+   "heard": [
+    {
+     "who": "mia",
+     "text": "Thanks for calling F&F. I'm Mia, a virtual assistant.",
+     "t": 6.1
+    },
+    {
+     "who": "caller",
+     "text": "Hello?",
+     "t": 6.1
+    },
+    {
+     "who": "caller",
+     "text": "Hi. I need to ship my car from Miami, Florida to Boston, Massachusetts.",
+     "t": 9.3
+    },
+    {
+     "who": "caller",
+     "text": "Honestly, the second question was way harder than the first. I left my",
+     "t": 13.4
+    },
+    {
+     "who": "caller",
+     "text": "than first.",
+     "t": 18.4
+    },
+    {
+     "who": "caller",
+     "text": "Austin last summer.",
+     "t": 26.6
+    },
+    {
+     "who": "caller",
+     "text": "Did you finish the reading for today? Thanks watching. Have a new project.",
+     "t": 28.5
+    },
+    {
+     "who": "caller",
+     "text": "Are you going to It's a twenty twenty Toyota Camry. Event tonight, Friday, and come Why? Drive",
+     "t": 33.6
+    },
+    {
+     "who": "caller",
+     "text": "event I'm flying Denver on Friday.",
+     "t": 38.0
+    },
+    {
+     "who": "caller",
+     "text": "For the project?",
+     "t": 45.9
+    },
+    {
+     "who": "caller",
+     "text": "Parts. Wait. Sorry. Can you send me the slides from last week? I'm just checking prices for call",
+     "t": 54.0
+    },
+    {
+     "who": "caller",
+     "text": "I'll call back later. Bye.",
+     "t": 58.2
+    },
+    {
+     "who": "caller",
+     "text": "Did anyone take notes on the pricing framework with NetWeek on Preview? I said a",
+     "t": 70.0
+    },
+    {
+     "who": "caller",
+     "text": "second question was way harder than the first. I love my charger. Love",
+     "t": 74.5
+    },
+    {
+     "who": "caller",
+     "text": "She drove all the way from Chicago to",
+     "t": 83.5
+    },
+    {
+     "who": "caller",
+     "text": "Austin last summer.",
+     "t": 86.8
+    },
+    {
+     "who": "caller",
+     "text": "Did you finish the reading for today's date? We have a group for you. Project.",
+     "t": 88.8
+    },
+    {
+     "who": "caller",
+     "text": "Are you going to I'm That's all. Event tonight, Friday. I'm fine.",
+     "t": 94.2
+    }
+   ],
+   "events": [
+    {
+     "type": "config",
+     "seq": 0,
+     "t": 0.0,
+     "at": 1794524019733,
+     "stt": "Deepgram nova-3",
+     "llm": "Groq openai/gpt-oss-20b",
+     "tts": "Cartesia \u00b7 Skylar",
+     "turn_detector": "LiveKit auto",
+     "noise_handling": "baseline",
+     "max_call_s": "360"
+    },
+    {
+     "type": "turn",
+     "seq": 1,
+     "t": 0.05,
+     "at": 1794524019777,
+     "role": "mia",
+     "kind": "greeting",
+     "text": "Thanks for calling F&F. I'm Mia, a virtual assistant. Let's get your quote: what city is the car shipping from, and where to?",
+     "metrics": {},
+     "speaking_s": null,
+     "interrupted": false
+    },
+    {
+     "type": "turn",
+     "seq": 2,
+     "t": 60.73,
+     "at": 1794524080460,
+     "role": "caller",
+     "kind": "said",
+     "text": "Hello? Hi. I need to ship my car from Miami, Florida to Boston, Massachusetts. Honestly, the second question was way harder than the first. I left my than first. Austin last summer. Did you finish the reading for today? Thanks watching. Have a new project. Are you going to It's a twenty twenty Toyota Camry. Event tonight, Friday, and come Why? Drive event I'm flying Denver on Friday. For the project? Parts. Wait. Sorry. Can you send me the slides from last week? I'm just checking prices for call I'll call back later. Bye.",
+     "metrics": {
+      "end_of_turn": 577,
+      "stt": 0
+     },
+     "speaking_s": 59.38,
+     "interrupted": false
+    },
+    {
+     "type": "tool",
+     "seq": 3,
+     "t": 61.41,
+     "at": 1794524081142,
+     "name": "save_vehicle",
+     "args": {
+      "year": 2020,
+      "make": "Toyota",
+      "model": "Camry",
+      "vehicle_type": null,
+      "drivable": null,
+      "total_vehicles": null
+     },
+     "result": {
+      "ok": true,
+      "saved": {
+       "quote_id": "Q1",
+       "vehicle": "2020 Toyota Camry"
+      },
+      "on_file": {
+       "origin": null,
+       "destination": null,
+       "vehicles": [
+        {
+         "quote_id": "Q1",
+         "vehicle": "2020 Toyota Camry"
+        }
+       ],
+       "expected_vehicles": null,
+       "missing": [
+        "origin",
+        "destination"
+       ]
+      },
+      "next": "The caller also asked a question in this message: answer it first in one short sentence (only from your instructions; offer a licensed representative if they don't cover it), then: Ask for the origin and destination (city and state)."
+     },
+     "ok": true,
+     "ms": 251
+    },
+    {
+     "type": "state",
+     "seq": 4,
+     "t": 61.41,
+     "at": 1794524081142,
+     "on_file": {
+      "origin": null,
+      "destination": null,
+      "vehicles": [
+       {
+        "quote_id": "Q1",
+        "vehicle": "2020 Toyota Camry"
+       }
+      ],
+      "expected_vehicles": null,
+      "missing": [
+       "origin",
+       "destination"
+      ]
+     },
+     "stage": "vehicles",
+     "quote": null
+    },
+    {
+     "type": "tool",
+     "seq": 5,
+     "t": 61.43,
+     "at": 1794524081159,
+     "name": "save_origin_destination",
+     "args": {
+      "origin_city": "Miami",
+      "origin_state": "Florida",
+      "destination_city": "Boston",
+      "destination_state": "Massachusetts"
+     },
+     "result": {
+      "ok": true,
+      "saved": {
+       "origin": "Miami, Florida",
+       "destination": "Boston, Massachusetts"
+      },
+      "on_file": {
+       "origin": "Miami, Florida",
+       "destination": "Boston, Massachusetts",
+       "vehicles": [
+        {
+         "quote_id": "Q1",
+         "vehicle": "2020 Toyota Camry"
+        }
+       ],
+       "expected_vehicles": null,
+       "missing": []
+      },
+      "next": "The caller also asked a question in this message: answer it first in one short sentence (only from your instructions; offer a licensed representative if they don't cover it), then: Everything is on file. Read it back in one sentence (each vehicle, origin city and state, destination city and state) and ask if it's correct. Call get_quote only after they confirm."
+     },
+     "ok": true,
+     "ms": 273
+    },
+    {
+     "type": "state",
+     "seq": 6,
+     "t": 61.43,
+     "at": 1794524081159,
+     "on_file": {
+      "origin": "Miami, Florida",
+      "destination": "Boston, Massachusetts",
+      "vehicles": [
+       {
+        "quote_id": "Q1",
+        "vehicle": "2020 Toyota Camry"
+       }
+      ],
+      "expected_vehicles": null,
+      "missing": []
+     },
+     "stage": "vehicles",
+     "quote": null
+    },
+    {
+     "type": "dropped",
+     "seq": 7,
+     "t": 61.73,
+     "at": 1794524081456,
+     "tool": "note_off_topic",
+     "args": "{\"next\":\"I\u2019m not sure about that. I can connect you with a licensed representative to help.\"}",
+     "why": "caller's message is about the quote"
+    }
+   ]
+  }
+ },
+ {
+  "case": {
+   "noise": "classroom",
+   "snr": 12,
+   "profile": "filter"
+  },
+  "score": {
+   "greeted": true,
+   "answered": 3,
+   "lines": 3,
+   "p50_s": 3.4,
+   "route": true,
+   "vehicle": true,
+   "hung_up": true,
+   "cut_off": 1,
+   "long_turns": 0,
+   "noisy_mode": false,
+   "recall": 0.93,
+   "extra_words": 14
+  },
+  "result": {
+   "room": "smoke-8e764333",
+   "greeted": true,
+   "lines": [
+    "Hi, I need to ship my car from Miami, Florida to Boston, Massachusetts.",
+    "It's a 2020 Toyota Camry.",
+    "I'm just checking prices for now. I'll call back later, bye!"
+   ],
+   "responses": [
+    4.0310000001918525,
+    1.25,
+    3.375
+   ],
+   "hung_up": true,
+   "heard": [
+    {
+     "who": "mia",
+     "text": "Thanks for calling F&F. I'm Mia, a virtual assistant. Let's get your quote: what city",
+     "t": 8.3
+    },
+    {
+     "who": "caller",
+     "text": "Anyone take notes on the pricing framework with... Might.",
+     "t": 8.3
+    },
+    {
+     "who": "caller",
+     "text": "I need to ship my car from Miami, Florida to Boston, Massachusetts.",
+     "t": 12.4
+    },
+    {
+     "who": "mia",
+     "text": "Got it, Miami, Florida to Boston, Massachusetts. What year, make and model is the car?",
+     "t": 21.2
+    },
+    {
+     "who": "caller",
+     "text": "It's a twenty twenty Toyota Camry.",
+     "t": 24.5
+    },
+    {
+     "who": "mia",
+     "text": "Let me make sure I have it right: your 2020 Toyota Camry will ship from Miami, Florida to Boston, Massachusetts. Is that right?",
+     "t": 32.9
+    },
+    {
+     "who": "caller",
+     "text": "I'm just checking prices for now.",
+     "t": 35.8
+    },
+    {
+     "who": "caller",
+     "text": "I'll call back later.",
+     "t": 37.0
+    },
+    {
+     "who": "caller",
+     "text": "Bye.",
+     "t": 37.9
+    },
+    {
+     "who": "caller",
+     "text": "I can't",
+     "t": 41.4
+    },
+    {
+     "who": "mia",
+     "text": "Thanks for calling",
+     "t": 43.7
+    },
+    {
+     "who": "mia",
+     "text": "Thank you for calling F&F. If you ever need another quote, just give us a call. Have a great day!",
+     "t": 49.7
+    },
+    {
+     "who": "caller",
+     "text": "Sorry.",
+     "t": 50.3
+    }
+   ],
+   "events": [
+    {
+     "type": "config",
+     "seq": 0,
+     "t": 0.0,
+     "at": 1794524118451,
+     "stt": "Deepgram nova-3",
+     "llm": "Groq openai/gpt-oss-20b",
+     "tts": "Cartesia \u00b7 Skylar",
+     "turn_detector": "LiveKit auto",
+     "noise_handling": "filter",
+     "max_call_s": "360"
+    },
+    {
+     "type": "turn",
+     "seq": 1,
+     "t": 0.04,
+     "at": 1794524118482,
+     "role": "mia",
+     "kind": "greeting",
+     "text": "Thanks for calling F&F. I'm Mia, a virtual assistant. Let's get your quote: what city is the car shipping from, and where to?",
+     "metrics": {},
+     "speaking_s": null,
+     "interrupted": false
+    },
+    {
+     "type": "turn",
+     "seq": 2,
+     "t": 15.29,
+     "at": 1794524133739,
+     "role": "caller",
+     "kind": "said",
+     "text": "Anyone take notes on the pricing framework with... Might. I need to ship my car from Miami, Florida to Boston, Massachusetts.",
+     "metrics": {
+      "end_of_turn": 3391,
+      "stt": 204
+     },
+     "speaking_s": 10.74,
+     "interrupted": false
+    },
+    {
+     "type": "tool",
+     "seq": 3,
+     "t": 16.01,
+     "at": 1794524134460,
+     "name": "save_origin_destination",
+     "args": {
+      "origin_city": "Miami",
+      "origin_state": "Florida",
+      "destination_city": "Boston",
+      "destination_state": "Massachusetts"
+     },
+     "result": {
+      "ok": true,
+      "saved": {
+       "origin": "Miami, Florida",
+       "destination": "Boston, Massachusetts"
+      },
+      "on_file": {
+       "origin": "Miami, Florida",
+       "destination": "Boston, Massachusetts",
+       "vehicles": [],
+       "expected_vehicles": null,
+       "missing": [
+        "vehicle"
+       ]
+      },
+      "next": "Ask for the year, make and model of the vehicle."
+     },
+     "ok": true,
+     "ms": 468
+    },
+    {
+     "type": "state",
+     "seq": 4,
+     "t": 16.01,
+     "at": 1794524134460,
+     "on_file": {
+      "origin": "Miami, Florida",
+      "destination": "Boston, Massachusetts",
+      "vehicles": [],
+      "expected_vehicles": null,
+      "missing": [
+       "vehicle"
+      ]
+     },
+     "stage": "route",
+     "quote": null
+    },
+    {
+     "type": "turn",
+     "seq": 5,
+     "t": 22.02,
+     "at": 1794524140465,
+     "role": "mia",
+     "kind": "said",
+     "text": "Got it, Miami, Florida to Boston, Massachusetts. What year, make and model is the car?",
+     "metrics": {
+      "llm_ttft": 234,
+      "tts_ttfb": 144,
+      "e2e": 4525
+     },
+     "speaking_s": 5.62,
+     "interrupted": false
+    },
+    {
+     "type": "turn",
+     "seq": 6,
+     "t": 25.39,
+     "at": 1794524143835,
+     "role": "caller",
+     "kind": "said",
+     "text": "It's a twenty twenty Toyota Camry.",
+     "metrics": {
+      "end_of_turn": 577,
+      "stt": 211
+     },
+     "speaking_s": 1.69,
+     "interrupted": false
+    },
+    {
+     "type": "tool",
+     "seq": 7,
+     "t": 25.66,
+     "at": 1794524144104,
+     "name": "save_vehicle",
+     "args": {
+      "year": 2020,
+      "make": "Toyota",
+      "model": "Camry",
+      "vehicle_type": null,
+      "drivable": null,
+      "total_vehicles": null
+     },
+     "result": {
+      "ok": true,
+      "saved": {
+       "quote_id": "Q1",
+       "vehicle": "2020 Toyota Camry"
+      },
+      "on_file": {
+       "origin": "Miami, Florida",
+       "destination": "Boston, Massachusetts",
+       "vehicles": [
+        {
+         "quote_id": "Q1",
+         "vehicle": "2020 Toyota Camry"
+        }
+       ],
+       "expected_vehicles": null,
+       "missing": []
+      },
+      "next": "Everything is on file. Read it back in one sentence (each vehicle, origin city and state, destination city and state) and ask if it's correct. Call get_quote only after they confirm."
+     },
+     "ok": true,
+     "ms": 264
+    },
+    {
+     "type": "state",
+     "seq": 8,
+     "t": 25.66,
+     "at": 1794524144104,
+     "on_file": {
+      "origin": "Miami, Florida",
+      "destination": "Boston, Massachusetts",
+      "vehicles": [
+       {
+        "quote_id": "Q1",
+        "vehicle": "2020 Toyota Camry"
+       }
+      ],
+      "expected_vehicles": null,
+      "missing": []
+     },
+     "stage": "vehicles",
+     "quote": null
+    },
+    {
+     "type": "turn",
+     "seq": 9,
+     "t": 33.63,
+     "at": 1794524152080,
+     "role": "mia",
+     "kind": "said",
+     "text": "Let me make sure I have it right: your 2020 Toyota Camry will ship from Miami, Florida to Boston, Massachusetts. Is that right?",
+     "metrics": {
+      "llm_ttft": 204,
+      "tts_ttfb": 148,
+      "e2e": 1205
+     },
+     "speaking_s": 7.62,
+     "interrupted": false
+    },
+    {
+     "type": "turn",
+     "seq": 10,
+     "t": 40.46,
+     "at": 1794524158910,
+     "role": "caller",
+     "kind": "said",
+     "text": "I'm just checking prices for now. I'll call back later. Bye.",
+     "metrics": {
+      "end_of_turn": 2501,
+      "stt": 389
+     },
+     "speaking_s": 3.29,
+     "interrupted": false
+    },
+    {
+     "type": "tool",
+     "seq": 11,
+     "t": 40.47,
+     "at": 1794524158912,
+     "name": "end_call",
+     "args": {},
+     "result": {
+      "ok": true,
+      "on_file": {
+       "origin": "Miami, Florida",
+       "destination": "Boston, Massachusetts",
+       "vehicles": [
+        {
+         "quote_id": "Q1",
+         "vehicle": "2020 Toyota Camry"
+        }
+       ],
+       "expected_vehicles": null,
+       "missing": []
+      },
+      "next": "Say exactly this and nothing else: \"Thanks for calling F&F! Feel free to call us again if you'd like another quote. Have a nice day!\""
+     },
+     "ok": true,
+     "ms": 0
+    },
+    {
+     "type": "state",
+     "seq": 12,
+     "t": 40.47,
+     "at": 1794524158912,
+     "on_file": {
+      "origin": "Miami, Florida",
+      "destination": "Boston, Massachusetts",
+      "vehicles": [
+       {
+        "quote_id": "Q1",
+        "vehicle": "2020 Toyota Camry"
+       }
+      ],
+      "expected_vehicles": null,
+      "missing": []
+     },
+     "stage": "vehicles",
+     "quote": null
+    },
+    {
+     "type": "turn",
+     "seq": 13,
+     "t": 43.91,
+     "at": 1794524162359,
+     "role": "mia",
+     "kind": "said",
+     "text": "Thanks for calling",
+     "metrics": {
+      "llm_ttft": 272,
+      "tts_ttfb": 155,
+      "e2e": 2934
+     },
+     "speaking_s": 3.02,
+     "interrupted": true
+    },
+    {
+     "type": "turn",
+     "seq": 14,
+     "t": 43.93,
+     "at": 1794524162375,
+     "role": "caller",
+     "kind": "said",
+     "text": "I can't",
+     "metrics": {
+      "end_of_turn": 2500,
+      "stt": 352
+     },
+     "speaking_s": 0.19,
+     "interrupted": false
+    },
+    {
+     "type": "tool",
+     "seq": 15,
+     "t": 44.09,
+     "at": 1794524162537,
+     "name": "end_call",
+     "args": {},
+     "result": {
+      "ok": true,
+      "on_file": {
+       "origin": "Miami, Florida",
+       "destination": "Boston, Massachusetts",
+       "vehicles": [
+        {
+         "quote_id": "Q1",
+         "vehicle": "2020 Toyota Camry"
+        }
+       ],
+       "expected_vehicles": null,
+       "missing": []
+      },
+      "next": "Say exactly this and nothing else: \"Thank you for calling F&F. If you ever need another quote, just give us a call. Have a great day!\""
+     },
+     "ok": true,
+     "ms": 0
+    },
+    {
+     "type": "state",
+     "seq": 16,
+     "t": 44.09,
+     "at": 1794524162537,
+     "on_file": {
+      "origin": "Miami, Florida",
+      "destination": "Boston, Massachusetts",
+      "vehicles": [
+       {
+        "quote_id": "Q1",
+        "vehicle": "2020 Toyota Camry"
+       }
+      ],
+      "expected_vehicles": null,
+      "missing": []
+     },
+     "stage": "vehicles",
+     "quote": null
+    },
+    {
+     "type": "turn",
+     "seq": 17,
+     "t": 50.38,
+     "at": 1794524168829,
+     "role": "mia",
+     "kind": "said",
+     "text": "Thank you for calling F&F. If you ever need another quote, just give us a call. Have a great day!",
+     "metrics": {
+      "llm_ttft": 199,
+      "tts_ttfb": 139,
+      "e2e": 3024
+     },
+     "speaking_s": 5.95,
+     "interrupted": false
+    },
+    {
+     "type": "turn",
+     "seq": 18,
+     "t": 50.49,
+     "at": 1794524168933,
+     "role": "caller",
+     "kind": "said",
+     "text": "Sorry.",
+     "metrics": {
+      "end_of_turn": 911,
+      "stt": 909
+     },
+     "speaking_s": 0.19,
+     "interrupted": false
+    }
+   ]
+  }
+ },
+ {
+  "case": {
+   "noise": "classroom",
+   "snr": 12,
+   "profile": "full"
+  },
+  "score": {
+   "greeted": true,
+   "answered": 3,
+   "lines": 3,
+   "p50_s": 3.4,
+   "route": true,
+   "vehicle": true,
+   "hung_up": true,
+   "cut_off": 1,
+   "long_turns": 0,
+   "noisy_mode": false,
+   "recall": 0.86,
+   "extra_words": 18
+  },
+  "result": {
+   "room": "smoke-c0c9b252",
+   "greeted": true,
+   "lines": [
+    "Hi, I need to ship my car from Miami, Florida to Boston, Massachusetts.",
+    "It's a 2020 Toyota Camry.",
+    "I'm just checking prices for now. I'll call back later, bye!"
+   ],
+   "responses": [
+    4.9530000002123415,
+    3.3590000001713634,
+    1.0
+   ],
+   "hung_up": true,
+   "heard": [
+    {
+     "who": "mia",
+     "text": "Hi, and thanks for calling F&F. I'm Mia, a virtual assistant. To",
+     "t": 8.1
+    },
+    {
+     "who": "caller",
+     "text": "Hi. I need to ship my car from Miami, Florida.",
+     "t": 8.1
+    },
+    {
+     "who": "caller",
+     "text": "To Boston, Massachusetts.",
+     "t": 10.0
+    },
+    {
+     "who": "mia",
+     "text": "Got it, Miami to Boston. What year, make and model is the car?",
+     "t": 18.3
+    },
+    {
+     "who": "caller",
+     "text": "It's a twenty twenty Toyota Camry.",
+     "t": 21.8
+    },
+    {
+     "who": "mia",
+     "text": "So that's your 2020 Toyota Camry, shipping from Miami, Florida to Boston, Massachusetts. Does that sound right?",
+     "t": 31.5
+    },
+    {
+     "who": "caller",
+     "text": "Just check the prices for them.",
+     "t": 34.6
+    },
+    {
+     "who": "caller",
+     "text": "I'll call back later.",
+     "t": 35.7
+    },
+    {
+     "who": "caller",
+     "text": "Bye.",
+     "t": 36.2
+    },
+    {
+     "who": "mia",
+     "text": "Let me make sure I have it right: your 2020 Toyota Camry will ship from Miami, Florida",
+     "t": 45.3
+    },
+    {
+     "who": "caller",
+     "text": "I can't believe it's over to my my job",
+     "t": 45.3
+    },
+    {
+     "who": "caller",
+     "text": "if anyone seems to notice on the pricing framework.",
+     "t": 48.6
+    }
+   ],
+   "events": [
+    {
+     "type": "config",
+     "seq": 0,
+     "t": 0.0,
+     "at": 1794524174192,
+     "stt": "Deepgram nova-3",
+     "llm": "Groq openai/gpt-oss-20b",
+     "tts": "Cartesia \u00b7 Skylar",
+     "turn_detector": "LiveKit auto",
+     "noise_handling": "full",
+     "max_call_s": "360"
+    },
+    {
+     "type": "turn",
+     "seq": 1,
+     "t": 0.04,
+     "at": 1794524174231,
+     "role": "mia",
+     "kind": "greeting",
+     "text": "Hi, and thanks for calling F&F. I'm Mia, a virtual assistant. To quote your car shipment, where are you shipping from and to?",
+     "metrics": {},
+     "speaking_s": null,
+     "interrupted": false
+    },
+    {
+     "type": "turn",
+     "seq": 2,
+     "t": 13.48,
+     "at": 1794524187672,
+     "role": "caller",
+     "kind": "said",
+     "text": "Hi. I need to ship my car from Miami, Florida. To Boston, Massachusetts.",
+     "metrics": {
+      "end_of_turn": 2500,
+      "stt": 0
+     },
+     "speaking_s": 9.84,
+     "interrupted": false
+    },
+    {
+     "type": "tool",
+     "seq": 3,
+     "t": 13.9,
+     "at": 1794524188084,
+     "name": "save_origin_destination",
+     "args": {
+      "origin_city": "Miami",
+      "origin_state": "Florida",
+      "destination_city": "Boston",
+      "destination_state": "Massachusetts"
+     },
+     "result": {
+      "ok": true,
+      "saved": {
+       "origin": "Miami, Florida",
+       "destination": "Boston, Massachusetts"
+      },
+      "on_file": {
+       "origin": "Miami, Florida",
+       "destination": "Boston, Massachusetts",
+       "vehicles": [],
+       "expected_vehicles": null,
+       "missing": [
+        "vehicle"
+       ]
+      },
+      "next": "Ask for the year, make and model of the vehicle."
+     },
+     "ok": true,
+     "ms": 409
+    },
+    {
+     "type": "state",
+     "seq": 4,
+     "t": 13.9,
+     "at": 1794524188084,
+     "on_file": {
+      "origin": "Miami, Florida",
+      "destination": "Boston, Massachusetts",
+      "vehicles": [],
+      "expected_vehicles": null,
+      "missing": [
+       "vehicle"
+      ]
+     },
+     "stage": "route",
+     "quote": null
+    },
+    {
+     "type": "turn",
+     "seq": 5,
+     "t": 18.21,
+     "at": 1794524192403,
+     "role": "mia",
+     "kind": "said",
+     "text": "Got it, Miami to Boston. What year, make and model is the car?",
+     "metrics": {
+      "llm_ttft": 226,
+      "tts_ttfb": 138,
+      "e2e": 3283
+     },
+     "speaking_s": 3.95,
+     "interrupted": false
+    },
+    {
+     "type": "turn",
+     "seq": 6,
+     "t": 24.5,
+     "at": 1794524198684,
+     "role": "caller",
+     "kind": "said",
+     "text": "It's a twenty twenty Toyota Camry.",
+     "metrics": {
+      "end_of_turn": 2501,
+      "stt": 435
+     },
+     "speaking_s": 2.6,
+     "interrupted": false
+    },
+    {
+     "type": "tool",
+     "seq": 7,
+     "t": 24.76,
+     "at": 1794524198953,
+     "name": "save_vehicle",
+     "args": {
+      "year": 2020,
+      "make": "Toyota",
+      "model": "Camry",
+      "vehicle_type": null,
+      "drivable": null,
+      "total_vehicles": null
+     },
+     "result": {
+      "ok": true,
+      "saved": {
+       "quote_id": "Q1",
+       "vehicle": "2020 Toyota Camry"
+      },
+      "on_file": {
+       "origin": "Miami, Florida",
+       "destination": "Boston, Massachusetts",
+       "vehicles": [
+        {
+         "quote_id": "Q1",
+         "vehicle": "2020 Toyota Camry"
+        }
+       ],
+       "expected_vehicles": null,
+       "missing": []
+      },
+      "next": "Everything is on file. Read it back in one sentence (each vehicle, origin city and state, destination city and state) and ask if it's correct. Call get_quote only after they confirm."
+     },
+     "ok": true,
+     "ms": 266
+    },
+    {
+     "type": "state",
+     "seq": 8,
+     "t": 24.76,
+     "at": 1794524198953,
+     "on_file": {
+      "origin": "Miami, Florida",
+      "destination": "Boston, Massachusetts",
+      "vehicles": [
+       {
+        "quote_id": "Q1",
+        "vehicle": "2020 Toyota Camry"
+       }
+      ],
+      "expected_vehicles": null,
+      "missing": []
+     },
+     "stage": "vehicles",
+     "quote": null
+    },
+    {
+     "type": "turn",
+     "seq": 9,
+     "t": 31.93,
+     "at": 1794524206114,
+     "role": "mia",
+     "kind": "said",
+     "text": "So that's your 2020 Toyota Camry, shipping from Miami, Florida to Boston, Massachusetts. Does that sound right?",
+     "metrics": {
+      "llm_ttft": 276,
+      "tts_ttfb": 141,
+      "e2e": 3196
+     },
+     "speaking_s": 6.74,
+     "interrupted": false
+    },
+    {
+     "type": "dropped",
+     "seq": 10,
+     "t": 34.79,
+     "at": 1794524208982,
+     "tool": "get_quote",
+     "args": "{}",
+     "why": "caller has not confirmed"
+    },
+    {
+     "type": "dropped",
+     "seq": 11,
+     "t": 35.91,
+     "at": 1794524210102,
+     "tool": "get_quote",
+     "args": "{}",
+     "why": "caller has not confirmed"
+    },
+    {
+     "type": "dropped",
+     "seq": 12,
+     "t": 36.42,
+     "at": 1794524210608,
+     "tool": "get_quote",
+     "args": "{\"\":\"\"}",
+     "why": "caller has not confirmed"
+    },
+    {
+     "type": "turn",
+     "seq": 13,
+     "t": 36.47,
+     "at": 1794524210658,
+     "role": "caller",
+     "kind": "said",
+     "text": "Just check the prices for them. I'll call back later. Bye.",
+     "metrics": {
+      "end_of_turn": 577,
+      "stt": 278
+     },
+     "speaking_s": 2.84,
+     "interrupted": false
+    },
+    {
+     "type": "turn",
+     "seq": 14,
+     "t": 45.11,
+     "at": 1794524219295,
+     "role": "mia",
+     "kind": "said",
+     "text": "Let me make sure I have it right: your 2020 Toyota Camry will ship from Miami, Florida",
+     "metrics": {
+      "llm_ttft": 246,
+      "tts_ttfb": 139,
+      "e2e": 720
+     },
+     "speaking_s": 8.49,
+     "interrupted": true
+    }
+   ]
+  }
+ },
+ {
+  "case": {
+   "noise": "classroom",
+   "snr": 5,
+   "profile": "baseline"
+  },
+  "score": {
+   "greeted": true,
+   "answered": 0,
+   "lines": 3,
+   "p50_s": null,
+   "route": true,
+   "vehicle": false,
+   "hung_up": true,
+   "cut_off": 0,
+   "long_turns": 0,
+   "noisy_mode": false,
+   "recall": 0.69,
+   "extra_words": 111
+  },
+  "result": {
+   "room": "smoke-8f90b5fb",
+   "greeted": true,
+   "lines": [
+    "Hi, I need to ship my car from Miami, Florida to Boston, Massachusetts.",
+    "It's a 2020 Toyota Camry.",
+    "I'm just checking prices for now. I'll call back later, bye!"
+   ],
+   "responses": [
+    null,
+    null,
+    null
+   ],
+   "hung_up": true,
+   "heard": [
+    {
+     "who": "mia",
+     "text": "Thanks for calling F&F. I'm Mia, a virtual assistant.",
+     "t": 6.6
+    },
+    {
+     "who": "caller",
+     "text": "Hello.",
+     "t": 6.6
+    },
+    {
+     "who": "caller",
+     "text": "Hi. I need to ship my car from Miami, Florida to Boston, Mass.",
+     "t": 10.0
+    },
+    {
+     "who": "caller",
+     "text": "She drove all the way from Chicago to Austin last summer.",
+     "t": 24.3
+    },
+    {
+     "who": "caller",
+     "text": "Did you finish the reading for today? Thanks. Can we improve our reading of the project?",
+     "t": 28.6
+    },
+    {
+     "who": "caller",
+     "text": "Are you going to... Is it twenty twenty twenty? I'm fine. Why? Drop",
+     "t": 33.8
+    },
+    {
+     "who": "caller",
+     "text": "I'm flying to Denver on Friday.",
+     "t": 38.2
+    },
+    {
+     "who": "caller",
+     "text": "Three parts. Wait. Sorry. Can you send me the slides from last week?",
+     "t": 53.9
+    },
+    {
+     "who": "caller",
+     "text": "I'll call back later.",
+     "t": 57.4
+    },
+    {
+     "who": "caller",
+     "text": "Brother. Anyone take notes on the pricing framework with the network improvement? Honestly, the second question",
+     "t": 71.0
+    },
+    {
+     "who": "caller",
+     "text": "was way harder than the first. I left my charger in the back.",
+     "t": 74.7
+    },
+    {
+     "who": "caller",
+     "text": "She drove all the way from Chicago to Austin last summer.",
+     "t": 84.0
+    },
+    {
+     "who": "caller",
+     "text": "Did you finish the reading for today? Thanks. We have a brief reading of the project.",
+     "t": 88.6
+    },
+    {
+     "who": "caller",
+     "text": "Exam you going to I don't know. That's all. Event tonight?",
+     "t": 94.0
+    }
+   ],
+   "events": [
+    {
+     "type": "config",
+     "seq": 0,
+     "t": 0.0,
+     "at": 1794524235693,
+     "stt": "Deepgram nova-3",
+     "llm": "Groq openai/gpt-oss-20b",
+     "tts": "Cartesia \u00b7 Skylar",
+     "turn_detector": "LiveKit auto",
+     "noise_handling": "baseline",
+     "max_call_s": "360"
+    },
+    {
+     "type": "turn",
+     "seq": 1,
+     "t": 0.04,
+     "at": 1794524235726,
+     "role": "mia",
+     "kind": "greeting",
+     "text": "Thanks for calling F&F. I'm Mia, a virtual assistant. Let's get your quote: what city is the car shipping from, and where to?",
+     "metrics": {},
+     "speaking_s": null,
+     "interrupted": false
+    },
+    {
+     "type": "turn",
+     "seq": 2,
+     "t": 61.01,
+     "at": 1794524296695,
+     "role": "caller",
+     "kind": "said",
+     "text": "Hello. Hi. I need to ship my car from Miami, Florida to Boston, Mass. She drove all the way from Chicago to Austin last summer. Did you finish the reading for today? Thanks. Can we improve our reading of the project? Are you going to... Is it twenty twenty twenty? I'm fine. Why? Drop I'm flying to Denver on Friday. Three parts. Wait. Sorry. Can you send me the slides from last week? I'll call back later.",
+     "metrics": {
+      "end_of_turn": 577,
+      "stt": 0
+     },
+     "speaking_s": 59.67,
+     "interrupted": false
+    },
+    {
+     "type": "tool",
+     "seq": 3,
+     "t": 61.74,
+     "at": 1794524297434,
+     "name": "save_origin_destination",
+     "args": {
+      "origin_city": "Miami",
+      "origin_state": "Florida",
+      "destination_city": "Boston",
+      "destination_state": "Massachusetts"
+     },
+     "result": {
+      "ok": true,
+      "saved": {
+       "origin": "Miami, Florida",
+       "destination": "Boston, Massachusetts"
+      },
+      "on_file": {
+       "origin": "Miami, Florida",
+       "destination": "Boston, Massachusetts",
+       "vehicles": [],
+       "expected_vehicles": null,
+       "missing": [
+        "vehicle"
+       ],
+       "heard_so_far": "2020 car"
+      },
+      "next": "The caller also asked a question in this message: answer it first in one short sentence (only from your instructions; offer a licensed representative if they don't cover it), then: They already said it's a 2020 car: don't ask for that again. Ask only for what's missing, e.g. \"What's the make and model of the 2020 car?\""
+     },
+     "ok": true,
+     "ms": 437
+    },
+    {
+     "type": "state",
+     "seq": 4,
+     "t": 61.75,
+     "at": 1794524297434,
+     "on_file": {
+      "origin": "Miami, Florida",
+      "destination": "Boston, Massachusetts",
+      "vehicles": [],
+      "expected_vehicles": null,
+      "missing": [
+       "vehicle"
+      ],
+      "heard_so_far": "2020 car"
+     },
+     "stage": "route",
+     "quote": null
+    },
+    {
+     "type": "dropped",
+     "seq": 5,
+     "t": 62.04,
+     "at": 1794524297728,
+     "tool": "note_off_topic",
+     "args": "{\"topic\":\"Did you finish the reading for today?\"}",
+     "why": "caller's message is about the quote"
+    }
+   ]
+  }
+ },
+ {
+  "case": {
+   "noise": "classroom",
+   "snr": 5,
+   "profile": "filter"
+  },
+  "score": {
+   "greeted": true,
+   "answered": 0,
+   "lines": 3,
+   "p50_s": null,
+   "route": true,
+   "vehicle": true,
+   "hung_up": false,
+   "cut_off": 0,
+   "long_turns": 0,
+   "noisy_mode": false,
+   "recall": 0.72,
+   "extra_words": 88
+  },
+  "result": {
+   "room": "smoke-15f32675",
+   "greeted": true,
+   "lines": [
+    "Hi, I need to ship my car from Miami, Florida to Boston, Massachusetts.",
+    "It's a 2020 Toyota Camry.",
+    "I'm just checking prices for now. I'll call back later, bye!"
+   ],
+   "responses": [
+    null,
+    null,
+    null
+   ],
+   "hung_up": false,
+   "heard": [
+    {
+     "who": "mia",
+     "text": "Hi, thanks for calling F&F. I'm Mia, a virtual assistant, and",
+     "t": 6.7
+    },
+    {
+     "who": "caller",
+     "text": "Actually, when I open the call Hi.",
+     "t": 6.7
+    },
+    {
+     "who": "caller",
+     "text": "I need to ship my car from Miami, Florida to Boston, Massachusetts.",
+     "t": 11.8
+    },
+    {
+     "who": "caller",
+     "text": "Wait. Hardly to for today's payment.",
+     "t": 12.9
+    },
+    {
+     "who": "caller",
+     "text": "It's so much better than the one",
+     "t": 19.8
+    },
+    {
+     "who": "caller",
+     "text": "the project.",
+     "t": 29.0
+    },
+    {
+     "who": "caller",
+     "text": "Are you going to networking networking night night. It's a twenty twenty Toyota Camry.",
+     "t": 33.0
+    },
+    {
+     "who": "caller",
+     "text": "December on Friday.",
+     "t": 36.1
+    },
+    {
+     "who": "caller",
+     "text": "I can't believe it's over to my... Sorry. No problem. One, three,",
+     "t": 45.4
+    },
+    {
+     "who": "caller",
+     "text": "anyone to make notes on the pricing",
+     "t": 46.0
+    },
+    {
+     "who": "caller",
+     "text": "My brother",
+     "t": 62.3
+    },
+    {
+     "who": "caller",
+     "text": "has plodding in the setting up that the exact is open for",
+     "t": 67.5
+    },
+    {
+     "who": "caller",
+     "text": "Downstairs, it's double the lunching hour that they like to eat some whole lunch",
+     "t": 79.4
+    },
+    {
+     "who": "caller",
+     "text": "better than the one upstairs.",
+     "t": 83.4
+    },
+    {
+     "who": "caller",
+     "text": "Are you going to Are you going to the network community now in that box? I'm writing. Hans broke down.",
+     "t": 94.0
+    }
+   ],
+   "events": [
+    {
+     "type": "config",
+     "seq": 0,
+     "t": 0.0,
+     "at": 1794524336331,
+     "stt": "Deepgram nova-3",
+     "llm": "Groq openai/gpt-oss-20b",
+     "tts": "Cartesia \u00b7 Skylar",
+     "turn_detector": "LiveKit auto",
+     "noise_handling": "filter",
+     "max_call_s": "360"
+    },
+    {
+     "type": "turn",
+     "seq": 1,
+     "t": 0.04,
+     "at": 1794524336365,
+     "role": "mia",
+     "kind": "greeting",
+     "text": "Hi, thanks for calling F&F. I'm Mia, a virtual assistant, and I'll get you a quote for shipping your car. Where are you shipping it from, and where is it going?",
+     "metrics": {},
+     "speaking_s": null,
+     "interrupted": false
+    },
+    {
+     "type": "turn",
+     "seq": 2,
+     "t": 40.14,
+     "at": 1794524376466,
+     "role": "caller",
+     "kind": "said",
+     "text": "Actually, when I open the call Hi. I need to ship my car from Miami, Florida to Boston, Massachusetts. Wait. Hardly to for today's payment. It's so much better than the one the project. Are you going to networking networking night night. It's a twenty twenty Toyota Camry. December on Friday.",
+     "metrics": {
+      "end_of_turn": 577,
+      "stt": 0
+     },
+     "speaking_s": 38.74,
+     "interrupted": false
+    },
+    {
+     "type": "tool",
+     "seq": 3,
+     "t": 40.82,
+     "at": 1794524377142,
+     "name": "save_vehicle",
+     "args": {
+      "year": 2020,
+      "make": "Toyota",
+      "model": "Camry",
+      "vehicle_type": null,
+      "drivable": null,
+      "total_vehicles": null
+     },
+     "result": {
+      "ok": true,
+      "saved": {
+       "quote_id": "Q1",
+       "vehicle": "2020 Toyota Camry"
+      },
+      "on_file": {
+       "origin": null,
+       "destination": null,
+       "vehicles": [
+        {
+         "quote_id": "Q1",
+         "vehicle": "2020 Toyota Camry"
+        }
+       ],
+       "expected_vehicles": null,
+       "missing": [
+        "origin",
+        "destination"
+       ]
+      },
+      "next": "The caller also asked a question in this message: answer it first in one short sentence (only from your instructions; offer a licensed representative if they don't cover it), then: Ask for the origin and destination (city and state)."
+     },
+     "ok": true,
+     "ms": 244
+    },
+    {
+     "type": "state",
+     "seq": 4,
+     "t": 40.82,
+     "at": 1794524377142,
+     "on_file": {
+      "origin": null,
+      "destination": null,
+      "vehicles": [
+       {
+        "quote_id": "Q1",
+        "vehicle": "2020 Toyota Camry"
+       }
+      ],
+      "expected_vehicles": null,
+      "missing": [
+       "origin",
+       "destination"
+      ]
+     },
+     "stage": "vehicles",
+     "quote": null
+    },
+    {
+     "type": "tool",
+     "seq": 5,
+     "t": 40.98,
+     "at": 1794524377306,
+     "name": "save_origin_destination",
+     "args": {
+      "origin_city": "Miami",
+      "origin_state": "Florida",
+      "destination_city": "Boston",
+      "destination_state": "Massachusetts"
+     },
+     "result": {
+      "ok": true,
+      "saved": {
+       "origin": "Miami, Florida",
+       "destination": "Boston, Massachusetts"
+      },
+      "on_file": {
+       "origin": "Miami, Florida",
+       "destination": "Boston, Massachusetts",
+       "vehicles": [
+        {
+         "quote_id": "Q1",
+         "vehicle": "2020 Toyota Camry"
+        }
+       ],
+       "expected_vehicles": null,
+       "missing": []
+      },
+      "next": "The caller also asked a question in this message: answer it first in one short sentence (only from your instructions; offer a licensed representative if they don't cover it), then: Everything is on file. Read it back in one sentence (each vehicle, origin city and state, destination city and state) and ask if it's correct. Call get_quote only after they confirm."
+     },
+     "ok": true,
+     "ms": 416
+    },
+    {
+     "type": "state",
+     "seq": 6,
+     "t": 40.98,
+     "at": 1794524377306,
+     "on_file": {
+      "origin": "Miami, Florida",
+      "destination": "Boston, Massachusetts",
+      "vehicles": [
+       {
+        "quote_id": "Q1",
+        "vehicle": "2020 Toyota Camry"
+       }
+      ],
+      "expected_vehicles": null,
+      "missing": []
+     },
+     "stage": "vehicles",
+     "quote": null
+    },
+    {
+     "type": "dropped",
+     "seq": 7,
+     "t": 41.32,
+     "at": 1794524377648,
+     "tool": "note_off_topic",
+     "args": "{\"message\":\"I\u2019m not sure I understand that. Could you clarify?\"}",
+     "why": "caller's message is about the quote"
+    },
+    {
+     "type": "dropped",
+     "seq": 8,
+     "t": 46.78,
+     "at": 1794524383109,
+     "tool": "get_quote",
+     "args": "{}",
+     "why": "caller has not confirmed"
+    }
+   ]
+  }
+ },
+ {
+  "case": {
+   "noise": "classroom",
+   "snr": 5,
+   "profile": "full"
+  },
+  "score": {
+   "greeted": true,
+   "answered": 2,
+   "lines": 3,
+   "p50_s": 6.7,
+   "route": false,
+   "vehicle": true,
+   "hung_up": true,
+   "cut_off": 0,
+   "long_turns": 6,
+   "noisy_mode": true,
+   "recall": 0.69,
+   "extra_words": 52
+  },
+  "result": {
+   "room": "smoke-7357c4da",
+   "greeted": true,
+   "lines": [
+    "Hi, I need to ship my car from Miami, Florida to Boston, Massachusetts.",
+    "It's a 2020 Toyota Camry.",
+    "I'm just checking prices for now. I'll call back later, bye!"
+   ],
+   "responses": [
+    10.688000000081956,
+    null,
+    2.7189999998081475
+   ],
+   "hung_up": true,
+   "heard": [
+    {
+     "who": "mia",
+     "text": "Hi, and thanks for calling F&F. I'm Mia, a virtual assistant. To quote your car shipment, where are you shipping from and to?",
+     "t": 7.3
+    },
+    {
+     "who": "caller",
+     "text": "I need to ship my cars to the unit to get rid of your boss three s",
+     "t": 13.5
+    },
+    {
+     "who": "caller",
+     "text": "Massachusetts.",
+     "t": 14.0
+    },
+    {
+     "who": "caller",
+     "text": "It's all the way down. It's still much better than the one My",
+     "t": 20.0
+    },
+    {
+     "who": "mia",
+     "text": "Where are you shipping the car from, and where is it going?",
+     "t": 26.9
+    },
+    {
+     "who": "caller",
+     "text": "It's a twenty twenty Toyota Camry.",
+     "t": 30.2
+    },
+    {
+     "who": "caller",
+     "text": "I can't believe it's over to my family. Trying to jog",
+     "t": 45.5
+    },
+    {
+     "who": "caller",
+     "text": "If anyone can make me a list on the price",
+     "t": 45.5
+    },
+    {
+     "who": "caller",
+     "text": "If anyone can make a noise on the pricing frame,",
+     "t": 48.7
+    },
+    {
+     "who": "caller",
+     "text": "Brother.",
+     "t": 62.3
+    },
+    {
+     "who": "mia",
+     "text": "Where are you shipping the car from, and where is it going?",
+     "t": 63.3
+    },
+    {
+     "who": "caller",
+     "text": "I'm calling in for setting up the checking prices for",
+     "t": 66.4
+    },
+    {
+     "who": "caller",
+     "text": "I'll call back later. Bye.",
+     "t": 68.7
+    },
+    {
+     "who": "mia",
+     "text": "Thanks for calling F&F! Feel free to call us again if you'd like another quote. Have a nice day!",
+     "t": 76.1
+    }
+   ],
+   "events": [
+    {
+     "type": "config",
+     "seq": 0,
+     "t": 0.0,
+     "at": 1794524437084,
+     "stt": "Deepgram nova-3",
+     "llm": "Groq openai/gpt-oss-20b",
+     "tts": "Cartesia \u00b7 Skylar",
+     "turn_detector": "LiveKit auto",
+     "noise_handling": "full",
+     "max_call_s": "360"
+    },
+    {
+     "type": "turn",
+     "seq": 1,
+     "t": 0.04,
+     "at": 1794524437119,
+     "role": "mia",
+     "kind": "greeting",
+     "text": "Hi, and thanks for calling F&F. I'm Mia, a virtual assistant. To quote your car shipment, where are you shipping from and to?",
+     "metrics": {},
+     "speaking_s": null,
+     "interrupted": false
+    },
+    {
+     "type": "tool",
+     "seq": 2,
+     "t": 14.0,
+     "at": 1794524451078,
+     "name": "end_long_turn",
+     "args": {
+      "seconds": 12.8,
+      "words": 17
+     },
+     "result": {
+      "ok": true,
+      "heard": "I need to ship my cars to the unit to get rid of your boss three s"
+     },
+     "ok": true,
+     "ms": 0
+    },
+    {
+     "type": "turn",
+     "seq": 3,
+     "t": 14.32,
+     "at": 1794524451400,
+     "role": "caller",
+     "kind": "said",
+     "text": "I need to ship my cars to the unit to get rid of your boss three s",
+     "metrics": {
+      "end_of_turn": 301,
+      "stt": 4
+     },
+     "speaking_s": 12.77,
+     "interrupted": false
+    },
+    {
+     "type": "dropped",
+     "seq": 4,
+     "t": 14.51,
+     "at": 1794524451593,
+     "tool": "note_off_topic",
+     "args": "{\"\":\" \"}",
+     "why": "caller's message is about the quote"
+    },
+    {
+     "type": "tool",
+     "seq": 5,
+     "t": 20.19,
+     "at": 1794524457271,
+     "name": "end_long_turn",
+     "args": {
+      "seconds": 19.0,
+      "words": 31
+     },
+     "result": {
+      "ok": true,
+      "heard": "I need to ship my cars to the unit to get rid of your boss three s Massachusetts. It's all the way down. It's still much better than the one My"
+     },
+     "ok": true,
+     "ms": 0
+    },
+    {
+     "type": "turn",
+     "seq": 6,
+     "t": 20.45,
+     "at": 1794524457534,
+     "role": "caller",
+     "kind": "said",
+     "text": "Massachusetts. It's all the way down. It's still much better than the one My",
+     "metrics": {
+      "end_of_turn": 301,
+      "stt": 45
+     },
+     "speaking_s": 5.35,
+     "interrupted": false
+    },
+    {
+     "type": "dropped",
+     "seq": 7,
+     "t": 20.7,
+     "at": 1794524457779,
+     "tool": "save_origin_destination",
+     "args": "{\"destination_city\":null,\"destination_state\":null,\"origin_city\":null,\"origin_state\":\"Massachusetts\"}",
+     "why": "no city the caller said"
+    },
+    {
+     "type": "turn",
+     "seq": 8,
+     "t": 26.83,
+     "at": 1794524463911,
+     "role": "mia",
+     "kind": "said",
+     "text": "Where are you shipping the car from, and where is it going?",
+     "metrics": {
+      "llm_ttft": 254,
+      "tts_ttfb": 144,
+      "e2e": 3854
+     },
+     "speaking_s": 2.84,
+     "interrupted": false
+    },
+    {
+     "type": "turn",
+     "seq": 9,
+     "t": 31.69,
+     "at": 1794524468774,
+     "role": "caller",
+     "kind": "said",
+     "text": "It's a twenty twenty Toyota Camry.",
+     "metrics": {
+      "end_of_turn": 577,
+      "stt": 0
+     },
+     "speaking_s": 6.72,
+     "interrupted": false
+    },
+    {
+     "type": "tool",
+     "seq": 10,
+     "t": 31.94,
+     "at": 1794524469020,
+     "name": "save_vehicle",
+     "args": {
+      "year": 2020,
+      "make": "Toyota",
+      "model": "Camry",
+      "vehicle_type": null,
+      "drivable": null,
+      "total_vehicles": null
+     },
+     "result": {
+      "ok": true,
+      "saved": {
+       "quote_id": "Q1",
+       "vehicle": "2020 Toyota Camry"
+      },
+      "on_file": {
+       "origin": null,
+       "destination": null,
+       "vehicles": [
+        {
+         "quote_id": "Q1",
+         "vehicle": "2020 Toyota Camry"
+        }
+       ],
+       "expected_vehicles": null,
+       "missing": [
+        "origin",
+        "destination"
+       ]
+      },
+      "next": "Ask for the origin and destination (city and state)."
+     },
+     "ok": true,
+     "ms": 243
+    },
+    {
+     "type": "state",
+     "seq": 11,
+     "t": 31.94,
+     "at": 1794524469020,
+     "on_file": {
+      "origin": null,
+      "destination": null,
+      "vehicles": [
+       {
+        "quote_id": "Q1",
+        "vehicle": "2020 Toyota Camry"
+       }
+      ],
+      "expected_vehicles": null,
+      "missing": [
+       "origin",
+       "destination"
+      ]
+     },
+     "stage": "vehicles",
+     "quote": null
+    },
+    {
+     "type": "tool",
+     "seq": 12,
+     "t": 35.8,
+     "at": 1794524472875,
+     "name": "save_origin_destination",
+     "args": {
+      "origin_city": "Massachusetts",
+      "origin_state": "Massachusetts",
+      "destination_city": null,
+      "destination_state": null
+     },
+     "result": {
+      "ok": false,
+      "error_code": "CITY_NOT_FOUND",
+      "attempts": 1,
+      "failed": "origin",
+      "heard": {
+       "city": "Massachusetts",
+       "state": "Massachusetts"
+      },
+      "on_file": {
+       "origin": null,
+       "destination": null,
+       "vehicles": [
+        {
+         "quote_id": "Q1",
+         "vehicle": "2020 Toyota Camry"
+        }
+       ],
+       "expected_vehicles": null,
+       "missing": [
+        "origin",
+        "destination"
+       ]
+      },
+      "next": "They named the state, Massachusetts, not a city. Ask which city in Massachusetts (don't say you couldn't find it)."
+     },
+     "ok": false,
+     "ms": 150
+    },
+    {
+     "type": "state",
+     "seq": 13,
+     "t": 35.8,
+     "at": 1794524472875,
+     "on_file": {
+      "origin": null,
+      "destination": null,
+      "vehicles": [
+       {
+        "quote_id": "Q1",
+        "vehicle": "2020 Toyota Camry"
+       }
+      ],
+      "expected_vehicles": null,
+      "missing": [
+       "origin",
+       "destination"
+      ]
+     },
+     "stage": "vehicles",
+     "quote": null
+    },
+    {
+     "type": "tool",
+     "seq": 14,
+     "t": 45.92,
+     "at": 1794524483003,
+     "name": "end_long_turn",
+     "args": {
+      "seconds": 21.5,
+      "words": 17
+     },
+     "result": {
+      "ok": true,
+      "heard": "It's a twenty twenty Toyota Camry. I can't believe it's over to my family. Trying to jog"
+     },
+     "ok": true,
+     "ms": 0
+    },
+    {
+     "type": "tool",
+     "seq": 15,
+     "t": 45.92,
+     "at": 1794524483003,
+     "name": "noisy_mode",
+     "args": {
+      "signals": 3,
+      "last": "long_turn"
+     },
+     "result": {
+      "ok": true,
+      "min_words": 3
+     },
+     "ok": true,
+     "ms": 0
+    },
+    {
+     "type": "turn",
+     "seq": 16,
+     "t": 46.21,
+     "at": 1794524483290,
+     "role": "caller",
+     "kind": "said",
+     "text": "I can't believe it's over to my family. Trying to jog If anyone can make me a list on the price",
+     "metrics": {
+      "end_of_turn": 301,
+      "stt": 18
+     },
+     "speaking_s": 14.07,
+     "interrupted": false
+    },
+    {
+     "type": "tool",
+     "seq": 17,
+     "t": 48.89,
+     "at": 1794524485974,
+     "name": "end_long_turn",
+     "args": {
+      "seconds": 24.5,
+      "words": 27
+     },
+     "result": {
+      "ok": true,
+      "heard": "It's a twenty twenty Toyota Camry. I can't believe it's over to my family. Trying to jog If anyone can make a noise on the pricing frame,"
+     },
+     "ok": true,
+     "ms": 0
+    },
+    {
+     "type": "turn",
+     "seq": 18,
+     "t": 49.16,
+     "at": 1794524486240,
+     "role": "caller",
+     "kind": "said",
+     "text": "If anyone can make a noise on the pricing frame,",
+     "metrics": {},
+     "speaking_s": null,
+     "interrupted": false
+    },
+    {
+     "type": "dropped",
+     "seq": 19,
+     "t": 49.32,
+     "at": 1794524486403,
+     "tool": "save_origin_destination",
+     "args": "{\"origin_city\":\"Boston\",\"origin_state\":\"Massachusetts\"}",
+     "why": "no city the caller said"
+    },
+    {
+     "type": "turn",
+     "seq": 20,
+     "t": 63.17,
+     "at": 1794524500248,
+     "role": "mia",
+     "kind": "said",
+     "text": "Where are you shipping the car from, and where is it going?",
+     "metrics": {
+      "llm_ttft": 172,
+      "tts_ttfb": 157
+     },
+     "speaking_s": 2.42,
+     "interrupted": false
+    },
+    {
+     "type": "tool",
+     "seq": 21,
+     "t": 66.0,
+     "at": 1794524503083,
+     "name": "end_long_turn",
+     "args": {
+      "seconds": 28.3,
+      "words": 11
+     },
+     "result": {
+      "ok": true,
+      "heard": "Brother. I'm calling in for setting up the checking prices for"
+     },
+     "ok": true,
+     "ms": 0
+    },
+    {
+     "type": "turn",
+     "seq": 22,
+     "t": 66.02,
+     "at": 1794524503102,
+     "role": "caller",
+     "kind": "said",
+     "text": "Brother. I'm calling in for setting up the checking prices for",
+     "metrics": {},
+     "speaking_s": null,
+     "interrupted": false
+    },
+    {
+     "type": "tool",
+     "seq": 23,
+     "t": 69.51,
+     "at": 1794524506588,
+     "name": "end_long_turn",
+     "args": {
+      "seconds": 31.7,
+      "words": 16
+     },
+     "result": {
+      "ok": true,
+      "heard": "Brother. I'm calling in for setting up the checking prices for I'll call back later. Bye."
+     },
+     "ok": true,
+     "ms": 0
+    },
+    {
+     "type": "turn",
+     "seq": 24,
+     "t": 69.82,
+     "at": 1794524506900,
+     "role": "caller",
+     "kind": "said",
+     "text": "I'll call back later. Bye.",
+     "metrics": {
+      "end_of_turn": 301,
+      "stt": 0
+     },
+     "speaking_s": 0.3,
+     "interrupted": false
+    },
+    {
+     "type": "dropped",
+     "seq": 25,
+     "t": 70.03,
+     "at": 1794524507113,
+     "tool": "note_off_topic",
+     "args": "{\"topic\":\"off-topic\"}",
+     "why": "the caller is done"
+    },
+    {
+     "type": "tool",
+     "seq": 26,
+     "t": 70.41,
+     "at": 1794524507487,
+     "name": "end_call",
+     "args": {},
+     "result": {
+      "ok": true,
+      "on_file": {
+       "origin": null,
+       "destination": null,
+       "vehicles": [
+        {
+         "quote_id": "Q1",
+         "vehicle": "2020 Toyota Camry"
+        }
+       ],
+       "expected_vehicles": null,
+       "missing": [
+        "origin",
+        "destination"
+       ]
+      },
+      "next": "Say exactly this and nothing else: \"Thanks for calling F&F! Feel free to call us again if you'd like another quote. Have a nice day!\""
+     },
+     "ok": true,
+     "ms": 0
+    },
+    {
+     "type": "state",
+     "seq": 27,
+     "t": 70.41,
+     "at": 1794524507487,
+     "on_file": {
+      "origin": null,
+      "destination": null,
+      "vehicles": [
+       {
+        "quote_id": "Q1",
+        "vehicle": "2020 Toyota Camry"
+       }
+      ],
+      "expected_vehicles": null,
+      "missing": [
+       "origin",
+       "destination"
+      ]
+     },
+     "stage": "vehicles",
+     "quote": null
+    },
+    {
+     "type": "turn",
+     "seq": 28,
+     "t": 76.75,
+     "at": 1794524513832,
+     "role": "mia",
+     "kind": "said",
+     "text": "Thanks for calling F&F! Feel free to call us again if you'd like another quote. Have a nice day!",
+     "metrics": {
+      "llm_ttft": 287,
+      "tts_ttfb": 153,
+      "e2e": 1344
+     },
+     "speaking_s": 5.9,
+     "interrupted": false
+    }
+   ]
+  }
+ },
+ {
+  "case": {
+   "noise": "subway",
+   "snr": 12,
+   "profile": "baseline"
+  },
+  "score": {
+   "greeted": true,
+   "answered": 2,
+   "lines": 3,
+   "p50_s": 2.1,
+   "route": true,
+   "vehicle": true,
+   "hung_up": true,
+   "cut_off": 3,
+   "long_turns": 0,
+   "noisy_mode": false,
+   "recall": 0.97,
+   "extra_words": 41
+  },
+  "result": {
+   "room": "smoke-27e49351",
+   "greeted": true,
+   "lines": [
+    "Hi, I need to ship my car from Miami, Florida to Boston, Massachusetts.",
+    "It's a 2020 Toyota Camry.",
+    "I'm just checking prices for now. I'll call back later, bye!"
+   ],
+   "responses": [
+    2.422000000020489,
+    1.828999999910593
+   ],
+   "hung_up": true,
+   "heard": [
+    {
+     "who": "mia",
+     "text": "Hi there, this is Mia, F&F's virtual assistant. To get your car shipping quote, where",
+     "t": 6.6
+    },
+    {
+     "who": "caller",
+     "text": "Chicago to Austin last summer. So",
+     "t": 6.6
+    },
+    {
+     "who": "caller",
+     "text": "Hi. I need to ship my car from Miami",
+     "t": 9.3
+    },
+    {
+     "who": "caller",
+     "text": "Florida to Boston, Massachusetts.",
+     "t": 12.1
+    },
+    {
+     "who": "caller",
+     "text": "Wait. Which group are you in for the project?",
+     "t": 15.8
+    },
+    {
+     "who": "mia",
+     "text": "Got it, Miami to Boston, Massachusetts. What year,",
+     "t": 16.1
+    },
+    {
+     "who": "mia",
+     "text": "I\u2019m not sure about that. Let\u2019s get",
+     "t": 18.9
+    },
+    {
+     "who": "caller",
+     "text": "It's a twenty twenty Toyota Camry.",
+     "t": 18.9
+    },
+    {
+     "who": "mia",
+     "text": "Just to confirm, your 2020",
+     "t": 22.4
+    },
+    {
+     "who": "caller",
+     "text": "I can't believe you've ever heard Did anyone take notes on the",
+     "t": 22.4
+    },
+    {
+     "who": "caller",
+     "text": "pricing?",
+     "t": 22.8
+    },
+    {
+     "who": "caller",
+     "text": "Framework?",
+     "t": 23.3
+    },
+    {
+     "who": "caller",
+     "text": "I'm just checking prices for now. I'll call back later.",
+     "t": 25.9
+    },
+    {
+     "who": "caller",
+     "text": "Bye.",
+     "t": 26.7
+    },
+    {
+     "who": "caller",
+     "text": "The coffee upstairs is so much better than the one upstairs.",
+     "t": 32.0
+    }
+   ],
+   "events": [
+    {
+     "type": "config",
+     "seq": 0,
+     "t": 0.0,
+     "at": 1794524521526,
+     "stt": "Deepgram nova-3",
+     "llm": "Groq openai/gpt-oss-20b",
+     "tts": "Cartesia \u00b7 Skylar",
+     "turn_detector": "LiveKit auto",
+     "noise_handling": "baseline",
+     "max_call_s": "360"
+    },
+    {
+     "type": "turn",
+     "seq": 1,
+     "t": 0.04,
+     "at": 1794524521559,
+     "role": "mia",
+     "kind": "greeting",
+     "text": "Hi there, this is Mia, F&F's virtual assistant. To get your car shipping quote, where is the car now, and where is it going?",
+     "metrics": {},
+     "speaking_s": null,
+     "interrupted": false
+    },
+    {
+     "type": "turn",
+     "seq": 2,
+     "t": 11.42,
+     "at": 1794524532941,
+     "role": "caller",
+     "kind": "said",
+     "text": "Chicago to Austin last summer. So Hi. I need to ship my car from Miami",
+     "metrics": {
+      "end_of_turn": 577,
+      "stt": 0
+     },
+     "speaking_s": 7.94,
+     "interrupted": false
+    },
+    {
+     "type": "tool",
+     "seq": 3,
+     "t": 11.74,
+     "at": 1794524533261,
+     "name": "save_origin_destination",
+     "args": {
+      "origin_city": "Miami",
+      "origin_state": null,
+      "destination_city": null,
+      "destination_state": null
+     },
+     "result": {
+      "ok": true,
+      "saved": {
+       "origin": "Miami, Florida"
+      },
+      "on_file": {
+       "origin": "Miami, Florida",
+       "destination": null,
+       "vehicles": [],
+       "expected_vehicles": null,
+       "missing": [
+        "destination",
+        "vehicle"
+       ]
+      },
+      "next": "Ask for the destination (city and state)."
+     },
+     "ok": true,
+     "ms": 316
+    },
+    {
+     "type": "state",
+     "seq": 4,
+     "t": 11.74,
+     "at": 1794524533261,
+     "on_file": {
+      "origin": "Miami, Florida",
+      "destination": null,
+      "vehicles": [],
+      "expected_vehicles": null,
+      "missing": [
+       "destination",
+       "vehicle"
+      ]
+     },
+     "stage": "route",
+     "quote": null
+    },
+    {
+     "type": "turn",
+     "seq": 5,
+     "t": 11.76,
+     "at": 1794524533278,
+     "role": "caller",
+     "kind": "said",
+     "text": "Florida to Boston, Massachusetts.",
+     "metrics": {},
+     "speaking_s": null,
+     "interrupted": false
+    },
+    {
+     "type": "tool",
+     "seq": 6,
+     "t": 12.19,
+     "at": 1794524533713,
+     "name": "save_origin_destination",
+     "args": {
+      "origin_city": null,
+      "origin_state": null,
+      "destination_city": "Boston",
+      "destination_state": "Massachusetts"
+     },
+     "result": {
+      "ok": true,
+      "saved": {
+       "destination": "Boston, Massachusetts"
+      },
+      "on_file": {
+       "origin": "Miami, Florida",
+       "destination": "Boston, Massachusetts",
+       "vehicles": [],
+       "expected_vehicles": null,
+       "missing": [
+        "vehicle"
+       ]
+      },
+      "next": "Ask for the year, make and model of the vehicle."
+     },
+     "ok": true,
+     "ms": 214
+    },
+    {
+     "type": "state",
+     "seq": 7,
+     "t": 12.19,
+     "at": 1794524533713,
+     "on_file": {
+      "origin": "Miami, Florida",
+      "destination": "Boston, Massachusetts",
+      "vehicles": [],
+      "expected_vehicles": null,
+      "missing": [
+       "vehicle"
+      ]
+     },
+     "stage": "route",
+     "quote": null
+    },
+    {
+     "type": "turn",
+     "seq": 8,
+     "t": 16.44,
+     "at": 1794524537966,
+     "role": "mia",
+     "kind": "said",
+     "text": "Got it, Miami to Boston, Massachusetts. What year,",
+     "metrics": {
+      "llm_ttft": 249,
+      "tts_ttfb": 138
+     },
+     "speaking_s": 3.86,
+     "interrupted": true
+    },
+    {
+     "type": "turn",
+     "seq": 9,
+     "t": 16.46,
+     "at": 1794524537980,
+     "role": "caller",
+     "kind": "said",
+     "text": "Wait. Which group are you in for the project?",
+     "metrics": {
+      "end_of_turn": 577,
+      "stt": 236
+     },
+     "speaking_s": 1.97,
+     "interrupted": false
+    },
+    {
+     "type": "tool",
+     "seq": 10,
+     "t": 16.69,
+     "at": 1794524538208,
+     "name": "note_off_topic",
+     "args": {},
+     "result": {
+      "ok": true,
+      "off_topic": 1,
+      "on_file": {
+       "origin": "Miami, Florida",
+       "destination": "Boston, Massachusetts",
+       "vehicles": [],
+       "expected_vehicles": null,
+       "missing": [
+        "vehicle"
+       ]
+      },
+      "next": "Answer in a few words at most, without making anything up, then steer back to the quote: Ask for the year, make and model of the vehicle."
+     },
+     "ok": true,
+     "ms": 0
+    },
+    {
+     "type": "state",
+     "seq": 11,
+     "t": 16.69,
+     "at": 1794524538208,
+     "on_file": {
+      "origin": "Miami, Florida",
+      "destination": "Boston, Massachusetts",
+      "vehicles": [],
+      "expected_vehicles": null,
+      "missing": [
+       "vehicle"
+      ]
+     },
+     "stage": "route",
+     "quote": null
+    },
+    {
+     "type": "turn",
+     "seq": 12,
+     "t": 19.19,
+     "at": 1794524540716,
+     "role": "mia",
+     "kind": "said",
+     "text": "I\u2019m not sure about that. Let\u2019s get",
+     "metrics": {
+      "llm_ttft": 159,
+      "tts_ttfb": 145,
+      "e2e": 1130
+     },
+     "speaking_s": 2.2,
+     "interrupted": true
+    },
+    {
+     "type": "turn",
+     "seq": 13,
+     "t": 19.65,
+     "at": 1794524541177,
+     "role": "caller",
+     "kind": "said",
+     "text": "It's a twenty twenty Toyota Camry.",
+     "metrics": {
+      "end_of_turn": 577,
+      "stt": 125
+     },
+     "speaking_s": 1.79,
+     "interrupted": false
+    },
+    {
+     "type": "tool",
+     "seq": 14,
+     "t": 20.24,
+     "at": 1794524541762,
+     "name": "save_vehicle",
+     "args": {
+      "year": 2020,
+      "make": "Toyota",
+      "model": "Camry",
+      "vehicle_type": null,
+      "drivable": null,
+      "total_vehicles": null
+     },
+     "result": {
+      "ok": true,
+      "saved": {
+       "quote_id": "Q1",
+       "vehicle": "2020 Toyota Camry"
+      },
+      "on_file": {
+       "origin": "Miami, Florida",
+       "destination": "Boston, Massachusetts",
+       "vehicles": [
+        {
+         "quote_id": "Q1",
+         "vehicle": "2020 Toyota Camry"
+        }
+       ],
+       "expected_vehicles": null,
+       "missing": []
+      },
+      "next": "Everything is on file. Read it back in one sentence (each vehicle, origin city and state, destination city and state) and ask if it's correct. Call get_quote only after they confirm."
+     },
+     "ok": true,
+     "ms": 227
+    },
+    {
+     "type": "state",
+     "seq": 15,
+     "t": 20.24,
+     "at": 1794524541762,
+     "on_file": {
+      "origin": "Miami, Florida",
+      "destination": "Boston, Massachusetts",
+      "vehicles": [
+       {
+        "quote_id": "Q1",
+        "vehicle": "2020 Toyota Camry"
+       }
+      ],
+      "expected_vehicles": null,
+      "missing": []
+     },
+     "stage": "vehicles",
+     "quote": null
+    },
+    {
+     "type": "turn",
+     "seq": 16,
+     "t": 22.5,
+     "at": 1794524544025,
+     "role": "mia",
+     "kind": "said",
+     "text": "Just to confirm, your 2020",
+     "metrics": {
+      "llm_ttft": 290,
+      "tts_ttfb": 131,
+      "e2e": 1603
+     },
+     "speaking_s": 1.83,
+     "interrupted": true
+    },
+    {
+     "type": "turn",
+     "seq": 17,
+     "t": 27.01,
+     "at": 1794524548528,
+     "role": "caller",
+     "kind": "said",
+     "text": "I can't believe you've ever heard Did anyone take notes on the pricing? Framework? I'm just checking prices for now. I'll call back later. Bye.",
+     "metrics": {
+      "end_of_turn": 577,
+      "stt": 333
+     },
+     "speaking_s": 5.14,
+     "interrupted": false
+    },
+    {
+     "type": "tool",
+     "seq": 18,
+     "t": 27.12,
+     "at": 1794524548646,
+     "name": "end_call",
+     "args": {},
+     "result": {
+      "ok": true,
+      "on_file": {
+       "origin": "Miami, Florida",
+       "destination": "Boston, Massachusetts",
+       "vehicles": [
+        {
+         "quote_id": "Q1",
+         "vehicle": "2020 Toyota Camry"
+        }
+       ],
+       "expected_vehicles": null,
+       "missing": []
+      },
+      "next": "Say exactly this and nothing else: \"Thank you for calling F&F. If you ever need another quote, just give us a call. Have a great day!\""
+     },
+     "ok": true,
+     "ms": 0
+    },
+    {
+     "type": "state",
+     "seq": 19,
+     "t": 27.12,
+     "at": 1794524548646,
+     "on_file": {
+      "origin": "Miami, Florida",
+      "destination": "Boston, Massachusetts",
+      "vehicles": [
+       {
+        "quote_id": "Q1",
+        "vehicle": "2020 Toyota Camry"
+       }
+      ],
+      "expected_vehicles": null,
+      "missing": []
+     },
+     "stage": "vehicles",
+     "quote": null
+    },
+    {
+     "type": "turn",
+     "seq": 20,
+     "t": 31.76,
+     "at": 1794524553280,
+     "role": "caller",
+     "kind": "said",
+     "text": "The coffee upstairs is so much better than the one upstairs.",
+     "metrics": {
+      "end_of_turn": 18,
+      "stt": 13
+     },
+     "speaking_s": 3.97,
+     "interrupted": false
+    }
+   ]
+  }
+ },
+ {
+  "case": {
+   "noise": "subway",
+   "snr": 12,
+   "profile": "filter"
+  },
+  "score": {
+   "greeted": true,
+   "answered": 3,
+   "lines": 3,
+   "p50_s": 1.6,
+   "route": true,
+   "vehicle": true,
+   "hung_up": true,
+   "cut_off": 0,
+   "long_turns": 0,
+   "noisy_mode": false,
+   "recall": 0.97,
+   "extra_words": 6
+  },
+  "result": {
+   "room": "smoke-2de9c8c8",
+   "greeted": true,
+   "lines": [
+    "Hi, I need to ship my car from Miami, Florida to Boston, Massachusetts.",
+    "It's a 2020 Toyota Camry.",
+    "I'm just checking prices for now. I'll call back later, bye!"
+   ],
+   "responses": [
+    1.6089999999385327,
+    1.5940000000409782,
+    1.3589999999385327
+   ],
+   "hung_up": true,
+   "heard": [
+    {
+     "who": "mia",
+     "text": "Thanks for calling F&F. I'm Mia, a virtual assistant.",
+     "t": 9.2
+    },
+    {
+     "who": "caller",
+     "text": "From Chicago to Ovaltons last summer. Hi. I need to ship my car from Miami, Florida to Boston,",
+     "t": 9.2
+    },
+    {
+     "who": "caller",
+     "text": "Massachusetts.",
+     "t": 10.0
+    },
+    {
+     "who": "mia",
+     "text": "Got it, Miami, Florida to Boston, Massachusetts. What year, make and model is the car?",
+     "t": 17.0
+    },
+    {
+     "who": "caller",
+     "text": "It's a twenty twenty Toyota Camry.",
+     "t": 20.2
+    },
+    {
+     "who": "mia",
+     "text": "Just to confirm, your 2020 Toyota Camry will ship from Miami, Florida to Boston, Massachusetts. Is that correct?",
+     "t": 26.6
+    },
+    {
+     "who": "caller",
+     "text": "I'm just checking prices for now.",
+     "t": 30.7
+    },
+    {
+     "who": "caller",
+     "text": "I'll call back later. Bye.",
+     "t": 32.5
+    },
+    {
+     "who": "mia",
+     "text": "Thanks so much for calling F&F! We're here whenever you need another quote. Take care!",
+     "t": 38.3
+    }
+   ],
+   "events": [
+    {
+     "type": "config",
+     "seq": 0,
+     "t": 0.01,
+     "at": 1794524573278,
+     "stt": "Deepgram nova-3",
+     "llm": "Groq openai/gpt-oss-20b",
+     "tts": "Cartesia \u00b7 Skylar",
+     "turn_detector": "LiveKit auto",
+     "noise_handling": "filter",
+     "max_call_s": "360"
+    },
+    {
+     "type": "turn",
+     "seq": 1,
+     "t": 0.04,
+     "at": 1794524573317,
+     "role": "mia",
+     "kind": "greeting",
+     "text": "Thanks for calling F&F. I'm Mia, a virtual assistant. Let's get your quote: what city is the car shipping from, and where to?",
+     "metrics": {},
+     "speaking_s": null,
+     "interrupted": false
+    },
+    {
+     "type": "turn",
+     "seq": 2,
+     "t": 9.68,
+     "at": 1794524582949,
+     "role": "caller",
+     "kind": "said",
+     "text": "From Chicago to Ovaltons last summer. Hi. I need to ship my car from Miami, Florida to Boston, Massachusetts.",
+     "metrics": {
+      "end_of_turn": 577,
+      "stt": 211
+     },
+     "speaking_s": 7.09,
+     "interrupted": false
+    },
+    {
+     "type": "tool",
+     "seq": 3,
+     "t": 10.1,
+     "at": 1794524583373,
+     "name": "save_origin_destination",
+     "args": {
+      "origin_city": "Miami",
+      "origin_state": "Florida",
+      "destination_city": "Boston",
+      "destination_state": "Massachusetts"
+     },
+     "result": {
+      "ok": true,
+      "saved": {
+       "origin": "Miami, Florida",
+       "destination": "Boston, Massachusetts"
+      },
+      "on_file": {
+       "origin": "Miami, Florida",
+       "destination": "Boston, Massachusetts",
+       "vehicles": [],
+       "expected_vehicles": null,
+       "missing": [
+        "vehicle"
+       ]
+      },
+      "next": "Ask for the year, make and model of the vehicle."
+     },
+     "ok": true,
+     "ms": 418
+    },
+    {
+     "type": "state",
+     "seq": 4,
+     "t": 10.1,
+     "at": 1794524583373,
+     "on_file": {
+      "origin": "Miami, Florida",
+      "destination": "Boston, Massachusetts",
+      "vehicles": [],
+      "expected_vehicles": null,
+      "missing": [
+       "vehicle"
+      ]
+     },
+     "stage": "route",
+     "quote": null
+    },
+    {
+     "type": "turn",
+     "seq": 5,
+     "t": 16.1,
+     "at": 1794524589374,
+     "role": "mia",
+     "kind": "said",
+     "text": "Got it, Miami, Florida to Boston, Massachusetts. What year, make and model is the car?",
+     "metrics": {
+      "llm_ttft": 151,
+      "tts_ttfb": 129,
+      "e2e": 1292
+     },
+     "speaking_s": 5.71,
+     "interrupted": false
+    },
+    {
+     "type": "turn",
+     "seq": 6,
+     "t": 19.52,
+     "at": 1794524592797,
+     "role": "caller",
+     "kind": "said",
+     "text": "It's a twenty twenty Toyota Camry.",
+     "metrics": {
+      "end_of_turn": 577,
+      "stt": 213
+     },
+     "speaking_s": 1.84,
+     "interrupted": false
+    },
+    {
+     "type": "tool",
+     "seq": 7,
+     "t": 19.77,
+     "at": 1794524593043,
+     "name": "save_vehicle",
+     "args": {
+      "year": 2020,
+      "make": "Toyota",
+      "model": "Camry",
+      "vehicle_type": null,
+      "drivable": null,
+      "total_vehicles": null
+     },
+     "result": {
+      "ok": true,
+      "saved": {
+       "quote_id": "Q1",
+       "vehicle": "2020 Toyota Camry"
+      },
+      "on_file": {
+       "origin": "Miami, Florida",
+       "destination": "Boston, Massachusetts",
+       "vehicles": [
+        {
+         "quote_id": "Q1",
+         "vehicle": "2020 Toyota Camry"
+        }
+       ],
+       "expected_vehicles": null,
+       "missing": []
+      },
+      "next": "Everything is on file. Read it back in one sentence (each vehicle, origin city and state, destination city and state) and ask if it's correct. Call get_quote only after they confirm."
+     },
+     "ok": true,
+     "ms": 241
+    },
+    {
+     "type": "state",
+     "seq": 8,
+     "t": 19.77,
+     "at": 1794524593043,
+     "on_file": {
+      "origin": "Miami, Florida",
+      "destination": "Boston, Massachusetts",
+      "vehicles": [
+       {
+        "quote_id": "Q1",
+        "vehicle": "2020 Toyota Camry"
+       }
+      ],
+      "expected_vehicles": null,
+      "missing": []
+     },
+     "stage": "vehicles",
+     "quote": null
+    },
+    {
+     "type": "turn",
+     "seq": 9,
+     "t": 27.6,
+     "at": 1794524600868,
+     "role": "mia",
+     "kind": "said",
+     "text": "Just to confirm, your 2020 Toyota Camry will ship from Miami, Florida to Boston, Massachusetts. Is that correct?",
+     "metrics": {
+      "llm_ttft": 334,
+      "tts_ttfb": 136,
+      "e2e": 1301
+     },
+     "speaking_s": 7.35,
+     "interrupted": false
+    },
+    {
+     "type": "dropped",
+     "seq": 10,
+     "t": 30.47,
+     "at": 1794524603742,
+     "tool": "get_quote",
+     "args": "{}",
+     "why": "caller has not confirmed"
+    },
+    {
+     "type": "turn",
+     "seq": 11,
+     "t": 32.25,
+     "at": 1794524605525,
+     "role": "caller",
+     "kind": "said",
+     "text": "I'm just checking prices for now. I'll call back later. Bye.",
+     "metrics": {
+      "end_of_turn": 577,
+      "stt": 323
+     },
+     "speaking_s": 2.94,
+     "interrupted": false
+    },
+    {
+     "type": "tool",
+     "seq": 12,
+     "t": 32.26,
+     "at": 1794524605529,
+     "name": "end_call",
+     "args": {},
+     "result": {
+      "ok": true,
+      "on_file": {
+       "origin": "Miami, Florida",
+       "destination": "Boston, Massachusetts",
+       "vehicles": [
+        {
+         "quote_id": "Q1",
+         "vehicle": "2020 Toyota Camry"
+        }
+       ],
+       "expected_vehicles": null,
+       "missing": []
+      },
+      "next": "Say exactly this and nothing else: \"Thanks so much for calling F&F! We're here whenever you need another quote. Take care!\""
+     },
+     "ok": true,
+     "ms": 0
+    },
+    {
+     "type": "state",
+     "seq": 13,
+     "t": 32.26,
+     "at": 1794524605529,
+     "on_file": {
+      "origin": "Miami, Florida",
+      "destination": "Boston, Massachusetts",
+      "vehicles": [
+       {
+        "quote_id": "Q1",
+        "vehicle": "2020 Toyota Camry"
+       }
+      ],
+      "expected_vehicles": null,
+      "missing": []
+     },
+     "stage": "vehicles",
+     "quote": null
+    },
+    {
+     "type": "turn",
+     "seq": 14,
+     "t": 38.43,
+     "at": 1794524611702,
+     "role": "mia",
+     "kind": "said",
+     "text": "Thanks so much for calling F&F! We're here whenever you need another quote. Take care!",
+     "metrics": {
+      "llm_ttft": 438,
+      "tts_ttfb": 155,
+      "e2e": 1179
+     },
+     "speaking_s": 5.58,
+     "interrupted": false
+    }
+   ]
+  }
+ },
+ {
+  "case": {
+   "noise": "subway",
+   "snr": 12,
+   "profile": "full"
+  },
+  "score": {
+   "greeted": true,
+   "answered": 3,
+   "lines": 3,
+   "p50_s": 1.5,
+   "route": true,
+   "vehicle": true,
+   "hung_up": true,
+   "cut_off": 0,
+   "long_turns": 0,
+   "noisy_mode": false,
+   "recall": 0.97,
+   "extra_words": 8
+  },
+  "result": {
+   "room": "smoke-f17d4ffd",
+   "greeted": true,
+   "lines": [
+    "Hi, I need to ship my car from Miami, Florida to Boston, Massachusetts.",
+    "It's a 2020 Toyota Camry.",
+    "I'm just checking prices for now. I'll call back later, bye!"
+   ],
+   "responses": [
+    1.547000000020489,
+    1.327999999979511,
+    3.405999999959022
+   ],
+   "hung_up": true,
+   "heard": [
+    {
+     "who": "mia",
+     "text": "Hi, and thanks for calling F&F. I'm Mia, a virtual assistant.",
+     "t": 5.9
+    },
+    {
+     "who": "caller",
+     "text": "If I'm",
+     "t": 5.9
+    },
+    {
+     "who": "caller",
+     "text": "Chicago to Ottawa in line number. Hi. I need to ship my car from Miami, Florida to Boston, Massachusetts.",
+     "t": 9.8
+    },
+    {
+     "who": "caller",
+     "text": "Massachusetts.",
+     "t": 10.0
+    },
+    {
+     "who": "mia",
+     "text": "Got it, Miami, Florida to Boston, Massachusetts. What year, make and model is the vehicle?",
+     "t": 17.5
+    },
+    {
+     "who": "caller",
+     "text": "It's a twenty twenty Toyota Camry.",
+     "t": 20.6
+    },
+    {
+     "who": "mia",
+     "text": "So that's your 2020 Toyota Camry, shipping from Miami, Florida to Boston, Massachusetts. Does that sound right?",
+     "t": 29.5
+    },
+    {
+     "who": "caller",
+     "text": "Just checking prices for now. I'll call back later.",
+     "t": 33.2
+    },
+    {
+     "who": "caller",
+     "text": "Bye.",
+     "t": 33.8
+    },
+    {
+     "who": "mia",
+     "text": "Thanks so much for calling F&F! We're here whenever you need another quote. Take care!",
+     "t": 41.3
+    }
+   ],
+   "events": [
+    {
+     "type": "config",
+     "seq": 0,
+     "t": 0.0,
+     "at": 1794524619059,
+     "stt": "Deepgram nova-3",
+     "llm": "Groq openai/gpt-oss-20b",
+     "tts": "Cartesia \u00b7 Skylar",
+     "turn_detector": "LiveKit auto",
+     "noise_handling": "full",
+     "max_call_s": "360"
+    },
+    {
+     "type": "turn",
+     "seq": 1,
+     "t": 0.05,
+     "at": 1794524619104,
+     "role": "mia",
+     "kind": "greeting",
+     "text": "Hi, and thanks for calling F&F. I'm Mia, a virtual assistant. To quote your car shipment, where are you shipping from and to?",
+     "metrics": {},
+     "speaking_s": null,
+     "interrupted": false
+    },
+    {
+     "type": "turn",
+     "seq": 2,
+     "t": 10.93,
+     "at": 1794524629989,
+     "role": "caller",
+     "kind": "said",
+     "text": "If I'm Chicago to Ottawa in line number. Hi. I need to ship my car from Miami, Florida to Boston, Massachusetts. Massachusetts.",
+     "metrics": {
+      "end_of_turn": 577,
+      "stt": 260
+     },
+     "speaking_s": 8.22,
+     "interrupted": false
+    },
+    {
+     "type": "tool",
+     "seq": 3,
+     "t": 11.34,
+     "at": 1794524630389,
+     "name": "save_origin_destination",
+     "args": {
+      "origin_city": "Miami",
+      "origin_state": "Florida",
+      "destination_city": "Boston",
+      "destination_state": "Massachusetts"
+     },
+     "result": {
+      "ok": true,
+      "saved": {
+       "origin": "Miami, Florida",
+       "destination": "Boston, Massachusetts"
+      },
+      "on_file": {
+       "origin": "Miami, Florida",
+       "destination": "Boston, Massachusetts",
+       "vehicles": [],
+       "expected_vehicles": null,
+       "missing": [
+        "vehicle"
+       ]
+      },
+      "next": "Ask for the year, make and model of the vehicle."
+     },
+     "ok": true,
+     "ms": 394
+    },
+    {
+     "type": "state",
+     "seq": 4,
+     "t": 11.34,
+     "at": 1794524630389,
+     "on_file": {
+      "origin": "Miami, Florida",
+      "destination": "Boston, Massachusetts",
+      "vehicles": [],
+      "expected_vehicles": null,
+      "missing": [
+       "vehicle"
+      ]
+     },
+     "stage": "route",
+     "quote": null
+    },
+    {
+     "type": "turn",
+     "seq": 5,
+     "t": 17.74,
+     "at": 1794524636798,
+     "role": "mia",
+     "kind": "said",
+     "text": "Got it, Miami, Florida to Boston, Massachusetts. What year, make and model is the vehicle?",
+     "metrics": {
+      "llm_ttft": 172,
+      "tts_ttfb": 142,
+      "e2e": 1301
+     },
+     "speaking_s": 6.09,
+     "interrupted": false
+    },
+    {
+     "type": "turn",
+     "seq": 6,
+     "t": 21.19,
+     "at": 1794524640241,
+     "role": "caller",
+     "kind": "said",
+     "text": "It's a twenty twenty Toyota Camry.",
+     "metrics": {
+      "end_of_turn": 577,
+      "stt": 247
+     },
+     "speaking_s": 1.59,
+     "interrupted": false
+    },
+    {
+     "type": "tool",
+     "seq": 7,
+     "t": 21.43,
+     "at": 1794524640489,
+     "name": "save_vehicle",
+     "args": {
+      "year": 2020,
+      "make": "Toyota",
+      "model": "Camry",
+      "vehicle_type": null,
+      "drivable": null,
+      "total_vehicles": null
+     },
+     "result": {
+      "ok": true,
+      "saved": {
+       "quote_id": "Q1",
+       "vehicle": "2020 Toyota Camry"
+      },
+      "on_file": {
+       "origin": "Miami, Florida",
+       "destination": "Boston, Massachusetts",
+       "vehicles": [
+        {
+         "quote_id": "Q1",
+         "vehicle": "2020 Toyota Camry"
+        }
+       ],
+       "expected_vehicles": null,
+       "missing": []
+      },
+      "next": "Everything is on file. Read it back in one sentence (each vehicle, origin city and state, destination city and state) and ask if it's correct. Call get_quote only after they confirm."
+     },
+     "ok": true,
+     "ms": 243
+    },
+    {
+     "type": "state",
+     "seq": 8,
+     "t": 21.43,
+     "at": 1794524640489,
+     "on_file": {
+      "origin": "Miami, Florida",
+      "destination": "Boston, Massachusetts",
+      "vehicles": [
+       {
+        "quote_id": "Q1",
+        "vehicle": "2020 Toyota Camry"
+       }
+      ],
+      "expected_vehicles": null,
+      "missing": []
+     },
+     "stage": "vehicles",
+     "quote": null
+    },
+    {
+     "type": "turn",
+     "seq": 9,
+     "t": 29.46,
+     "at": 1794524648519,
+     "role": "mia",
+     "kind": "said",
+     "text": "So that's your 2020 Toyota Camry, shipping from Miami, Florida to Boston, Massachusetts. Does that sound right?",
+     "metrics": {
+      "llm_ttft": 228,
+      "tts_ttfb": 132,
+      "e2e": 1192
+     },
+     "speaking_s": 7.67,
+     "interrupted": false
+    },
+    {
+     "type": "turn",
+     "seq": 10,
+     "t": 35.76,
+     "at": 1794524654814,
+     "role": "caller",
+     "kind": "said",
+     "text": "Just checking prices for now. I'll call back later. Bye.",
+     "metrics": {
+      "end_of_turn": 2501,
+      "stt": 276
+     },
+     "speaking_s": 2.74,
+     "interrupted": false
+    },
+    {
+     "type": "tool",
+     "seq": 11,
+     "t": 35.76,
+     "at": 1794524654816,
+     "name": "end_call",
+     "args": {},
+     "result": {
+      "ok": true,
+      "on_file": {
+       "origin": "Miami, Florida",
+       "destination": "Boston, Massachusetts",
+       "vehicles": [
+        {
+         "quote_id": "Q1",
+         "vehicle": "2020 Toyota Camry"
+        }
+       ],
+       "expected_vehicles": null,
+       "missing": []
+      },
+      "next": "Say exactly this and nothing else: \"Thanks so much for calling F&F! We're here whenever you need another quote. Take care!\""
+     },
+     "ok": true,
+     "ms": 0
+    },
+    {
+     "type": "state",
+     "seq": 12,
+     "t": 35.76,
+     "at": 1794524654816,
+     "on_file": {
+      "origin": "Miami, Florida",
+      "destination": "Boston, Massachusetts",
+      "vehicles": [
+       {
+        "quote_id": "Q1",
+        "vehicle": "2020 Toyota Camry"
+       }
+      ],
+      "expected_vehicles": null,
+      "missing": []
+     },
+     "stage": "vehicles",
+     "quote": null
+    },
+    {
+     "type": "turn",
+     "seq": 13,
+     "t": 41.98,
+     "at": 1794524661030,
+     "role": "mia",
+     "kind": "said",
+     "text": "Thanks so much for calling F&F! We're here whenever you need another quote. Take care!",
+     "metrics": {
+      "llm_ttft": 353,
+      "tts_ttfb": 154,
+      "e2e": 3015
+     },
+     "speaking_s": 5.7,
+     "interrupted": false
+    }
+   ]
+  }
+ },
+ {
+  "case": {
+   "noise": "subway",
+   "snr": 5,
+   "profile": "baseline"
+  },
+  "score": {
+   "greeted": true,
+   "answered": 3,
+   "lines": 3,
+   "p50_s": 6.7,
+   "route": true,
+   "vehicle": false,
+   "hung_up": false,
+   "cut_off": 5,
+   "long_turns": 0,
+   "noisy_mode": false,
+   "recall": 0.86,
+   "extra_words": 87
+  },
+  "result": {
+   "room": "smoke-e84039de",
+   "greeted": true,
+   "lines": [
+    "Hi, I need to ship my car from Miami, Florida to Boston, Massachusetts.",
+    "It's a 2020 Toyota Camry.",
+    "I'm just checking prices for now. I'll call back later, bye!"
+   ],
+   "responses": [
+    2.8589999999385327,
+    17.17200000002049,
+    6.734000000171363
+   ],
+   "hung_up": false,
+   "heard": [
+    {
+     "who": "mia",
+     "text": "Hi, and thanks for calling F&F. I'm Mia, a virtual assistant. To quote your",
+     "t": 6.2
+    },
+    {
+     "who": "caller",
+     "text": "From Chicago to Austin last",
+     "t": 6.2
+    },
+    {
+     "who": "caller",
+     "text": "summer. Hi. I need to ship my car from Miami, Florida to Boston, Massachusetts.",
+     "t": 10.9
+    },
+    {
+     "who": "mia",
+     "text": "Got it, Miami, Florida to Boston, Massachusetts.",
+     "t": 15.9
+    },
+    {
+     "who": "caller",
+     "text": "Project?",
+     "t": 15.9
+    },
+    {
+     "who": "caller",
+     "text": "Twenty twenty two. Can't believe it's already November. I can't",
+     "t": 21.3
+    },
+    {
+     "who": "caller",
+     "text": "believe it's can't it's already Did anyone take notes on the",
+     "t": 22.5
+    },
+    {
+     "who": "caller",
+     "text": "pricing?",
+     "t": 22.9
+    },
+    {
+     "who": "caller",
+     "text": "Framework?",
+     "t": 23.3
+    },
+    {
+     "who": "caller",
+     "text": "The second question... I need to call my landlord about",
+     "t": 25.8
+    },
+    {
+     "who": "caller",
+     "text": "anything.",
+     "t": 27.0
+    },
+    {
+     "who": "caller",
+     "text": "The coffee out here is a",
+     "t": 28.9
+    },
+    {
+     "who": "caller",
+     "text": "so much better than",
+     "t": 29.7
+    },
+    {
+     "who": "caller",
+     "text": "the one upstairs. I love my charger.",
+     "t": 32.8
+    },
+    {
+     "who": "mia",
+     "text": "I\u2019m not sure about the",
+     "t": 38.0
+    },
+    {
+     "who": "caller",
+     "text": "The other room again. I'm flying to Denver. I'm",
+     "t": 38.0
+    },
+    {
+     "who": "caller",
+     "text": "Friday for the call. I'm just checking prices for now. I'll call back later.",
+     "t": 39.7
+    },
+    {
+     "who": "caller",
+     "text": "Presentation into three parts.",
+     "t": 41.8
+    },
+    {
+     "who": "caller",
+     "text": "I think...",
+     "t": 43.2
+    },
+    {
+     "who": "caller",
+     "text": "Professor said the exam.",
+     "t": 45.3
+    },
+    {
+     "who": "mia",
+     "text": "I\u2019m not sure about the pricing policy.",
+     "t": 52.0
+    },
+    {
+     "who": "caller",
+     "text": "Can you send me the slides from last night then?",
+     "t": 52.0
+    },
+    {
+     "who": "mia",
+     "text": "What's the make and",
+     "t": 55.9
+    },
+    {
+     "who": "caller",
+     "text": "Are you going to the networking event?",
+     "t": 55.9
+    },
+    {
+     "who": "caller",
+     "text": "Tonight?",
+     "t": 56.3
+    },
+    {
+     "who": "caller",
+     "text": "Honestly, the",
+     "t": 59.0
+    },
+    {
+     "who": "mia",
+     "text": "What's the make and model",
+     "t": 61.3
+    },
+    {
+     "who": "caller",
+     "text": "second question was way harder.",
+     "t": 62.3
+    }
+   ],
+   "events": [
+    {
+     "type": "config",
+     "seq": 0,
+     "t": 0.01,
+     "at": 1794524668410,
+     "stt": "Deepgram nova-3",
+     "llm": "Groq openai/gpt-oss-20b",
+     "tts": "Cartesia \u00b7 Skylar",
+     "turn_detector": "LiveKit auto",
+     "noise_handling": "baseline",
+     "max_call_s": "360"
+    },
+    {
+     "type": "turn",
+     "seq": 1,
+     "t": 0.04,
+     "at": 1794524668443,
+     "role": "mia",
+     "kind": "greeting",
+     "text": "Hi, and thanks for calling F&F. I'm Mia, a virtual assistant. To quote your car shipment, where are you shipping from and to?",
+     "metrics": {},
+     "speaking_s": null,
+     "interrupted": false
+    },
+    {
+     "type": "turn",
+     "seq": 2,
+     "t": 11.17,
+     "at": 1794524679576,
+     "role": "caller",
+     "kind": "said",
+     "text": "From Chicago to Austin last summer. Hi. I need to ship my car from Miami, Florida to Boston, Massachusetts.",
+     "metrics": {
+      "end_of_turn": 577,
+      "stt": 0
+     },
+     "speaking_s": 7.84,
+     "interrupted": false
+    },
+    {
+     "type": "tool",
+     "seq": 3,
+     "t": 11.7,
+     "at": 1794524680102,
+     "name": "save_origin_destination",
+     "args": {
+      "origin_city": "Miami",
+      "origin_state": "Florida",
+      "destination_city": "Boston",
+      "destination_state": "Massachusetts"
+     },
+     "result": {
+      "ok": true,
+      "saved": {
+       "origin": "Miami, Florida",
+       "destination": "Boston, Massachusetts"
+      },
+      "on_file": {
+       "origin": "Miami, Florida",
+       "destination": "Boston, Massachusetts",
+       "vehicles": [],
+       "expected_vehicles": null,
+       "missing": [
+        "vehicle"
+       ]
+      },
+      "next": "Ask for the year, make and model of the vehicle."
+     },
+     "ok": true,
+     "ms": 522
+    },
+    {
+     "type": "state",
+     "seq": 4,
+     "t": 11.7,
+     "at": 1794524680102,
+     "on_file": {
+      "origin": "Miami, Florida",
+      "destination": "Boston, Massachusetts",
+      "vehicles": [],
+      "expected_vehicles": null,
+      "missing": [
+       "vehicle"
+      ]
+     },
+     "stage": "route",
+     "quote": null
+    },
+    {
+     "type": "turn",
+     "seq": 5,
+     "t": 15.05,
+     "at": 1794524683457,
+     "role": "mia",
+     "kind": "said",
+     "text": "Got it, Miami, Florida to Boston, Massachusetts.",
+     "metrics": {
+      "llm_ttft": 147,
+      "tts_ttfb": 139,
+      "e2e": 1404
+     },
+     "speaking_s": 3.06,
+     "interrupted": true
+    },
+    {
+     "type": "turn",
+     "seq": 6,
+     "t": 33.61,
+     "at": 1794524702012,
+     "role": "caller",
+     "kind": "said",
+     "text": "Project? Twenty twenty two. Can't believe it's already November. I can't believe it's can't it's already Did anyone take notes on the pricing? Framework? The second question... I need to call my landlord about anything. The coffee out here is a so much better than the one upstairs. I love my charger.",
+     "metrics": {
+      "end_of_turn": 577,
+      "stt": 0
+     },
+     "speaking_s": 20.16,
+     "interrupted": false
+    },
+    {
+     "type": "tool",
+     "seq": 7,
+     "t": 33.8,
+     "at": 1794524702202,
+     "name": "save_vehicle",
+     "args": {
+      "year": 2022,
+      "make": null,
+      "model": null,
+      "vehicle_type": null,
+      "drivable": null,
+      "total_vehicles": null
+     },
+     "result": {
+      "ok": false,
+      "error_code": "MISSING_MAKE_AND_MODEL",
+      "known": {
+       "year": 2022
+      },
+      "on_file": {
+       "origin": "Miami, Florida",
+       "destination": "Boston, Massachusetts",
+       "vehicles": [],
+       "expected_vehicles": null,
+       "missing": [
+        "vehicle"
+       ],
+       "heard_so_far": "2022 car"
+      },
+      "next": "The caller also asked a question in this message: answer it first in one short sentence (only from your instructions; offer a licensed representative if they don't cover it), then: Ask for the make and model of the vehicle."
+     },
+     "ok": false,
+     "ms": 1
+    },
+    {
+     "type": "state",
+     "seq": 8,
+     "t": 33.8,
+     "at": 1794524702202,
+     "on_file": {
+      "origin": "Miami, Florida",
+      "destination": "Boston, Massachusetts",
+      "vehicles": [],
+      "expected_vehicles": null,
+      "missing": [
+       "vehicle"
+      ],
+      "heard_so_far": "2022 car"
+     },
+     "stage": "route",
+     "quote": null
+    },
+    {
+     "type": "turn",
+     "seq": 9,
+     "t": 37.4,
+     "at": 1794524705800,
+     "role": "mia",
+     "kind": "said",
+     "text": "I\u2019m not sure about the",
+     "metrics": {
+      "llm_ttft": 381,
+      "tts_ttfb": 137,
+      "e2e": 1307
+     },
+     "speaking_s": 3.07,
+     "interrupted": true
+    },
+    {
+     "type": "dropped",
+     "seq": 10,
+     "t": 42.65,
+     "at": 1794524711056,
+     "tool": "note_off_topic",
+     "args": "{\"message\":\"I\u2019m not sure what you\u2019re asking.\"}",
+     "why": "caller's message is about the quote"
+    },
+    {
+     "type": "turn",
+     "seq": 11,
+     "t": 44.6,
+     "at": 1794524713009,
+     "role": "caller",
+     "kind": "said",
+     "text": "The other room again. I'm flying to Denver. I'm Friday for the call. I'm just checking prices for now. I'll call back later. Presentation into three parts. I think... Professor said the exam.",
+     "metrics": {
+      "end_of_turn": 577,
+      "stt": 417
+     },
+     "speaking_s": 9.14,
+     "interrupted": false
+    },
+    {
+     "type": "turn",
+     "seq": 12,
+     "t": 50.93,
+     "at": 1794524719337,
+     "role": "mia",
+     "kind": "said",
+     "text": "I\u2019m not sure about the pricing policy.",
+     "metrics": {
+      "llm_ttft": 294,
+      "tts_ttfb": 144,
+      "e2e": 1019
+     },
+     "speaking_s": 5.9,
+     "interrupted": true
+    },
+    {
+     "type": "turn",
+     "seq": 13,
+     "t": 51.11,
+     "at": 1794524719510,
+     "role": "caller",
+     "kind": "said",
+     "text": "Can you send me the slides from last night then?",
+     "metrics": {
+      "end_of_turn": 577,
+      "stt": 414
+     },
+     "speaking_s": 5.24,
+     "interrupted": false
+    },
+    {
+     "type": "dropped",
+     "seq": 14,
+     "t": 51.37,
+     "at": 1794524719776,
+     "tool": "note_off_topic",
+     "args": "{\"message\":\"I\u2019m not sure about the pricing policy.\"}",
+     "why": "caller's message is about the quote"
+    },
+    {
+     "type": "turn",
+     "seq": 15,
+     "t": 55.84,
+     "at": 1794524724247,
+     "role": "mia",
+     "kind": "said",
+     "text": "What's the make and",
+     "metrics": {
+      "llm_ttft": 443,
+      "tts_ttfb": 140,
+      "e2e": 1165
+     },
+     "speaking_s": 4.16,
+     "interrupted": true
+    },
+    {
+     "type": "dropped",
+     "seq": 16,
+     "t": 56.46,
+     "at": 1794524724865,
+     "tool": "save_vehicle",
+     "args": "{\"make\":\"??\",\"model\":\"??\"}",
+     "why": "no vehicle detail the caller said"
+    },
+    {
+     "type": "turn",
+     "seq": 17,
+     "t": 57.7,
+     "at": 1794524726106,
+     "role": "caller",
+     "kind": "said",
+     "text": "Are you going to the networking event? Tonight?",
+     "metrics": {
+      "end_of_turn": 577,
+      "stt": 0
+     },
+     "speaking_s": 5.1,
+     "interrupted": false
+    },
+    {
+     "type": "turn",
+     "seq": 18,
+     "t": 61.05,
+     "at": 1794524729455,
+     "role": "mia",
+     "kind": "said",
+     "text": "What's the make and model",
+     "metrics": {
+      "llm_ttft": 572,
+      "tts_ttfb": 140,
+      "e2e": 720
+     },
+     "speaking_s": 3.21,
+     "interrupted": true
+    },
+    {
+     "type": "turn",
+     "seq": 19,
+     "t": 61.06,
+     "at": 1794524729469,
+     "role": "caller",
+     "kind": "said",
+     "text": "Honestly, the",
+     "metrics": {
+      "end_of_turn": 577,
+      "stt": 0
+     },
+     "speaking_s": 2.24,
+     "interrupted": false
+    },
+    {
+     "type": "tool",
+     "seq": 20,
+     "t": 61.36,
+     "at": 1794524729769,
+     "name": "note_off_topic",
+     "args": {},
+     "result": {
+      "ok": true,
+      "off_topic": 1,
+      "on_file": {
+       "origin": "Miami, Florida",
+       "destination": "Boston, Massachusetts",
+       "vehicles": [],
+       "expected_vehicles": null,
+       "missing": [
+        "vehicle"
+       ],
+       "heard_so_far": "2022 car"
+      },
+      "next": "Answer in a few words at most, without making anything up, then steer back to the quote: They already said it's a 2022 car: don't ask for that again. Ask only for what's missing, e.g. \"What's the make and model of the 2022 car?\""
+     },
+     "ok": true,
+     "ms": 0
+    },
+    {
+     "type": "state",
+     "seq": 21,
+     "t": 61.36,
+     "at": 1794524729769,
+     "on_file": {
+      "origin": "Miami, Florida",
+      "destination": "Boston, Massachusetts",
+      "vehicles": [],
+      "expected_vehicles": null,
+      "missing": [
+       "vehicle"
+      ],
+      "heard_so_far": "2022 car"
+     },
+     "stage": "route",
+     "quote": null
+    },
+    {
+     "type": "turn",
+     "seq": 22,
+     "t": 61.96,
+     "at": 1794524730368,
+     "role": "caller",
+     "kind": "said",
+     "text": "second question was way harder.",
+     "metrics": {},
+     "speaking_s": null,
+     "interrupted": false
+    }
+   ]
+  }
+ },
+ {
+  "case": {
+   "noise": "subway",
+   "snr": 5,
+   "profile": "filter"
+  },
+  "score": {
+   "greeted": true,
+   "answered": 3,
+   "lines": 3,
+   "p50_s": 3.1,
+   "route": true,
+   "vehicle": true,
+   "hung_up": false,
+   "cut_off": 0,
+   "long_turns": 0,
+   "noisy_mode": false,
+   "recall": 0.83,
+   "extra_words": 9
+  },
+  "result": {
+   "room": "smoke-c928364d",
+   "greeted": true,
+   "lines": [
+    "Hi, I need to ship my car from Miami, Florida to Boston, Massachusetts.",
+    "It's a 2020 Toyota Camry.",
+    "I'm just checking prices for now. I'll call back later, bye!"
+   ],
+   "responses": [
+    4.5310000001918525,
+    2.1399999998975545,
+    3.0630000000819564
+   ],
+   "hung_up": false,
+   "heard": [
+    {
+     "who": "mia",
+     "text": "Hi, thanks for calling F&F. I'm Mia, a virtual assistant,",
+     "t": 9.3
+    },
+    {
+     "who": "caller",
+     "text": "From Chicago to Austin last summer. Hi. I need to ship my car from Miami.",
+     "t": 9.3
+    },
+    {
+     "who": "caller",
+     "text": "Florida to Boston, Massachusetts.",
+     "t": 10.1
+    },
+    {
+     "who": "caller",
+     "text": "Should be",
+     "t": 11.5
+    },
+    {
+     "who": "mia",
+     "text": "Got it, Miami to Boston. What year, make and model is the car?",
+     "t": 18.9
+    },
+    {
+     "who": "caller",
+     "text": "Twenty twenty Toyota Camry.",
+     "t": 22.4
+    },
+    {
+     "who": "mia",
+     "text": "Let me make sure I have it right: your 2020 Toyota Camry will ship from Miami, Florida to Boston, Massachusetts. Is that right?",
+     "t": 31.0
+    },
+    {
+     "who": "caller",
+     "text": "I'm just checking prices for them.",
+     "t": 35.1
+    },
+    {
+     "who": "caller",
+     "text": "I'll call back later.",
+     "t": 36.3
+    },
+    {
+     "who": "caller",
+     "text": "Bye.",
+     "t": 37.1
+    },
+    {
+     "who": "mia",
+     "text": "Just to confirm, your 2020 Toyota Camry will ship from Miami, Florida to Boston, Massachusetts. Is that correct?",
+     "t": 47.3
+    }
+   ],
+   "events": [
+    {
+     "type": "config",
+     "seq": 0,
+     "t": 0.01,
+     "at": 1794524786756,
+     "stt": "Deepgram nova-3",
+     "llm": "Groq openai/gpt-oss-20b",
+     "tts": "Deepgram \u00b7 Thalia",
+     "turn_detector": "LiveKit auto",
+     "noise_handling": "filter",
+     "max_call_s": "360"
+    },
+    {
+     "type": "turn",
+     "seq": 1,
+     "t": 0.07,
+     "at": 1794524786823,
+     "role": "mia",
+     "kind": "greeting",
+     "text": "Hi, thanks for calling F&F. I'm Mia, a virtual assistant, and I'll get you a quote for shipping your car. Where are you shipping it from, and where is it going?",
+     "metrics": {},
+     "speaking_s": null,
+     "interrupted": false
+    },
+    {
+     "type": "turn",
+     "seq": 2,
+     "t": 9.84,
+     "at": 1794524796593,
+     "role": "caller",
+     "kind": "said",
+     "text": "From Chicago to Austin last summer. Hi. I need to ship my car from Miami. Florida to Boston, Massachusetts.",
+     "metrics": {
+      "end_of_turn": 577,
+      "stt": 198
+     },
+     "speaking_s": 7.19,
+     "interrupted": false
+    },
+    {
+     "type": "tool",
+     "seq": 3,
+     "t": 10.2,
+     "at": 1794524796950,
+     "name": "save_origin_destination",
+     "args": {
+      "origin_city": "Miami",
+      "origin_state": "Florida",
+      "destination_city": "Boston",
+      "destination_state": "Massachusetts"
+     },
+     "result": {
+      "ok": true,
+      "saved": {
+       "origin": "Miami, Florida",
+       "destination": "Boston, Massachusetts"
+      },
+      "on_file": {
+       "origin": "Miami, Florida",
+       "destination": "Boston, Massachusetts",
+       "vehicles": [],
+       "expected_vehicles": null,
+       "missing": [
+        "vehicle"
+       ]
+      },
+      "next": "Ask for the year, make and model of the vehicle."
+     },
+     "ok": true,
+     "ms": 352
+    },
+    {
+     "type": "state",
+     "seq": 4,
+     "t": 10.2,
+     "at": 1794524796950,
+     "on_file": {
+      "origin": "Miami, Florida",
+      "destination": "Boston, Massachusetts",
+      "vehicles": [],
+      "expected_vehicles": null,
+      "missing": [
+       "vehicle"
+      ]
+     },
+     "stage": "route",
+     "quote": null
+    },
+    {
+     "type": "turn",
+     "seq": 5,
+     "t": 12.82,
+     "at": 1794524799574,
+     "role": "caller",
+     "kind": "said",
+     "text": "Should be",
+     "metrics": {
+      "end_of_turn": 2500,
+      "stt": 540
+     },
+     "speaking_s": 0.34,
+     "interrupted": false
+    },
+    {
+     "type": "turn",
+     "seq": 6,
+     "t": 18.31,
+     "at": 1794524805057,
+     "role": "mia",
+     "kind": "said",
+     "text": "Got it, Miami to Boston. What year, make and model is the car?",
+     "metrics": {
+      "llm_ttft": 353,
+      "tts_ttfb": 56,
+      "e2e": 2992
+     },
+     "speaking_s": 5.0,
+     "interrupted": false
+    },
+    {
+     "type": "turn",
+     "seq": 7,
+     "t": 21.49,
+     "at": 1794524808242,
+     "role": "caller",
+     "kind": "said",
+     "text": "Twenty twenty Toyota Camry.",
+     "metrics": {
+      "end_of_turn": 577,
+      "stt": 420
+     },
+     "speaking_s": 1.24,
+     "interrupted": false
+    },
+    {
+     "type": "tool",
+     "seq": 8,
+     "t": 22.34,
+     "at": 1794524809093,
+     "name": "save_vehicle",
+     "args": {
+      "year": 2020,
+      "make": "Toyota",
+      "model": "Camry",
+      "vehicle_type": null,
+      "drivable": null,
+      "total_vehicles": null
+     },
+     "result": {
+      "ok": true,
+      "saved": {
+       "quote_id": "Q1",
+       "vehicle": "2020 Toyota Camry"
+      },
+      "on_file": {
+       "origin": "Miami, Florida",
+       "destination": "Boston, Massachusetts",
+       "vehicles": [
+        {
+         "quote_id": "Q1",
+         "vehicle": "2020 Toyota Camry"
+        }
+       ],
+       "expected_vehicles": null,
+       "missing": []
+      },
+      "next": "Everything is on file. Read it back in one sentence (each vehicle, origin city and state, destination city and state) and ask if it's correct. Call get_quote only after they confirm."
+     },
+     "ok": true,
+     "ms": 301
+    },
+    {
+     "type": "state",
+     "seq": 9,
+     "t": 22.34,
+     "at": 1794524809093,
+     "on_file": {
+      "origin": "Miami, Florida",
+      "destination": "Boston, Massachusetts",
+      "vehicles": [
+       {
+        "quote_id": "Q1",
+        "vehicle": "2020 Toyota Camry"
+       }
+      ],
+      "expected_vehicles": null,
+      "missing": []
+     },
+     "stage": "vehicles",
+     "quote": null
+    },
+    {
+     "type": "turn",
+     "seq": 10,
+     "t": 31.97,
+     "at": 1794524818723,
+     "role": "mia",
+     "kind": "said",
+     "text": "Let me make sure I have it right: your 2020 Toyota Camry will ship from Miami, Florida to Boston, Massachusetts. Is that right?",
+     "metrics": {
+      "llm_ttft": 465,
+      "tts_ttfb": 60,
+      "e2e": 1960
+     },
+     "speaking_s": 9.1,
+     "interrupted": false
+    },
+    {
+     "type": "dropped",
+     "seq": 11,
+     "t": 35.39,
+     "at": 1794524822145,
+     "tool": "get_quote",
+     "args": "{}",
+     "why": "caller has not confirmed"
+    },
+    {
+     "type": "dropped",
+     "seq": 12,
+     "t": 36.96,
+     "at": 1794524823709,
+     "tool": "note_off_topic",
+     "args": "{\"message\":\"Sure, I can help with that.\"}",
+     "why": "caller's message is about the quote"
+    },
+    {
+     "type": "turn",
+     "seq": 13,
+     "t": 38.66,
+     "at": 1794524825413,
+     "role": "caller",
+     "kind": "said",
+     "text": "I'm just checking prices for them. I'll call back later. Bye.",
+     "metrics": {
+      "end_of_turn": 2500,
+      "stt": 493
+     },
+     "speaking_s": 3.04,
+     "interrupted": false
+    },
+    {
+     "type": "turn",
+     "seq": 14,
+     "t": 46.37,
+     "at": 1794524833122,
+     "role": "mia",
+     "kind": "said",
+     "text": "Just to confirm, your 2020 Toyota Camry will ship from Miami, Florida to Boston, Massachusetts. Is that correct?",
+     "metrics": {
+      "llm_ttft": 301,
+      "tts_ttfb": 63,
+      "e2e": 2565
+     },
+     "speaking_s": 7.64,
+     "interrupted": false
+    }
+   ]
+  }
+ },
+ {
+  "case": {
+   "noise": "subway",
+   "snr": 5,
+   "profile": "full"
+  },
+  "score": {
+   "greeted": true,
+   "answered": 3,
+   "lines": 3,
+   "p50_s": 1.7,
+   "route": true,
+   "vehicle": false,
+   "hung_up": true,
+   "cut_off": 1,
+   "long_turns": 0,
+   "noisy_mode": false,
+   "recall": 0.69,
+   "extra_words": 17
+  },
+  "result": {
+   "room": "smoke-7c28761e",
+   "greeted": true,
+   "lines": [
+    "Hi, I need to ship my car from Miami, Florida to Boston, Massachusetts.",
+    "It's a 2020 Toyota Camry.",
+    "I'm just checking prices for now. I'll call back later, bye!"
+   ],
+   "responses": [
+    1.7350000001024455,
+    0.9379999998491257,
+    3.515000000130385
+   ],
+   "hung_up": true,
+   "heard": [
+    {
+     "who": "mia",
+     "text": "Hi, and thanks for calling F&F. I'm Mia, a virtual",
+     "t": 6.1
+    },
+    {
+     "who": "caller",
+     "text": "Away from",
+     "t": 6.1
+    },
+    {
+     "who": "caller",
+     "text": "Chicago to Hi. I need to ship my car from Miami, Florida to Massachusetts.",
+     "t": 9.3
+    },
+    {
+     "who": "mia",
+     "text": "Which city in Massachusetts are you shipping to?",
+     "t": 12.6
+    },
+    {
+     "who": "caller",
+     "text": "The twenty twenty two American Dec.",
+     "t": 16.1
+    },
+    {
+     "who": "mia",
+     "text": "Got it, a 2022 American Dec. Which city",
+     "t": 19.5
+    },
+    {
+     "who": "caller",
+     "text": "Can't wait until thirty November.",
+     "t": 19.5
+    },
+    {
+     "who": "caller",
+     "text": "I'm just checking to press this for you. I'll call back later. Bye.",
+     "t": 23.4
+    },
+    {
+     "who": "mia",
+     "text": "Thank you for calling F&F. If you ever need another quote, just give us a call. Have a great day!",
+     "t": 31.4
+    }
+   ],
+   "events": [
+    {
+     "type": "config",
+     "seq": 0,
+     "t": 0.0,
+     "at": 1794524851230,
+     "stt": "Deepgram nova-3",
+     "llm": "Groq openai/gpt-oss-20b",
+     "tts": "Deepgram \u00b7 Thalia",
+     "turn_detector": "LiveKit auto",
+     "noise_handling": "full",
+     "max_call_s": "360"
+    },
+    {
+     "type": "turn",
+     "seq": 1,
+     "t": 0.04,
+     "at": 1794524851267,
+     "role": "mia",
+     "kind": "greeting",
+     "text": "Hi, and thanks for calling F&F. I'm Mia, a virtual assistant. To quote your car shipment, where are you shipping from and to?",
+     "metrics": {},
+     "speaking_s": null,
+     "interrupted": false
+    },
+    {
+     "type": "turn",
+     "seq": 2,
+     "t": 9.07,
+     "at": 1794524860299,
+     "role": "caller",
+     "kind": "said",
+     "text": "Away from Chicago to Hi. I need to ship my car from Miami, Florida to Massachusetts.",
+     "metrics": {
+      "end_of_turn": 577,
+      "stt": 193
+     },
+     "speaking_s": 7.29,
+     "interrupted": false
+    },
+    {
+     "type": "tool",
+     "seq": 3,
+     "t": 9.3,
+     "at": 1794524860527,
+     "name": "save_origin_destination",
+     "args": {
+      "origin_city": "Miami",
+      "origin_state": "Florida",
+      "destination_city": null,
+      "destination_state": "Massachusetts"
+     },
+     "result": {
+      "ok": true,
+      "saved": {
+       "origin": "Miami, Florida"
+      },
+      "on_file": {
+       "origin": "Miami, Florida",
+       "destination": null,
+       "vehicles": [],
+       "expected_vehicles": null,
+       "missing": [
+        "destination",
+        "vehicle"
+       ]
+      },
+      "next": "They said Massachusetts but no city: ask which city in Massachusetts they're shipping to (e.g. \"Which city in Massachusetts?\")."
+     },
+     "ok": true,
+     "ms": 222
+    },
+    {
+     "type": "state",
+     "seq": 4,
+     "t": 9.3,
+     "at": 1794524860527,
+     "on_file": {
+      "origin": "Miami, Florida",
+      "destination": null,
+      "vehicles": [],
+      "expected_vehicles": null,
+      "missing": [
+       "destination",
+       "vehicle"
+      ]
+     },
+     "stage": "route",
+     "quote": null
+    },
+    {
+     "type": "turn",
+     "seq": 5,
+     "t": 12.02,
+     "at": 1794524863247,
+     "role": "mia",
+     "kind": "said",
+     "text": "Which city in Massachusetts are you shipping to?",
+     "metrics": {
+      "llm_ttft": 296,
+      "tts_ttfb": 134,
+      "e2e": 1242
+     },
+     "speaking_s": 2.29,
+     "interrupted": false
+    },
+    {
+     "type": "turn",
+     "seq": 6,
+     "t": 15.37,
+     "at": 1794524866598,
+     "role": "caller",
+     "kind": "said",
+     "text": "The twenty twenty two American Dec.",
+     "metrics": {
+      "end_of_turn": 577,
+      "stt": 229
+     },
+     "speaking_s": 1.54,
+     "interrupted": false
+    },
+    {
+     "type": "turn",
+     "seq": 7,
+     "t": 18.34,
+     "at": 1794524869565,
+     "role": "mia",
+     "kind": "said",
+     "text": "Got it, a 2022 American Dec. Which",
+     "metrics": {
+      "llm_ttft": 282,
+      "tts_ttfb": 137,
+      "e2e": 718
+     },
+     "speaking_s": 2.83,
+     "interrupted": true
+    },
+    {
+     "type": "turn",
+     "seq": 8,
+     "t": 18.68,
+     "at": 1794524869909,
+     "role": "caller",
+     "kind": "said",
+     "text": "Can't wait until thirty November.",
+     "metrics": {
+      "end_of_turn": 577,
+      "stt": 244
+     },
+     "speaking_s": 1.29,
+     "interrupted": false
+    },
+    {
+     "type": "tool",
+     "seq": 9,
+     "t": 19.02,
+     "at": 1794524870250,
+     "name": "save_vehicle",
+     "args": {
+      "year": 2022,
+      "make": "American",
+      "model": "Dec.",
+      "vehicle_type": null,
+      "drivable": null,
+      "total_vehicles": null
+     },
+     "result": {
+      "ok": false,
+      "error_code": "MAKE_NOT_FOUND",
+      "attempts": 1,
+      "known": {},
+      "on_file": {
+       "origin": "Miami, Florida",
+       "destination": null,
+       "vehicles": [],
+       "expected_vehicles": null,
+       "missing": [
+        "destination",
+        "vehicle"
+       ],
+       "heard_so_far": "2022 car"
+      },
+      "next": "The caller also asked a question in this message: answer it first in one short sentence (only from your instructions; offer a licensed representative if they don't cover it), then: Say you couldn't find that make in our system and ask them to repeat it."
+     },
+     "ok": false,
+     "ms": 1
+    },
+    {
+     "type": "state",
+     "seq": 10,
+     "t": 19.02,
+     "at": 1794524870250,
+     "on_file": {
+      "origin": "Miami, Florida",
+      "destination": null,
+      "vehicles": [],
+      "expected_vehicles": null,
+      "missing": [
+       "destination",
+       "vehicle"
+      ],
+      "heard_so_far": "2022 car"
+     },
+     "stage": "route",
+     "quote": null
+    },
+    {
+     "type": "tool",
+     "seq": 11,
+     "t": 22.07,
+     "at": 1794524873297,
+     "name": "note_off_topic",
+     "args": {},
+     "result": {
+      "ok": true,
+      "off_topic": 1,
+      "on_file": {
+       "origin": "Miami, Florida",
+       "destination": null,
+       "vehicles": [],
+       "expected_vehicles": null,
+       "missing": [
+        "destination",
+        "vehicle"
+       ],
+       "heard_so_far": "2022 car"
+      },
+      "next": "Answer in a few words at most, without making anything up, then steer back to the quote: They said Massachusetts but no city: ask which city in Massachusetts they're shipping to (e.g. \"Which city in Massachusetts?\")."
+     },
+     "ok": true,
+     "ms": 0
+    },
+    {
+     "type": "state",
+     "seq": 12,
+     "t": 22.07,
+     "at": 1794524873297,
+     "on_file": {
+      "origin": "Miami, Florida",
+      "destination": null,
+      "vehicles": [],
+      "expected_vehicles": null,
+      "missing": [
+       "destination",
+       "vehicle"
+      ],
+      "heard_so_far": "2022 car"
+     },
+     "stage": "route",
+     "quote": null
+    },
+    {
+     "type": "turn",
+     "seq": 13,
+     "t": 24.41,
+     "at": 1794524875631,
+     "role": "caller",
+     "kind": "said",
+     "text": "I'm just checking to press this for you. I'll call back later. Bye.",
+     "metrics": {
+      "end_of_turn": 2500,
+      "stt": 239
+     },
+     "speaking_s": 3.14,
+     "interrupted": false
+    },
+    {
+     "type": "tool",
+     "seq": 14,
+     "t": 24.68,
+     "at": 1794524875907,
+     "name": "end_call",
+     "args": {},
+     "result": {
+      "ok": true,
+      "on_file": {
+       "origin": "Miami, Florida",
+       "destination": null,
+       "vehicles": [],
+       "expected_vehicles": null,
+       "missing": [
+        "destination",
+        "vehicle"
+       ],
+       "heard_so_far": "2022 car"
+      },
+      "next": "Say exactly this and nothing else: \"Thank you for calling F&F. If you ever need another quote, just give us a call. Have a great day!\""
+     },
+     "ok": true,
+     "ms": 0
+    },
+    {
+     "type": "state",
+     "seq": 15,
+     "t": 24.68,
+     "at": 1794524875907,
+     "on_file": {
+      "origin": "Miami, Florida",
+      "destination": null,
+      "vehicles": [],
+      "expected_vehicles": null,
+      "missing": [
+       "destination",
+       "vehicle"
+      ],
+      "heard_so_far": "2022 car"
+     },
+     "stage": "route",
+     "quote": null
+    },
+    {
+     "type": "turn",
+     "seq": 16,
+     "t": 32.48,
+     "at": 1794524883707,
+     "role": "mia",
+     "kind": "said",
+     "text": "Thank you for calling F&F. If you ever need another quote, just give us a call. Have a great day!",
+     "metrics": {
+      "llm_ttft": 167,
+      "tts_ttfb": 127,
+      "e2e": 3088
+     },
+     "speaking_s": 7.5,
+     "interrupted": false
+    }
+   ]
+  }
+ },
+ {
+  "case": {
+   "noise": "cafe",
+   "snr": 12,
+   "profile": "baseline"
+  },
+  "score": {
+   "greeted": true,
+   "answered": 0,
+   "lines": 3,
+   "p50_s": null,
+   "route": true,
+   "vehicle": true,
+   "hung_up": true,
+   "cut_off": 0,
+   "long_turns": 0,
+   "noisy_mode": false,
+   "recall": 0.97,
+   "extra_words": 137
+  },
+  "result": {
+   "room": "smoke-ba3a4d75",
+   "greeted": true,
+   "lines": [
+    "Hi, I need to ship my car from Miami, Florida to Boston, Massachusetts.",
+    "It's a 2020 Toyota Camry.",
+    "I'm just checking prices for now. I'll call back later, bye!"
+   ],
+   "responses": [
+    null,
+    null,
+    null
+   ],
+   "hung_up": true,
+   "heard": [
+    {
+     "who": "mia",
+     "text": "Hi, and thanks for calling F&F. I'm Mia, a virtual",
+     "t": 6.4
+    },
+    {
+     "who": "caller",
+     "text": "For you and for Raj. Hi.",
+     "t": 6.4
+    },
+    {
+     "who": "caller",
+     "text": "I need to ship my car from Miami, Florida to Boston, Massachusetts.... Is yours",
+     "t": 10.0
+    },
+    {
+     "who": "caller",
+     "text": "so much better than the long road",
+     "t": 11.3
+    },
+    {
+     "who": "caller",
+     "text": "trips. I think the",
+     "t": 14.0
+    },
+    {
+     "who": "caller",
+     "text": "professor said the exams came from the school.",
+     "t": 17.1
+    },
+    {
+     "who": "caller",
+     "text": "Are you going to the networking event tonight?",
+     "t": 26.8
+    },
+    {
+     "who": "caller",
+     "text": "I need to call my landlord about",
+     "t": 32.0
+    },
+    {
+     "who": "caller",
+     "text": "It's a twenty twenty Toyota Camry. Chicago. An awesome",
+     "t": 33.1
+    },
+    {
+     "who": "caller",
+     "text": "week? Did anyone take notes on the",
+     "t": 42.9
+    },
+    {
+     "who": "caller",
+     "text": "pricing framework?",
+     "t": 43.7
+    },
+    {
+     "who": "caller",
+     "text": "The coffee goes all the way",
+     "t": 48.1
+    },
+    {
+     "who": "caller",
+     "text": "call my landlord.",
+     "t": 48.9
+    },
+    {
+     "who": "caller",
+     "text": "I'm flying to Denver on Friday.",
+     "t": 51.6
+    },
+    {
+     "who": "caller",
+     "text": "Did you finish the ring? I'm just checking prices for now.",
+     "t": 54.8
+    },
+    {
+     "who": "caller",
+     "text": "I'll call back later. Bye. Honestly, the second question was way harder than the first.",
+     "t": 59.7
+    },
+    {
+     "who": "caller",
+     "text": "On Friday.",
+     "t": 60.8
+    },
+    {
+     "who": "caller",
+     "text": "Need to call my landlord. I need call to my landlord. Wait. Which group are you in for, Roger?",
+     "t": 66.6
+    },
+    {
+     "who": "caller",
+     "text": "Which river are in? Did you finish the reading for today, Shane? Are you going to the network? Coffee out here is",
+     "t": 70.1
+    },
+    {
+     "who": "caller",
+     "text": "so much better than the launch.",
+     "t": 71.4
+    },
+    {
+     "who": "caller",
+     "text": "List. I think the",
+     "t": 73.9
+    },
+    {
+     "who": "caller",
+     "text": "professor said the exam is pretty good.",
+     "t": 77.0
+    },
+    {
+     "who": "caller",
+     "text": "Are you going to the networking event tonight?",
+     "t": 86.6
+    },
+    {
+     "who": "caller",
+     "text": "I need to call my landline about this.",
+     "t": 90.7
+    },
+    {
+     "who": "caller",
+     "text": "She drove all the way from Chicago to Austin last summer.",
+     "t": 95.2
+    }
+   ],
+   "events": [
+    {
+     "type": "config",
+     "seq": 0,
+     "t": 0.0,
+     "at": 1794524891360,
+     "stt": "Deepgram nova-3",
+     "llm": "Groq openai/gpt-oss-20b",
+     "tts": "Deepgram \u00b7 Thalia",
+     "turn_detector": "LiveKit auto",
+     "noise_handling": "baseline",
+     "max_call_s": "360"
+    },
+    {
+     "type": "turn",
+     "seq": 1,
+     "t": 0.04,
+     "at": 1794524891399,
+     "role": "mia",
+     "kind": "greeting",
+     "text": "Hi, and thanks for calling F&F. I'm Mia, a virtual assistant. To quote your car shipment, where are you shipping from and to?",
+     "metrics": {},
+     "speaking_s": null,
+     "interrupted": false
+    },
+    {
+     "type": "turn",
+     "seq": 2,
+     "t": 61.01,
+     "at": 1794524952364,
+     "role": "caller",
+     "kind": "said",
+     "text": "For you and for Raj. Hi. I need to ship my car from Miami, Florida to Boston, Massachusetts.... Is yours so much better than the long road trips. I think the professor said the exams came from the school. Are you going to the networking event tonight? I need to call my landlord about It's a twenty twenty Toyota Camry. Chicago. An awesome week? Did anyone take notes on the pricing framework? The coffee goes all the way call my landlord. I'm flying to Denver on Friday. Did you finish the ring? I'm just checking prices for now. I'll call back later. Bye. Honestly, the second question was way harder than the first. On Friday.",
+     "metrics": {
+      "end_of_turn": 577,
+      "stt": 129
+     },
+     "speaking_s": 59.49,
+     "interrupted": false
+    },
+    {
+     "type": "tool",
+     "seq": 3,
+     "t": 61.63,
+     "at": 1794524952989,
+     "name": "save_vehicle",
+     "args": {
+      "year": 2020,
+      "make": "Toyota",
+      "model": "Camry",
+      "vehicle_type": null,
+      "drivable": null,
+      "total_vehicles": null
+     },
+     "result": {
+      "ok": true,
+      "saved": {
+       "quote_id": "Q1",
+       "vehicle": "2020 Toyota Camry"
+      },
+      "on_file": {
+       "origin": null,
+       "destination": null,
+       "vehicles": [
+        {
+         "quote_id": "Q1",
+         "vehicle": "2020 Toyota Camry"
+        }
+       ],
+       "expected_vehicles": null,
+       "missing": [
+        "origin",
+        "destination"
+       ]
+      },
+      "next": "The caller also asked a question in this message: answer it first in one short sentence (only from your instructions; offer a licensed representative if they don't cover it), then: Ask for the origin and destination (city and state)."
+     },
+     "ok": true,
+     "ms": 297
+    },
+    {
+     "type": "state",
+     "seq": 4,
+     "t": 61.63,
+     "at": 1794524952989,
+     "on_file": {
+      "origin": null,
+      "destination": null,
+      "vehicles": [
+       {
+        "quote_id": "Q1",
+        "vehicle": "2020 Toyota Camry"
+       }
+      ],
+      "expected_vehicles": null,
+      "missing": [
+       "origin",
+       "destination"
+      ]
+     },
+     "stage": "vehicles",
+     "quote": null
+    },
+    {
+     "type": "tool",
+     "seq": 5,
+     "t": 61.76,
+     "at": 1794524953116,
+     "name": "save_origin_destination",
+     "args": {
+      "origin_city": "Miami",
+      "origin_state": "Florida",
+      "destination_city": "Boston",
+      "destination_state": "Massachusetts"
+     },
+     "result": {
+      "ok": true,
+      "saved": {
+       "origin": "Miami, Florida",
+       "destination": "Boston, Massachusetts"
+      },
+      "on_file": {
+       "origin": "Miami, Florida",
+       "destination": "Boston, Massachusetts",
+       "vehicles": [
+        {
+         "quote_id": "Q1",
+         "vehicle": "2020 Toyota Camry"
+        }
+       ],
+       "expected_vehicles": null,
+       "missing": []
+      },
+      "next": "The caller also asked a question in this message: answer it first in one short sentence (only from your instructions; offer a licensed representative if they don't cover it), then: Everything is on file. Read it back in one sentence (each vehicle, origin city and state, destination city and state) and ask if it's correct. Call get_quote only after they confirm."
+     },
+     "ok": true,
+     "ms": 432
+    },
+    {
+     "type": "state",
+     "seq": 6,
+     "t": 61.76,
+     "at": 1794524953116,
+     "on_file": {
+      "origin": "Miami, Florida",
+      "destination": "Boston, Massachusetts",
+      "vehicles": [
+       {
+        "quote_id": "Q1",
+        "vehicle": "2020 Toyota Camry"
+       }
+      ],
+      "expected_vehicles": null,
+      "missing": []
+     },
+     "stage": "vehicles",
+     "quote": null
+    },
+    {
+     "type": "dropped",
+     "seq": 7,
+     "t": 62.14,
+     "at": 1794524953491,
+     "tool": "note_off_topic",
+     "args": "{\"message\":\"I\u2019m not sure I understand that question. Let\u2019s focus on your shipping details.\"}",
+     "why": "caller's message is about the quote"
+    }
+   ]
+  }
+ },
+ {
+  "case": {
+   "noise": "cafe",
+   "snr": 12,
+   "profile": "filter"
+  },
+  "score": {
+   "greeted": true,
+   "answered": 3,
+   "lines": 3,
+   "p50_s": 1.5,
+   "route": true,
+   "vehicle": false,
+   "hung_up": true,
+   "cut_off": 0,
+   "long_turns": 0,
+   "noisy_mode": false,
+   "recall": 0.83,
+   "extra_words": 7
+  },
+  "result": {
+   "room": "smoke-24fe2aff",
+   "greeted": true,
+   "lines": [
+    "Hi, I need to ship my car from Miami, Florida to Boston, Massachusetts.",
+    "It's a 2020 Toyota Camry.",
+    "I'm just checking prices for now. I'll call back later, bye!"
+   ],
+   "responses": [
+    1.5150000001303852,
+    3.219000000040978,
+    1.1870000001508743
+   ],
+   "hung_up": true,
+   "heard": [
+    {
+     "who": "mia",
+     "text": "Hi, thanks for calling F&F. I'm Mia, a virtual assistant, and I'll get you a",
+     "t": 6.0
+    },
+    {
+     "who": "caller",
+     "text": "For you and for Robbie.",
+     "t": 6.0
+    },
+    {
+     "who": "caller",
+     "text": "Hi. I need to ship my car from Miami, Florida to Boston, Massachusetts.",
+     "t": 10.7
+    },
+    {
+     "who": "mia",
+     "text": "Got it, Miami to Boston. What year, make and model is the car?",
+     "t": 14.4
+    },
+    {
+     "who": "caller",
+     "text": "A twenty twenty twenty two.",
+     "t": 19.0
+    },
+    {
+     "who": "mia",
+     "text": "Got it, a 2022. What make and model is it?",
+     "t": 24.9
+    },
+    {
+     "who": "caller",
+     "text": "I'm just checking prices for now.",
+     "t": 27.9
+    },
+    {
+     "who": "caller",
+     "text": "I'll call back later.",
+     "t": 29.3
+    },
+    {
+     "who": "caller",
+     "text": "Bye.",
+     "t": 30.0
+    },
+    {
+     "who": "mia",
+     "text": "Thanks so much for calling F&F! We're here whenever you need another quote. Take care!",
+     "t": 35.2
+    }
+   ],
+   "events": [
+    {
+     "type": "config",
+     "seq": 0,
+     "t": 0.01,
+     "at": 1794524991571,
+     "stt": "Deepgram nova-3",
+     "llm": "Groq openai/gpt-oss-20b",
+     "tts": "Deepgram \u00b7 Thalia",
+     "turn_detector": "LiveKit auto",
+     "noise_handling": "filter",
+     "max_call_s": "360"
+    },
+    {
+     "type": "turn",
+     "seq": 1,
+     "t": 0.04,
+     "at": 1794524991601,
+     "role": "mia",
+     "kind": "greeting",
+     "text": "Hi, thanks for calling F&F. I'm Mia, a virtual assistant, and I'll get you a quote for shipping your car. Where are you shipping it from, and where is it going?",
+     "metrics": {},
+     "speaking_s": null,
+     "interrupted": false
+    },
+    {
+     "type": "turn",
+     "seq": 2,
+     "t": 10.4,
+     "at": 1794525001970,
+     "role": "caller",
+     "kind": "said",
+     "text": "For you and for Robbie. Hi. I need to ship my car from Miami, Florida to Boston, Massachusetts.",
+     "metrics": {
+      "end_of_turn": 577,
+      "stt": 249
+     },
+     "speaking_s": 8.84,
+     "interrupted": false
+    },
+    {
+     "type": "tool",
+     "seq": 3,
+     "t": 10.78,
+     "at": 1794525002344,
+     "name": "save_origin_destination",
+     "args": {
+      "origin_city": "Miami",
+      "origin_state": "Florida",
+      "destination_city": "Boston",
+      "destination_state": "Massachusetts"
+     },
+     "result": {
+      "ok": true,
+      "saved": {
+       "origin": "Miami, Florida",
+       "destination": "Boston, Massachusetts"
+      },
+      "on_file": {
+       "origin": "Miami, Florida",
+       "destination": "Boston, Massachusetts",
+       "vehicles": [],
+       "expected_vehicles": null,
+       "missing": [
+        "vehicle"
+       ]
+      },
+      "next": "Ask for the year, make and model of the vehicle."
+     },
+     "ok": true,
+     "ms": 368
+    },
+    {
+     "type": "state",
+     "seq": 4,
+     "t": 10.78,
+     "at": 1794525002344,
+     "on_file": {
+      "origin": "Miami, Florida",
+      "destination": "Boston, Massachusetts",
+      "vehicles": [],
+      "expected_vehicles": null,
+      "missing": [
+       "vehicle"
+      ]
+     },
+     "stage": "route",
+     "quote": null
+    },
+    {
+     "type": "turn",
+     "seq": 5,
+     "t": 16.31,
+     "at": 1794525007880,
+     "role": "mia",
+     "kind": "said",
+     "text": "Got it, Miami to Boston. What year, make and model is the car?",
+     "metrics": {
+      "llm_ttft": 213,
+      "tts_ttfb": 56,
+      "e2e": 1229
+     },
+     "speaking_s": 5.26,
+     "interrupted": false
+    },
+    {
+     "type": "turn",
+     "seq": 6,
+     "t": 21.42,
+     "at": 1794525012988,
+     "role": "caller",
+     "kind": "said",
+     "text": "A twenty twenty twenty two.",
+     "metrics": {
+      "end_of_turn": 2500,
+      "stt": 477
+     },
+     "speaking_s": 1.44,
+     "interrupted": false
+    },
+    {
+     "type": "tool",
+     "seq": 7,
+     "t": 21.43,
+     "at": 1794525012991,
+     "name": "save_vehicle",
+     "args": {
+      "year": 2022,
+      "make": null,
+      "model": null,
+      "vehicle_type": null,
+      "drivable": null,
+      "total_vehicles": null
+     },
+     "result": {
+      "ok": false,
+      "error_code": "MISSING_MAKE_AND_MODEL",
+      "known": {
+       "year": 2022
+      },
+      "on_file": {
+       "origin": "Miami, Florida",
+       "destination": "Boston, Massachusetts",
+       "vehicles": [],
+       "expected_vehicles": null,
+       "missing": [
+        "vehicle"
+       ],
+       "heard_so_far": "2022 car"
+      },
+      "next": "Ask for the make and model of the vehicle."
+     },
+     "ok": false,
+     "ms": 0
+    },
+    {
+     "type": "state",
+     "seq": 8,
+     "t": 21.43,
+     "at": 1794525012991,
+     "on_file": {
+      "origin": "Miami, Florida",
+      "destination": "Boston, Massachusetts",
+      "vehicles": [],
+      "expected_vehicles": null,
+      "missing": [
+       "vehicle"
+      ],
+      "heard_so_far": "2022 car"
+     },
+     "stage": "route",
+     "quote": null
+    },
+    {
+     "type": "turn",
+     "seq": 9,
+     "t": 25.14,
+     "at": 1794525016708,
+     "role": "mia",
+     "kind": "said",
+     "text": "Got it, a 2022. What make and model is it?",
+     "metrics": {
+      "llm_ttft": 335,
+      "tts_ttfb": 55,
+      "e2e": 2898
+     },
+     "speaking_s": 3.32,
+     "interrupted": false
+    },
+    {
+     "type": "turn",
+     "seq": 10,
+     "t": 28.25,
+     "at": 1794525019816,
+     "role": "caller",
+     "kind": "said",
+     "text": "I'm just checking prices for now.",
+     "metrics": {
+      "end_of_turn": 577,
+      "stt": 196
+     },
+     "speaking_s": 1.44,
+     "interrupted": false
+    },
+    {
+     "type": "dropped",
+     "seq": 11,
+     "t": 30.09,
+     "at": 1794525021652,
+     "tool": "note_off_topic",
+     "args": "{\"topic\":\"caller said they are just checking prices\"}",
+     "why": "the caller is done"
+    },
+    {
+     "type": "turn",
+     "seq": 12,
+     "t": 30.2,
+     "at": 1794525021765,
+     "role": "caller",
+     "kind": "said",
+     "text": "I'll call back later. Bye.",
+     "metrics": {
+      "end_of_turn": 577,
+      "stt": 286
+     },
+     "speaking_s": 1.39,
+     "interrupted": false
+    },
+    {
+     "type": "tool",
+     "seq": 13,
+     "t": 30.2,
+     "at": 1794525021768,
+     "name": "end_call",
+     "args": {},
+     "result": {
+      "ok": true,
+      "on_file": {
+       "origin": "Miami, Florida",
+       "destination": "Boston, Massachusetts",
+       "vehicles": [],
+       "expected_vehicles": null,
+       "missing": [
+        "vehicle"
+       ],
+       "heard_so_far": "2022 car"
+      },
+      "next": "Say exactly this and nothing else: \"Thanks so much for calling F&F! We're here whenever you need another quote. Take care!\""
+     },
+     "ok": true,
+     "ms": 0
+    },
+    {
+     "type": "state",
+     "seq": 14,
+     "t": 30.2,
+     "at": 1794525021768,
+     "on_file": {
+      "origin": "Miami, Florida",
+      "destination": "Boston, Massachusetts",
+      "vehicles": [],
+      "expected_vehicles": null,
+      "missing": [
+       "vehicle"
+      ],
+      "heard_so_far": "2022 car"
+     },
+     "stage": "route",
+     "quote": null
+    },
+    {
+     "type": "turn",
+     "seq": 15,
+     "t": 34.89,
+     "at": 1794525026452,
+     "role": "mia",
+     "kind": "said",
+     "text": "Thanks so much for calling F&F! We're here whenever you need another quote. Take care!",
+     "metrics": {
+      "llm_ttft": 252,
+      "tts_ttfb": 63,
+      "e2e": 901
+     },
+     "speaking_s": 4.36,
+     "interrupted": false
+    }
+   ]
+  }
+ },
+ {
+  "case": {
+   "noise": "cafe",
+   "snr": 12,
+   "profile": "full"
+  },
+  "score": {
+   "greeted": true,
+   "answered": 3,
+   "lines": 3,
+   "p50_s": 1.5,
+   "route": true,
+   "vehicle": true,
+   "hung_up": true,
+   "cut_off": 0,
+   "long_turns": 0,
+   "noisy_mode": false,
+   "recall": 0.93,
+   "extra_words": 2
+  },
+  "result": {
+   "room": "smoke-3d6d5404",
+   "greeted": true,
+   "lines": [
+    "Hi, I need to ship my car from Miami, Florida to Boston, Massachusetts.",
+    "It's a 2020 Toyota Camry.",
+    "I'm just checking prices for now. I'll call back later, bye!"
+   ],
+   "responses": [
+    1.452999999979511,
+    1.843000000109896,
+    1.2809999999590218
+   ],
+   "hung_up": true,
+   "heard": [
+    {
+     "who": "mia",
+     "text": "Hi, and thanks for calling F&F. I'm Mia, a virtual assistant. To",
+     "t": 9.2
+    },
+    {
+     "who": "caller",
+     "text": "Hi. I need to ship my car from Miami, Florida to",
+     "t": 9.2
+    },
+    {
+     "who": "caller",
+     "text": "Massachusetts.",
+     "t": 10.3
+    },
+    {
+     "who": "mia",
+     "text": "Which city in Massachusetts are you shipping to?",
+     "t": 13.5
+    },
+    {
+     "who": "caller",
+     "text": "It's a twenty twenty Toyota Camry.",
+     "t": 16.6
+    },
+    {
+     "who": "mia",
+     "text": "Which city in Massachusetts are you shipping to?",
+     "t": 20.1
+    },
+    {
+     "who": "caller",
+     "text": "I'm just checking prices for now.",
+     "t": 23.0
+    },
+    {
+     "who": "caller",
+     "text": "I'll call back later. Bye.",
+     "t": 24.7
+    },
+    {
+     "who": "mia",
+     "text": "Thanks for calling F&F! Feel free to call us again if you'd like another quote. Have a nice day!",
+     "t": 31.6
+    }
+   ],
+   "events": [
+    {
+     "type": "config",
+     "seq": 0,
+     "t": 0.0,
+     "at": 1794525033922,
+     "stt": "Deepgram nova-3",
+     "llm": "Groq openai/gpt-oss-20b",
+     "tts": "Deepgram \u00b7 Thalia",
+     "turn_detector": "LiveKit auto",
+     "noise_handling": "full",
+     "max_call_s": "360"
+    },
+    {
+     "type": "turn",
+     "seq": 1,
+     "t": 0.04,
+     "at": 1794525033956,
+     "role": "mia",
+     "kind": "greeting",
+     "text": "Hi, and thanks for calling F&F. I'm Mia, a virtual assistant. To quote your car shipment, where are you shipping from and to?",
+     "metrics": {},
+     "speaking_s": null,
+     "interrupted": false
+    },
+    {
+     "type": "turn",
+     "seq": 2,
+     "t": 11.27,
+     "at": 1794525045188,
+     "role": "caller",
+     "kind": "said",
+     "text": "Hi. I need to ship my car from Miami, Florida to Massachusetts.",
+     "metrics": {
+      "end_of_turn": 577,
+      "stt": 225
+     },
+     "speaking_s": 8.49,
+     "interrupted": false
+    },
+    {
+     "type": "tool",
+     "seq": 3,
+     "t": 11.48,
+     "at": 1794525045396,
+     "name": "save_origin_destination",
+     "args": {
+      "origin_city": "Miami",
+      "origin_state": "Florida",
+      "destination_city": null,
+      "destination_state": "Massachusetts"
+     },
+     "result": {
+      "ok": true,
+      "saved": {
+       "origin": "Miami, Florida"
+      },
+      "on_file": {
+       "origin": "Miami, Florida",
+       "destination": null,
+       "vehicles": [],
+       "expected_vehicles": null,
+       "missing": [
+        "destination",
+        "vehicle"
+       ]
+      },
+      "next": "They said Massachusetts but no city: ask which city in Massachusetts they're shipping to (e.g. \"Which city in Massachusetts?\")."
+     },
+     "ok": true,
+     "ms": 202
+    },
+    {
+     "type": "state",
+     "seq": 4,
+     "t": 11.48,
+     "at": 1794525045396,
+     "on_file": {
+      "origin": "Miami, Florida",
+      "destination": null,
+      "vehicles": [],
+      "expected_vehicles": null,
+      "missing": [
+       "destination",
+       "vehicle"
+      ]
+     },
+     "stage": "route",
+     "quote": null
+    },
+    {
+     "type": "turn",
+     "seq": 5,
+     "t": 14.08,
+     "at": 1794525048000,
+     "role": "mia",
+     "kind": "said",
+     "text": "Which city in Massachusetts are you shipping to?",
+     "metrics": {
+      "llm_ttft": 174,
+      "tts_ttfb": 141,
+      "e2e": 1108
+     },
+     "speaking_s": 2.28,
+     "interrupted": false
+    },
+    {
+     "type": "turn",
+     "seq": 6,
+     "t": 17.22,
+     "at": 1794525051138,
+     "role": "caller",
+     "kind": "said",
+     "text": "It's a twenty twenty Toyota Camry.",
+     "metrics": {
+      "end_of_turn": 577,
+      "stt": 261
+     },
+     "speaking_s": 1.54,
+     "interrupted": false
+    },
+    {
+     "type": "tool",
+     "seq": 7,
+     "t": 17.48,
+     "at": 1794525051395,
+     "name": "save_vehicle",
+     "args": {
+      "year": 2020,
+      "make": "Toyota",
+      "model": "Camry",
+      "vehicle_type": null,
+      "drivable": null,
+      "total_vehicles": null
+     },
+     "result": {
+      "ok": true,
+      "saved": {
+       "quote_id": "Q1",
+       "vehicle": "2020 Toyota Camry"
+      },
+      "on_file": {
+       "origin": "Miami, Florida",
+       "destination": null,
+       "vehicles": [
+        {
+         "quote_id": "Q1",
+         "vehicle": "2020 Toyota Camry"
+        }
+       ],
+       "expected_vehicles": null,
+       "missing": [
+        "destination"
+       ]
+      },
+      "next": "They said Massachusetts but no city: ask which city in Massachusetts they're shipping to (e.g. \"Which city in Massachusetts?\")."
+     },
+     "ok": true,
+     "ms": 252
+    },
+    {
+     "type": "state",
+     "seq": 8,
+     "t": 17.48,
+     "at": 1794525051395,
+     "on_file": {
+      "origin": "Miami, Florida",
+      "destination": null,
+      "vehicles": [
+       {
+        "quote_id": "Q1",
+        "vehicle": "2020 Toyota Camry"
+       }
+      ],
+      "expected_vehicles": null,
+      "missing": [
+       "destination"
+      ]
+     },
+     "stage": "vehicles",
+     "quote": null
+    },
+    {
+     "type": "turn",
+     "seq": 9,
+     "t": 20.51,
+     "at": 1794525054427,
+     "role": "mia",
+     "kind": "said",
+     "text": "Which city in Massachusetts are you shipping to?",
+     "metrics": {
+      "llm_ttft": 689,
+      "tts_ttfb": 133,
+      "e2e": 1664
+     },
+     "speaking_s": 2.2,
+     "interrupted": false
+    },
+    {
+     "type": "turn",
+     "seq": 10,
+     "t": 23.42,
+     "at": 1794525057336,
+     "role": "caller",
+     "kind": "said",
+     "text": "I'm just checking prices for now.",
+     "metrics": {
+      "end_of_turn": 577,
+      "stt": 219
+     },
+     "speaking_s": 1.24,
+     "interrupted": false
+    },
+    {
+     "type": "turn",
+     "seq": 11,
+     "t": 25.03,
+     "at": 1794525058947,
+     "role": "caller",
+     "kind": "said",
+     "text": "I'll call back later. Bye.",
+     "metrics": {
+      "end_of_turn": 577,
+      "stt": 272
+     },
+     "speaking_s": 0.99,
+     "interrupted": false
+    },
+    {
+     "type": "dropped",
+     "seq": 12,
+     "t": 25.18,
+     "at": 1794525059101,
+     "tool": "note_off_topic",
+     "args": "{\"topic\":\"bye\"}",
+     "why": "the caller is done"
+    },
+    {
+     "type": "tool",
+     "seq": 13,
+     "t": 25.18,
+     "at": 1794525059102,
+     "name": "end_call",
+     "args": {},
+     "result": {
+      "ok": true,
+      "on_file": {
+       "origin": "Miami, Florida",
+       "destination": null,
+       "vehicles": [
+        {
+         "quote_id": "Q1",
+         "vehicle": "2020 Toyota Camry"
+        }
+       ],
+       "expected_vehicles": null,
+       "missing": [
+        "destination"
+       ]
+      },
+      "next": "Say exactly this and nothing else: \"Thanks for calling F&F! Feel free to call us again if you'd like another quote. Have a nice day!\""
+     },
+     "ok": true,
+     "ms": 0
+    },
+    {
+     "type": "state",
+     "seq": 14,
+     "t": 25.18,
+     "at": 1794525059102,
+     "on_file": {
+      "origin": "Miami, Florida",
+      "destination": null,
+      "vehicles": [
+       {
+        "quote_id": "Q1",
+        "vehicle": "2020 Toyota Camry"
+       }
+      ],
+      "expected_vehicles": null,
+      "missing": [
+       "destination"
+      ]
+     },
+     "stage": "vehicles",
+     "quote": null
+    },
+    {
+     "type": "turn",
+     "seq": 15,
+     "t": 31.44,
+     "at": 1794525065361,
+     "role": "mia",
+     "kind": "said",
+     "text": "Thanks for calling F&F! Feel free to call us again if you'd like another quote. Have a nice day!",
+     "metrics": {
+      "llm_ttft": 156,
+      "tts_ttfb": 136,
+      "e2e": 1040
+     },
+     "speaking_s": 5.96,
+     "interrupted": false
+    }
+   ]
+  }
+ },
+ {
+  "case": {
+   "noise": "cafe",
+   "snr": 5,
+   "profile": "baseline"
+  },
+  "score": {
+   "greeted": true,
+   "answered": 0,
+   "lines": 3,
+   "p50_s": null,
+   "route": false,
+   "vehicle": false,
+   "hung_up": false,
+   "cut_off": 0,
+   "long_turns": 0,
+   "noisy_mode": false,
+   "recall": 0.66,
+   "extra_words": 157
+  },
+  "result": {
+   "room": "smoke-f3ad0799",
+   "greeted": true,
+   "lines": [
+    "Hi, I need to ship my car from Miami, Florida to Boston, Massachusetts.",
+    "It's a 2020 Toyota Camry.",
+    "I'm just checking prices for now. I'll call back later, bye!"
+   ],
+   "responses": [
+    null,
+    null,
+    null
+   ],
+   "hung_up": false,
+   "heard": [
+    {
+     "who": "mia",
+     "text": "Hi, and thanks for calling F&F. I'm Mia, a virtual",
+     "t": 6.3
+    },
+    {
+     "who": "caller",
+     "text": "Hi.",
+     "t": 6.3
+    },
+    {
+     "who": "caller",
+     "text": "Need to ship my car from Miami to this... Are you holding this? The coffee out here is",
+     "t": 10.1
+    },
+    {
+     "who": "caller",
+     "text": "so much better than the laundry",
+     "t": 11.3
+    },
+    {
+     "who": "caller",
+     "text": "Are you going to the networking event tonight?",
+     "t": 26.7
+    },
+    {
+     "who": "caller",
+     "text": "I need to call my line to think about the future. It's a twenty",
+     "t": 32.0
+    },
+    {
+     "who": "caller",
+     "text": "twenty... We drove all the way from Chicago to Austin last summer.",
+     "t": 35.1
+    },
+    {
+     "who": "caller",
+     "text": "Let's split the presentation into three parts. Okay. When you send me the",
+     "t": 39.7
+    },
+    {
+     "who": "caller",
+     "text": "Did anyone take notes on the pricing framework?",
+     "t": 43.7
+    },
+    {
+     "who": "caller",
+     "text": "The coffee to go all the way. I need to",
+     "t": 48.1
+    },
+    {
+     "who": "caller",
+     "text": "call my landlord.",
+     "t": 49.0
+    },
+    {
+     "who": "caller",
+     "text": "Did you finish the... I'm just checking for you. Honda at four. A callback later.",
+     "t": 55.8
+    },
+    {
+     "who": "caller",
+     "text": "Bye. Honestly, the second question was way harder than the first.",
+     "t": 59.7
+    },
+    {
+     "who": "caller",
+     "text": "On Friday.",
+     "t": 60.7
+    },
+    {
+     "who": "caller",
+     "text": "Need to tell my landlord how he left home. Wait. Which group are you in for, Roger?",
+     "t": 66.5
+    },
+    {
+     "who": "caller",
+     "text": "Group group you in? Did you finish the reading for today, Shane? Are you going to the network? The coffee out here is",
+     "t": 70.1
+    },
+    {
+     "who": "caller",
+     "text": "so much better than the Londo's books.",
+     "t": 75.3
+    },
+    {
+     "who": "caller",
+     "text": "I think the professor said the exam is.",
+     "t": 77.4
+    },
+    {
+     "who": "caller",
+     "text": "I left my charger.",
+     "t": 79.8
+    },
+    {
+     "who": "caller",
+     "text": "Are you going to the networking event tonight?",
+     "t": 86.8
+    },
+    {
+     "who": "caller",
+     "text": "I need to call my landline about this.",
+     "t": 90.7
+    },
+    {
+     "who": "caller",
+     "text": "She drove all the way from Chicago to Austin last summer.",
+     "t": 95.2
+    }
+   ],
+   "events": [
+    {
+     "type": "config",
+     "seq": 0,
+     "t": 0.0,
+     "at": 1794525074128,
+     "stt": "Deepgram nova-3",
+     "llm": "Groq openai/gpt-oss-20b",
+     "tts": "Deepgram \u00b7 Thalia",
+     "turn_detector": "LiveKit auto",
+     "noise_handling": "baseline",
+     "max_call_s": "360"
+    },
+    {
+     "type": "turn",
+     "seq": 1,
+     "t": 0.04,
+     "at": 1794525074164,
+     "role": "mia",
+     "kind": "greeting",
+     "text": "Hi, and thanks for calling F&F. I'm Mia, a virtual assistant. To quote your car shipment, where are you shipping from and to?",
+     "metrics": {},
+     "speaking_s": null,
+     "interrupted": false
+    },
+    {
+     "type": "turn",
+     "seq": 2,
+     "t": 61.08,
+     "at": 1794525135200,
+     "role": "caller",
+     "kind": "said",
+     "text": "Hi. Need to ship my car from Miami to this... Are you holding this? The coffee out here is so much better than the laundry Are you going to the networking event tonight? I need to call my line to think about the future. It's a twenty twenty... We drove all the way from Chicago to Austin last summer. Let's split the presentation into three parts. Okay. When you send me the Did anyone take notes on the pricing framework? The coffee to go all the way. I need to call my landlord. Did you finish the... I'm just checking for you. Honda at four. A callback later. Bye. Honestly, the second question was way harder than the first. On Friday.",
+     "metrics": {
+      "end_of_turn": 578,
+      "stt": 20
+     },
+     "speaking_s": 59.59,
+     "interrupted": false
+    },
+    {
+     "type": "dropped",
+     "seq": 3,
+     "t": 61.3,
+     "at": 1794525135422,
+     "tool": "note_off_topic",
+     "args": "{\"next\":\"I\u2019m not sure about that, but I can help with your car shipping quote.\"}",
+     "why": "caller's message is about the quote"
+    }
+   ]
+  }
+ },
+ {
+  "case": {
+   "noise": "cafe",
+   "snr": 5,
+   "profile": "filter"
+  },
+  "score": {
+   "greeted": true,
+   "answered": 0,
+   "lines": 3,
+   "p50_s": null,
+   "route": false,
+   "vehicle": true,
+   "hung_up": true,
+   "cut_off": 0,
+   "long_turns": 0,
+   "noisy_mode": false,
+   "recall": 0.66,
+   "extra_words": 115
+  },
+  "result": {
+   "room": "smoke-d09e1c20",
+   "greeted": true,
+   "lines": [
+    "Hi, I need to ship my car from Miami, Florida to Boston, Massachusetts.",
+    "It's a 2020 Toyota Camry.",
+    "I'm just checking prices for now. I'll call back later, bye!"
+   ],
+   "responses": [
+    null,
+    null,
+    null
+   ],
+   "hung_up": true,
+   "heard": [
+    {
+     "who": "mia",
+     "text": "Hi, and thanks for calling F&F. I'm Mia, a virtual assistant.",
+     "t": 6.3
+    },
+    {
+     "who": "caller",
+     "text": "For you and for the project.",
+     "t": 6.3
+    },
+    {
+     "who": "caller",
+     "text": "Hi. I need to ship my car from Miami to Daskey, Massachusetts.",
+     "t": 10.5
+    },
+    {
+     "who": "caller",
+     "text": "And the model... I drove all the way",
+     "t": 12.0
+    },
+    {
+     "who": "caller",
+     "text": "Are you going to the networking event?",
+     "t": 28.3
+    },
+    {
+     "who": "caller",
+     "text": "I need to call my land to keep up.",
+     "t": 32.1
+    },
+    {
+     "who": "caller",
+     "text": "She drove twenty twenty Toyota Camry.",
+     "t": 34.1
+    },
+    {
+     "who": "caller",
+     "text": "I need to call my lender. I'm going to Denver on Friday.",
+     "t": 52.7
+    },
+    {
+     "who": "caller",
+     "text": "Call I'm",
+     "t": 56.9
+    },
+    {
+     "who": "caller",
+     "text": "Honestly, the second question was way harder than the first.",
+     "t": 60.0
+    },
+    {
+     "who": "caller",
+     "text": "I need to come in more parts. I'll call them out. Wait. Which group are you in for the project?",
+     "t": 66.1
+    },
+    {
+     "who": "caller",
+     "text": "Did you finish the reading today, Shane? Are you looking for that? What's in the Copy out Sears",
+     "t": 70.5
+    },
+    {
+     "who": "caller",
+     "text": "so much better than the line. Well, Harold, which... It's all for the main body.",
+     "t": 75.3
+    },
+    {
+     "who": "caller",
+     "text": "Think the professor said to you, ma'am, is being a better one.",
+     "t": 78.7
+    },
+    {
+     "who": "caller",
+     "text": "Are you going to the networking event by phone?",
+     "t": 86.8
+    },
+    {
+     "who": "caller",
+     "text": "I need to call my landlord about this. She",
+     "t": 92.1
+    },
+    {
+     "who": "caller",
+     "text": "drove all the way from Chicago to Austin last summer.",
+     "t": 94.2
+    }
+   ],
+   "events": [
+    {
+     "type": "config",
+     "seq": 0,
+     "t": 0.0,
+     "at": 1794525175018,
+     "stt": "Deepgram nova-3",
+     "llm": "Groq openai/gpt-oss-20b",
+     "tts": "Deepgram \u00b7 Thalia",
+     "turn_detector": "LiveKit auto",
+     "noise_handling": "filter",
+     "max_call_s": "360"
+    },
+    {
+     "type": "turn",
+     "seq": 1,
+     "t": 0.05,
+     "at": 1794525175065,
+     "role": "mia",
+     "kind": "greeting",
+     "text": "Hi, and thanks for calling F&F. I'm Mia, a virtual assistant. To quote your car shipment, where are you shipping from and to?",
+     "metrics": {},
+     "speaking_s": null,
+     "interrupted": false
+    },
+    {
+     "type": "turn",
+     "seq": 2,
+     "t": 11.36,
+     "at": 1794525186375,
+     "role": "caller",
+     "kind": "said",
+     "text": "For you and for the project. Hi. I need to ship my car from Miami to Daskey, Massachusetts. And the model... I drove all the way",
+     "metrics": {
+      "end_of_turn": 578,
+      "stt": 424
+     },
+     "speaking_s": 9.79,
+     "interrupted": false
+    },
+    {
+     "type": "tool",
+     "seq": 3,
+     "t": 12.0,
+     "at": 1794525187009,
+     "name": "save_origin_destination",
+     "args": {
+      "origin_city": "Miami",
+      "origin_state": null,
+      "destination_city": "Daskey",
+      "destination_state": "Massachusetts"
+     },
+     "result": {
+      "ok": false,
+      "error_code": "CITY_NOT_FOUND",
+      "attempts": 1,
+      "failed": "destination",
+      "heard": {
+       "city": "Daskey",
+       "state": "Massachusetts"
+      },
+      "on_file": {
+       "origin": "Miami, Florida",
+       "destination": null,
+       "vehicles": [],
+       "expected_vehicles": null,
+       "missing": [
+        "destination",
+        "vehicle"
+       ]
+      },
+      "next": "Say you couldn't find Daskey in our system and ask if you got it right; ask them to repeat the city and its state."
+     },
+     "ok": false,
+     "ms": 353
+    },
+    {
+     "type": "state",
+     "seq": 4,
+     "t": 12.0,
+     "at": 1794525187009,
+     "on_file": {
+      "origin": "Miami, Florida",
+      "destination": null,
+      "vehicles": [],
+      "expected_vehicles": null,
+      "missing": [
+       "destination",
+       "vehicle"
+      ]
+     },
+     "stage": "route",
+     "quote": null
+    },
+    {
+     "type": "turn",
+     "seq": 5,
+     "t": 34.61,
+     "at": 1794525209625,
+     "role": "caller",
+     "kind": "said",
+     "text": "Are you going to the networking event? I need to call my land to keep up. She drove twenty twenty Toyota Camry.",
+     "metrics": {
+      "end_of_turn": 577,
+      "stt": 0
+     },
+     "speaking_s": 22.64,
+     "interrupted": false
+    },
+    {
+     "type": "dropped",
+     "seq": 6,
+     "t": 34.8,
+     "at": 1794525209814,
+     "tool": "note_off_topic",
+     "args": "{\"topic\":\"networking event\"}",
+     "why": "caller's message is about the quote"
+    },
+    {
+     "type": "tool",
+     "seq": 7,
+     "t": 35.08,
+     "at": 1794525210096,
+     "name": "save_vehicle",
+     "args": {
+      "year": 2020,
+      "make": "Toyota",
+      "model": "Camry",
+      "vehicle_type": null,
+      "drivable": null,
+      "total_vehicles": null
+     },
+     "result": {
+      "ok": true,
+      "saved": {
+       "quote_id": "Q1",
+       "vehicle": "2020 Toyota Camry"
+      },
+      "on_file": {
+       "origin": "Miami, Florida",
+       "destination": null,
+       "vehicles": [
+        {
+         "quote_id": "Q1",
+         "vehicle": "2020 Toyota Camry"
+        }
+       ],
+       "expected_vehicles": null,
+       "missing": [
+        "destination"
+       ]
+      },
+      "next": "The caller also asked a question in this message: answer it first in one short sentence (only from your instructions; offer a licensed representative if they don't cover it), then: Ask for the destination (city and state)."
+     },
+     "ok": true,
+     "ms": 277
+    },
+    {
+     "type": "state",
+     "seq": 8,
+     "t": 35.08,
+     "at": 1794525210096,
+     "on_file": {
+      "origin": "Miami, Florida",
+      "destination": null,
+      "vehicles": [
+       {
+        "quote_id": "Q1",
+        "vehicle": "2020 Toyota Camry"
+       }
+      ],
+      "expected_vehicles": null,
+      "missing": [
+       "destination"
+      ]
+     },
+     "stage": "vehicles",
+     "quote": null
+    },
+    {
+     "type": "dropped",
+     "seq": 9,
+     "t": 35.48,
+     "at": 1794525210493,
+     "tool": "request_human",
+     "args": "{\"reason\":\"asked about networking event\"}",
+     "why": "caller did not ask for a person"
+    },
+    {
+     "type": "dropped",
+     "seq": 10,
+     "t": 66.5,
+     "at": 1794525241512,
+     "tool": "request_human",
+     "args": "{\"reason\":\"asked for group info\"}",
+     "why": "caller did not ask for a person"
+    }
+   ]
+  }
+ },
+ {
+  "case": {
+   "noise": "cafe",
+   "snr": 5,
+   "profile": "full"
+  },
+  "score": {
+   "greeted": true,
+   "answered": 2,
+   "lines": 3,
+   "p50_s": 8.8,
+   "route": true,
+   "vehicle": true,
+   "hung_up": false,
+   "cut_off": 2,
+   "long_turns": 9,
+   "noisy_mode": true,
+   "recall": 0.66,
+   "extra_words": 140
+  },
+  "result": {
+   "room": "smoke-d3599d0d",
+   "greeted": true,
+   "lines": [
+    "Hi, I need to ship my car from Miami, Florida to Boston, Massachusetts.",
+    "It's a 2020 Toyota Camry.",
+    "I'm just checking prices for now. I'll call back later, bye!"
+   ],
+   "responses": [
+    null,
+    3.8589999999385327,
+    13.672000000020489
+   ],
+   "hung_up": false,
+   "heard": [
+    {
+     "who": "mia",
+     "text": "Hi, and thanks for calling F&F. I'm Mia, a virtual assistant.",
+     "t": 6.1
+    },
+    {
+     "who": "caller",
+     "text": "Group are you in for project?",
+     "t": 6.1
+    },
+    {
+     "who": "caller",
+     "text": "Seven five three one... Hi. I need to ship my car from Miami, Florida to Dallas, Massachusetts.",
+     "t": 10.1
+    },
+    {
+     "who": "caller",
+     "text": "Better than a lot of cars. Bobby, the call better",
+     "t": 15.3
+    },
+    {
+     "who": "caller",
+     "text": "you... I think the professor said the exam is",
+     "t": 15.3
+    },
+    {
+     "who": "caller",
+     "text": "Are you going to the networking event?",
+     "t": 28.2
+    },
+    {
+     "who": "caller",
+     "text": "I need to call my landlord about this.",
+     "t": 32.4
+    },
+    {
+     "who": "caller",
+     "text": "A twenty twenty Toyota Camry. Positive. It's better.",
+     "t": 34.1
+    },
+    {
+     "who": "mia",
+     "text": "It sounds a bit noisy where you are, so I'll keep talking unless you stop me. I\u2019m sorry, I couldn\u2019t find Dallas in Massachusetts. Did you mean Dallas,",
+     "t": 44.8
+    },
+    {
+     "who": "caller",
+     "text": "Slides from last week... Did anyone take notes on the pricing framework?",
+     "t": 44.8
+    },
+    {
+     "who": "caller",
+     "text": "Call my lender. I'm going to Denver on Friday. I'm not. You so much.",
+     "t": 52.7
+    },
+    {
+     "who": "caller",
+     "text": "You should be",
+     "t": 52.7
+    },
+    {
+     "who": "caller",
+     "text": "You should My brother is spotting me on the floor. Let's",
+     "t": 56.9
+    },
+    {
+     "who": "caller",
+     "text": "Honestly, the second question was way harder than the first.",
+     "t": 60.0
+    },
+    {
+     "who": "caller",
+     "text": "I can't",
+     "t": 60.8
+    },
+    {
+     "who": "mia",
+     "text": "I\u2019m not",
+     "t": 66.0
+    },
+    {
+     "who": "caller",
+     "text": "I need to come in before I left. Wait. Which group are you in for Roger?",
+     "t": 66.1
+    },
+    {
+     "who": "caller",
+     "text": "You finish the reading for today, Shane? Are you going to the Netflix and the Copy out Sears",
+     "t": 71.2
+    },
+    {
+     "who": "caller",
+     "text": "so much better than the Those Harold, where's the beach that",
+     "t": 75.2
+    },
+    {
+     "who": "caller",
+     "text": "I think the professor said to you, ma'am,",
+     "t": 75.2
+    },
+    {
+     "who": "caller",
+     "text": "I think the professor said to you, ma'am, speaking of several questions.",
+     "t": 78.4
+    }
+   ],
+   "events": [
+    {
+     "type": "config",
+     "seq": 0,
+     "t": 0.01,
+     "at": 1794525275939,
+     "stt": "Deepgram nova-3",
+     "llm": "Groq openai/gpt-oss-20b",
+     "tts": "Deepgram \u00b7 Thalia",
+     "turn_detector": "LiveKit auto",
+     "noise_handling": "full",
+     "max_call_s": "360"
+    },
+    {
+     "type": "turn",
+     "seq": 1,
+     "t": 0.04,
+     "at": 1794525275974,
+     "role": "mia",
+     "kind": "greeting",
+     "text": "Hi, and thanks for calling F&F. I'm Mia, a virtual assistant. To quote your car shipment, where are you shipping from and to?",
+     "metrics": {},
+     "speaking_s": null,
+     "interrupted": false
+    },
+    {
+     "type": "tool",
+     "seq": 2,
+     "t": 15.71,
+     "at": 1794525291646,
+     "name": "end_long_turn",
+     "args": {
+      "seconds": 14.7,
+      "words": 33
+     },
+     "result": {
+      "ok": true,
+      "heard": "Group are you in for project? Seven five three one... Hi. I need to ship my car from Miami, Florida to Dallas, Massachusetts. Better than a lot of cars. Bobby, the call better"
+     },
+     "ok": true,
+     "ms": 0
+    },
+    {
+     "type": "turn",
+     "seq": 3,
+     "t": 16.01,
+     "at": 1794525291948,
+     "role": "caller",
+     "kind": "said",
+     "text": "Group are you in for project? Seven five three one... Hi. I need to ship my car from Miami, Florida to Dallas, Massachusetts. Better than a lot of cars. Bobby, the call better you... I think the professor said the exam is",
+     "metrics": {
+      "end_of_turn": 301,
+      "stt": 9
+     },
+     "speaking_s": 14.71,
+     "interrupted": false
+    },
+    {
+     "type": "tool",
+     "seq": 4,
+     "t": 28.09,
+     "at": 1794525304026,
+     "name": "end_long_turn",
+     "args": {
+      "seconds": 27.1,
+      "words": 40
+     },
+     "result": {
+      "ok": true,
+      "heard": "Group are you in for project? Seven five three one... Hi. I need to ship my car from Miami, Florida to Dallas, Massachusetts. Better than a lot of cars. Bobby, the call better Are you going to the networking event?"
+     },
+     "ok": true,
+     "ms": 0
+    },
+    {
+     "type": "turn",
+     "seq": 5,
+     "t": 28.36,
+     "at": 1794525304298,
+     "role": "caller",
+     "kind": "said",
+     "text": "Are you going to the networking event?",
+     "metrics": {},
+     "speaking_s": null,
+     "interrupted": false
+    },
+    {
+     "type": "tool",
+     "seq": 6,
+     "t": 32.17,
+     "at": 1794525308100,
+     "name": "end_long_turn",
+     "args": {
+      "seconds": 31.2,
+      "words": 48
+     },
+     "result": {
+      "ok": true,
+      "heard": "Group are you in for project? Seven five three one... Hi. I need to ship my car from Miami, Florida to Dallas, Massachusetts. Better than a lot of cars. Bobby, the call better Are you going to the networking event? I need to call my landlord about this."
+     },
+     "ok": true,
+     "ms": 0
+    },
+    {
+     "type": "tool",
+     "seq": 7,
+     "t": 32.17,
+     "at": 1794525308100,
+     "name": "noisy_mode",
+     "args": {
+      "signals": 3,
+      "last": "long_turn"
+     },
+     "result": {
+      "ok": true,
+      "min_words": 3
+     },
+     "ok": true,
+     "ms": 0
+    },
+    {
+     "type": "turn",
+     "seq": 8,
+     "t": 32.47,
+     "at": 1794525308402,
+     "role": "caller",
+     "kind": "said",
+     "text": "I need to call my landlord about this.",
+     "metrics": {},
+     "speaking_s": null,
+     "interrupted": false
+    },
+    {
+     "type": "tool",
+     "seq": 9,
+     "t": 33.81,
+     "at": 1794525309742,
+     "name": "end_long_turn",
+     "args": {
+      "seconds": 32.8,
+      "words": 56
+     },
+     "result": {
+      "ok": true,
+      "heard": "Group are you in for project? Seven five three one... Hi. I need to ship my car from Miami, Florida to Dallas, Massachusetts. Better than a lot of cars. Bobby, the call better Are you going to the networking event? I need to call my landlord about this. A twenty twenty Toyota Camry. Positive. It's better."
+     },
+     "ok": true,
+     "ms": 0
+    },
+    {
+     "type": "turn",
+     "seq": 10,
+     "t": 34.07,
+     "at": 1794525310000,
+     "role": "caller",
+     "kind": "said",
+     "text": "A twenty twenty Toyota Camry. Positive. It's better.",
+     "metrics": {},
+     "speaking_s": null,
+     "interrupted": false
+    },
+    {
+     "type": "tool",
+     "seq": 11,
+     "t": 34.93,
+     "at": 1794525310865,
+     "name": "save_origin_destination",
+     "args": {
+      "origin_city": "Miami",
+      "origin_state": "Florida",
+      "destination_city": null,
+      "destination_state": null
+     },
+     "result": {
+      "ok": true,
+      "saved": {
+       "origin": "Miami, Florida"
+      },
+      "on_file": {
+       "origin": "Miami, Florida",
+       "destination": null,
+       "vehicles": [],
+       "expected_vehicles": null,
+       "missing": [
+        "destination",
+        "vehicle"
+       ],
+       "heard_so_far": "2020 Toyota"
+      },
+      "next": "Ask for the destination (city and state)."
+     },
+     "ok": true,
+     "ms": 276
+    },
+    {
+     "type": "state",
+     "seq": 12,
+     "t": 34.93,
+     "at": 1794525310865,
+     "on_file": {
+      "origin": "Miami, Florida",
+      "destination": null,
+      "vehicles": [],
+      "expected_vehicles": null,
+      "missing": [
+       "destination",
+       "vehicle"
+      ],
+      "heard_so_far": "2020 Toyota"
+     },
+     "stage": "route",
+     "quote": null
+    },
+    {
+     "type": "tool",
+     "seq": 13,
+     "t": 34.94,
+     "at": 1794525310869,
+     "name": "save_vehicle",
+     "args": {
+      "year": 2020,
+      "make": "Toyota",
+      "model": "Camry",
+      "vehicle_type": null,
+      "drivable": null,
+      "total_vehicles": null
+     },
+     "result": {
+      "ok": true,
+      "saved": {
+       "quote_id": "Q1",
+       "vehicle": "2020 Toyota Camry"
+      },
+      "on_file": {
+       "origin": "Miami, Florida",
+       "destination": null,
+       "vehicles": [
+        {
+         "quote_id": "Q1",
+         "vehicle": "2020 Toyota Camry"
+        }
+       ],
+       "expected_vehicles": null,
+       "missing": [
+        "destination"
+       ]
+      },
+      "next": "Ask for the destination (city and state)."
+     },
+     "ok": true,
+     "ms": 273
+    },
+    {
+     "type": "state",
+     "seq": 14,
+     "t": 34.94,
+     "at": 1794525310869,
+     "on_file": {
+      "origin": "Miami, Florida",
+      "destination": null,
+      "vehicles": [
+       {
+        "quote_id": "Q1",
+        "vehicle": "2020 Toyota Camry"
+       }
+      ],
+      "expected_vehicles": null,
+      "missing": [
+       "destination"
+      ]
+     },
+     "stage": "vehicles",
+     "quote": null
+    },
+    {
+     "type": "tool",
+     "seq": 15,
+     "t": 35.34,
+     "at": 1794525311272,
+     "name": "save_origin_destination",
+     "args": {
+      "origin_city": null,
+      "origin_state": null,
+      "destination_city": "Dallas",
+      "destination_state": "Massachusetts"
+     },
+     "result": {
+      "ok": false,
+      "error_code": "CITY_NOT_FOUND",
+      "attempts": 1,
+      "failed": "destination",
+      "heard": {
+       "city": "Dallas",
+       "state": "Massachusetts"
+      },
+      "on_file": {
+       "origin": "Miami, Florida",
+       "destination": null,
+       "vehicles": [
+        {
+         "quote_id": "Q1",
+         "vehicle": "2020 Toyota Camry"
+        }
+       ],
+       "expected_vehicles": null,
+       "missing": [
+        "destination"
+       ]
+      },
+      "next": "Say you couldn't find Dallas in our system and ask if you got it right; ask them to repeat the city and its state."
+     },
+     "ok": false,
+     "ms": 196
+    },
+    {
+     "type": "state",
+     "seq": 16,
+     "t": 35.34,
+     "at": 1794525311272,
+     "on_file": {
+      "origin": "Miami, Florida",
+      "destination": null,
+      "vehicles": [
+       {
+        "quote_id": "Q1",
+        "vehicle": "2020 Toyota Camry"
+       }
+      ],
+      "expected_vehicles": null,
+      "missing": [
+       "destination"
+      ]
+     },
+     "stage": "vehicles",
+     "quote": null
+    },
+    {
+     "type": "turn",
+     "seq": 17,
+     "t": 45.35,
+     "at": 1794525321285,
+     "role": "mia",
+     "kind": "said",
+     "text": "It sounds a bit noisy where you are, so I'll keep talking unless you stop me. I\u2019m sorry, I couldn\u2019t find Dallas in Massachusetts. Did you mean Dallas,",
+     "metrics": {
+      "llm_ttft": 318,
+      "tts_ttfb": 93
+     },
+     "speaking_s": 9.6,
+     "interrupted": true
+    },
+    {
+     "type": "tool",
+     "seq": 18,
+     "t": 52.89,
+     "at": 1794525328825,
+     "name": "end_long_turn",
+     "args": {
+      "seconds": 16.8,
+      "words": 26
+     },
+     "result": {
+      "ok": true,
+      "heard": "Slides from last week... Did anyone take notes on the pricing framework? Call my lender. I'm going to Denver on Friday. I'm not. You so much."
+     },
+     "ok": true,
+     "ms": 0
+    },
+    {
+     "type": "turn",
+     "seq": 19,
+     "t": 53.2,
+     "at": 1794525329133,
+     "role": "caller",
+     "kind": "said",
+     "text": "Slides from last week... Did anyone take notes on the pricing framework? Call my lender. I'm going to Denver on Friday. I'm not. You so much. You should be",
+     "metrics": {
+      "end_of_turn": 300,
+      "stt": 2
+     },
+     "speaking_s": 17.88,
+     "interrupted": false
+    },
+    {
+     "type": "tool",
+     "seq": 20,
+     "t": 56.9,
+     "at": 1794525332832,
+     "name": "end_long_turn",
+     "args": {
+      "seconds": 20.8,
+      "words": 37
+     },
+     "result": {
+      "ok": true,
+      "heard": "Slides from last week... Did anyone take notes on the pricing framework? Call my lender. I'm going to Denver on Friday. I'm not. You so much. You should My brother is spotting me on the floor. Let's"
+     },
+     "ok": true,
+     "ms": 0
+    },
+    {
+     "type": "turn",
+     "seq": 21,
+     "t": 57.2,
+     "at": 1794525333130,
+     "role": "caller",
+     "kind": "said",
+     "text": "You should My brother is spotting me on the floor. Let's",
+     "metrics": {},
+     "speaking_s": null,
+     "interrupted": false
+    },
+    {
+     "type": "tool",
+     "seq": 22,
+     "t": 59.83,
+     "at": 1794525335764,
+     "name": "end_long_turn",
+     "args": {
+      "seconds": 23.7,
+      "words": 47
+     },
+     "result": {
+      "ok": true,
+      "heard": "Slides from last week... Did anyone take notes on the pricing framework? Call my lender. I'm going to Denver on Friday. I'm not. You so much. You should My brother is spotting me on the floor. Let's Honestly, the second question was way harder than the first."
+     },
+     "ok": true,
+     "ms": 0
+    },
+    {
+     "type": "turn",
+     "seq": 23,
+     "t": 60.05,
+     "at": 1794525335981,
+     "role": "caller",
+     "kind": "said",
+     "text": "Honestly, the second question was way harder than the first.",
+     "metrics": {},
+     "speaking_s": null,
+     "interrupted": false
+    },
+    {
+     "type": "tool",
+     "seq": 24,
+     "t": 60.64,
+     "at": 1794525336572,
+     "name": "note_off_topic",
+     "args": {},
+     "result": {
+      "ok": true,
+      "off_topic": 1,
+      "on_file": {
+       "origin": "Miami, Florida",
+       "destination": null,
+       "vehicles": [
+        {
+         "quote_id": "Q1",
+         "vehicle": "2020 Toyota Camry"
+        }
+       ],
+       "expected_vehicles": null,
+       "missing": [
+        "destination"
+       ]
+      },
+      "next": "Answer in a few words at most, without making anything up, then steer back to the quote: Ask for the destination (city and state)."
+     },
+     "ok": true,
+     "ms": 0
+    },
+    {
+     "type": "state",
+     "seq": 25,
+     "t": 60.64,
+     "at": 1794525336572,
+     "on_file": {
+      "origin": "Miami, Florida",
+      "destination": null,
+      "vehicles": [
+       {
+        "quote_id": "Q1",
+        "vehicle": "2020 Toyota Camry"
+       }
+      ],
+      "expected_vehicles": null,
+      "missing": [
+       "destination"
+      ]
+     },
+     "stage": "vehicles",
+     "quote": null
+    },
+    {
+     "type": "turn",
+     "seq": 26,
+     "t": 65.65,
+     "at": 1794525341588,
+     "role": "mia",
+     "kind": "said",
+     "text": "I\u2019m not",
+     "metrics": {
+      "llm_ttft": 417,
+      "tts_ttfb": 98
+     },
+     "speaking_s": 4.49,
+     "interrupted": true
+    },
+    {
+     "type": "tool",
+     "seq": 27,
+     "t": 75.73,
+     "at": 1794525351668,
+     "name": "end_long_turn",
+     "args": {
+      "seconds": 14.6,
+      "words": 45
+     },
+     "result": {
+      "ok": true,
+      "heard": "I need to come in before I left. Wait. Which group are you in for Roger? You finish the reading for today, Shane? Are you going to the Netflix and the Copy out Sears so much better than the Those Harold, where's the beach that"
+     },
+     "ok": true,
+     "ms": 0
+    },
+    {
+     "type": "turn",
+     "seq": 28,
+     "t": 76.03,
+     "at": 1794525351960,
+     "role": "caller",
+     "kind": "said",
+     "text": "I can't I need to come in before I left. Wait. Which group are you in for Roger? You finish the reading for today, Shane? Are you going to the Netflix and the Copy out Sears so much better than the Those Harold, where's the beach that I think the professor said to you, ma'am,",
+     "metrics": {
+      "end_of_turn": 301,
+      "stt": 19
+     },
+     "speaking_s": 14.68,
+     "interrupted": false
+    },
+    {
+     "type": "tool",
+     "seq": 29,
+     "t": 78.81,
+     "at": 1794525354749,
+     "name": "end_long_turn",
+     "args": {
+      "seconds": 17.7,
+      "words": 57
+     },
+     "result": {
+      "ok": true,
+      "heard": "I need to come in before I left. Wait. Which group are you in for Roger? You finish the reading for today, Shane? Are you going to the Netflix and the Copy out Sears so much better than the Those Harold, where's the beach that I think the professor said to you, ma'am, speaking of several questions."
+     },
+     "ok": true,
+     "ms": 0
+    },
+    {
+     "type": "turn",
+     "seq": 30,
+     "t": 79.13,
+     "at": 1794525355063,
+     "role": "caller",
+     "kind": "said",
+     "text": "I think the professor said to you, ma'am, speaking of several questions.",
+     "metrics": {},
+     "speaking_s": null,
+     "interrupted": false
+    },
+    {
+     "type": "dropped",
+     "seq": 31,
+     "t": 79.56,
+     "at": 1794525355494,
+     "tool": "save_origin_destination",
+     "args": "{\"destination_city\":null,\"destination_state\":null}",
+     "why": "no city the caller said"
+    }
+   ]
+  }
+ }
+]

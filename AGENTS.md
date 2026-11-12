@@ -100,13 +100,14 @@ Fargate, not Lambda. Everything else follows the fit pattern.
 | `records.py` | The call record and its DynamoDB write (keys documented there; shared table with the backend) |
 | `idle.py` | On AWS the worker exits after 10 idle minutes (no call, no wake) or 2 hours, so it only costs money around calls |
 | `transfer.py` | Transfer to a licensed representative: Mia dials Sergio's phone into the call through the Twilio SIP trunk, **screens the line (press 1; a voicemail never does)** with caller and line unable to hear each other until then, introduces the caller and leaves; daily cap, ring/talk limits |
+| `noise.py` | Noisy places: background voice cancellation (LiveKit BVC; **Linux only**, it crashes on Windows), a 12 s cap on a caller turn (`Mia.on_user_turn_exceeded`), noisy-call mode (3 signs -> 3 words to interrupt + one spoken notice). Profiles `full`/`filter`/`baseline` (`MIA_NOISE_HANDLING`, or `noise` in a test call's dispatch) |
 | `silence.py` | What Mia does when the caller goes quiet: "are you still there?", or a goodbye and hang-up |
-| `voices.py` | The 6 American voices callers can pick (2 each: Cartesia, ElevenLabs, Deepgram; Cartesia Skylar first and default), each with a description; keys and descriptions match `backend/app/voices.py` |
+| `voices.py` | The 6 American voices callers can pick (2 each: Deepgram, Cartesia, ElevenLabs; Deepgram Thalia first and default since 2026-11-12, when the Cartesia credits ran out), each with a description; keys and descriptions match `backend/app/voices.py` |
 | `speech.py` | Numbers written out as words before any voice reads them (`Mia.tts_node`) |
 | `faq.py` | FAQ facts checked in code: if Mia's answer to an FAQ lacks its key fact (100 lb, cash on delivery...), the canonical answer is spoken first |
 | `catalog.py` | CarHauler catalog snapshot on disk (a week), so worker restarts don't spend API calls |
 | `latency.py` | Per-turn latency from `ChatMessage.metrics` (end of turn, LLM TTFT, TTS TTFB, e2e) |
-| `smoke.py` | `uv run python -m mia.smoke [--api http://localhost:5190] [--lines ...] [--wait 45]`: a scripted caller phones the running worker through LiveKit (`--wait`: stay silent, to test silence handling) |
+| `smoke.py` | `uv run python -m mia.smoke [--api http://localhost:5190] [--lines ...] [--wait 45] [--noise classroom --snr 5 --profile full]`: a scripted caller phones the running worker through LiveKit (`--wait`: stay silent, to test silence handling; `--noise`: background noise under the caller's mic) |
 
 ### Repo map
 
@@ -151,6 +152,11 @@ docker compose up        # api :8020, web :5190, DynamoDB Local :8030, agent wor
 - `uv run pytest -m llm` replays `evals/scenarios/*.yaml` against the real LLM (fake CarHauler
   and geocoder, so prices are fixed). `MIA_LLM_MODEL` switches the model. CI runs it when the
   `GROQ_API_KEY` repository secret is set, retrying a failed scenario twice (flakes).
+- `uv run python -m evals.noisy_calls --label <name>` (in `agent/`): **noisy calls**, scripted
+  calls with classroom chatter, subway or cafe noise (or a `.wav` recording) at 12 and 5 dB,
+  against the `baseline`/`filter`/`full` noise profiles (21 calls, ~30 min, ~1 CarHauler call
+  each). **Needs a Linux worker** (`docker compose up agent`): the filter crashes on Windows.
+  Runs are committed to `evals/noisy_calls/` like the simulations.
 - `uv run python -m evals.sim.run` (in `agent/`): **AI-vs-AI simulations**, 8 personas x 9
   paths (72 calls, ~10 min, cents of Groq; no CarHauler or Google calls). `--personas`,
   `--paths`, `--repeat`, `--limit`, `--scenario-runs N` (the scenario suite N times, for pass
@@ -182,6 +188,13 @@ docker compose up        # api :8020, web :5190, DynamoDB Local :8030, agent wor
   token-endpoint rate limit, the daily call cap and the max call length.
 
 ## 6. Decisions log
+
+- 2026-11-12 (Belinda's classroom demo): **Noisy places** (`noise.py`). Mia didn't talk in a
+  classroom: other voices kept the caller's turn open and cut her off. Now: LiveKit's
+  background voice cancellation on the caller's audio (Linux only; it crashes the worker on
+  Windows), a 12 s cap on a caller turn, and noisy-call mode (3 words to interrupt after 3
+  signs of noise). Measured with `evals/noisy_calls.py`: lines answered in noise 28% ->
+  89%. **Deepgram Thalia is the default voice** (Cartesia credits spent; tests use Deepgram).
 
 - 2026-11-11 (Belinda, second round): **Lines code writes come in three wordings**
   (`phrases.py`: read-back, "one second" filler, representative offer, closing), picked at

@@ -12,6 +12,9 @@ American voices only: each one here is tagged American by its provider (Cartesia
 Deepgram's voice catalogs, ElevenLabs' premade voice list). The ElevenLabs voice in
 ``ELEVENLABS_VOICE_ID`` isn't used any more (its accent couldn't be confirmed). Numbers are
 written out as words before any of them speaks (speech.py).
+
+2026-11-12: Deepgram Thalia is first and the default (was Cartesia Skylar): the Cartesia
+credits are spent, and Deepgram is the provider we pay for anyway (it's also the STT).
 """
 
 from __future__ import annotations
@@ -38,6 +41,20 @@ class Voice:
 VOICES: dict[str, Voice] = {
     v.key: v
     for v in [
+        Voice(
+            "deepgram-thalia",
+            "deepgram",
+            "Deepgram · Thalia",
+            "aura-2-thalia-en",
+            "American, clear and energetic. Deepgram Aura-2, built for phone agents.",
+        ),
+        Voice(
+            "deepgram-athena",
+            "deepgram",
+            "Deepgram · Athena",
+            "aura-2-athena-en",
+            "American, calm and professional. Deepgram Aura-2.",
+        ),
         Voice(
             "cartesia-skylar",
             "cartesia",
@@ -66,23 +83,9 @@ VOICES: dict[str, Voice] = {
             "cgSgspJ2msm6clMCkdW9",
             "American, young and expressive. ElevenLabs Flash v2.5.",
         ),
-        Voice(
-            "deepgram-thalia",
-            "deepgram",
-            "Deepgram · Thalia",
-            "aura-2-thalia-en",
-            "American, clear and energetic. Deepgram Aura-2, built for phone agents.",
-        ),
-        Voice(
-            "deepgram-athena",
-            "deepgram",
-            "Deepgram · Athena",
-            "aura-2-athena-en",
-            "American, calm and professional. Deepgram Aura-2.",
-        ),
     ]
 }
-DEFAULT = "cartesia-skylar"
+DEFAULT = "deepgram-thalia"
 
 
 def pick(key: str | None) -> Voice:

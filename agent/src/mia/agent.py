@@ -23,9 +23,10 @@ from livekit.agents import (
     function_tool,
     llm,
 )
+from livekit.agents.voice import UserTurnExceededEvent
 from livekit.plugins import groq
 
-from mia import faq, grounding, guardrails, speech, tools
+from mia import faq, grounding, guardrails, noise, speech, tools
 from mia.prompt import INSTRUCTIONS, pick_greeting
 from mia.state import QuoteSession
 from mia.tools import OFF_TOPIC_LIMIT, Services, model_from_words
@@ -443,6 +444,7 @@ class Mia(Agent):
             spoken = faq.ensure_answer(spoken, last_said) if spoken else spoken
             spoken = guardrails.no_model_again(spoken, state)
             spoken = guardrails.keep_going(spoken, state)
+            spoken = noise.with_noisy_line(spoken, state)
             if spoken and guardrails.is_goodbye(spoken) and not state.ended:
                 # She's closing the call without end_call: hang up after this line plays.
                 logger.info("goodbye without end_call; hanging up after it")
@@ -546,6 +548,21 @@ class Mia(Agent):
 
         async for frame in Agent.default.tts_node(self, spoken(), model_settings):
             yield frame
+
+    async def on_user_turn_exceeded(self, ev: UserTurnExceededEvent) -> None:
+        """The caller has been "speaking" for noise.TURN_LIMIT_S without Mia answering: in a
+        noisy room the turn never ends. End it and answer what was heard, through the normal
+        pipeline (tools and guardrails); LiveKit's default replies with no tools."""
+        logger.info("caller turn hit %.1f s; answering what was heard", ev.duration)
+        self.services.events.tool(
+            "end_long_turn",
+            {"seconds": round(ev.duration, 1), "words": ev.accumulated_word_count},
+            {"ok": True, "heard": ev.accumulated_transcript[-500:]},
+            0,
+        )
+        if self.services.on_noise:
+            self.services.on_noise("long_turn")
+        self.session.commit_user_turn()
 
     async def on_enter(self) -> None:
         if self._speak_greeting:  # voice: say it without waiting for the LLM

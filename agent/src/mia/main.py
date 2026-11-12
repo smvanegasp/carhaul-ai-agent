@@ -33,7 +33,7 @@ from livekit.agents import (
 )
 from livekit.plugins import deepgram, silero
 
-from mia import catalog, guardrails, idle, records, silence, transfer, voices
+from mia import catalog, guardrails, idle, noise, records, silence, transfer, voices
 from mia.agent import Mia, make_llm, new_session
 from mia.carhauler import CarHaulerClient
 from mia.events import TOPIC, CallEvents
@@ -118,7 +118,8 @@ class RoomPublisher:
 
 def _dispatch_metadata(ctx: JobContext) -> dict:
     """What the API put in the agent dispatch (backend/app/livekit_token.py): the caller's
-    voice choice. Anything unreadable means defaults."""
+    voice choice; scripted test calls (smoke.py) may add ``noise`` (a noise.PROFILES entry).
+    Anything unreadable means defaults."""
     try:
         data = json.loads(ctx.job.metadata or "{}")
     except ValueError:
@@ -148,13 +149,16 @@ async def entrypoint(ctx: JobContext) -> None:
     publisher = RoomPublisher(ctx.room)
     events = services.events = CallEvents(sink=publisher)
     llm = make_llm()
-    voice = voices.pick(_dispatch_metadata(ctx).get("voice"))
+    meta = _dispatch_metadata(ctx)
+    voice = voices.pick(meta.get("voice"))
+    noise_profile = noise.profile(meta.get("noise"))
     turn_detector = os.environ.get("MIA_TURN_DETECTOR") or "auto"
     events.config(
         stt="Deepgram nova-3",
         llm=f"Groq {llm.model}",
         tts=voice.label,
         turn_detector=f"LiveKit {turn_detector}",
+        noise_handling=noise_profile,
         max_call_s=str(int(MAX_CALL_SECONDS)),
     )
 
@@ -174,11 +178,15 @@ async def entrypoint(ctx: JobContext) -> None:
             # one word (noise has none). If something still stops her, she resumes after 2 s
             # of silence. LiveKit's "adaptive" detector (MIA_INTERRUPTION=adaptive) is opt-in:
             # in a local test call (2026-11-11) the worker process died silently as it started.
+            # Noisy-call mode (noise.py) raises min_words to 3 mid-call.
             "interruption": {
                 "enabled": True,
                 "mode": os.environ.get("MIA_INTERRUPTION") or "vad",
-                "min_words": 1,
+                "min_words": noise.NORMAL_MIN_WORDS,
             },
+            # In a room full of voices the turn never ends: past this, Mia answers what she
+            # heard (Mia.on_user_turn_exceeded).
+            "user_turn_limit": noise.turn_limit(noise_profile),
         },
     )
 
@@ -418,16 +426,40 @@ async def entrypoint(ctx: JobContext) -> None:
             # (seen in the first live test, 2026-11-10: no goodbye after "are you still there?").
             handle.add_done_callback(lambda _: session.reset_away_timer())
 
+    # Signs of a noisy call (noise.py): enough of them and interrupting Mia takes 3 words.
+    noise_watch = noise.NoiseWatch()
+
+    def on_noise(why: str) -> None:
+        if noise_profile != "full":
+            return
+        if noise_watch.signal(state, why):
+            noise.set_min_words(session.options.interruption, noisy=True)
+            events.tool(
+                "noisy_mode",
+                {"signals": noise_watch.signals, "last": why},
+                {"ok": True, "min_words": noise.NOISY_MIN_WORDS},
+                0,
+            )
+
+    services.on_noise = on_noise
+
+    @session.on("agent_false_interruption")
+    def _on_false_interruption(_ev) -> None:
+        on_noise("false_interruption")  # something stopped her and nobody spoke
+
     @session.on("conversation_item_added")
     def _on_item(ev) -> None:
         item = ev.item
         if getattr(item, "type", None) == "message" and item.role in ("user", "assistant"):
+            interrupted = bool(getattr(item, "interrupted", False))
             events.turn(
                 item.role,
                 item.text_content or "",
                 dict(item.metrics or {}),
-                interrupted=bool(getattr(item, "interrupted", False)),
+                interrupted=interrupted,
             )
+            if interrupted and item.role == "assistant":
+                on_noise("interrupted")
 
     async def time_limit() -> None:
         await asyncio.sleep(MAX_CALL_SECONDS)
@@ -464,7 +496,13 @@ async def entrypoint(ctx: JobContext) -> None:
         room=ctx.room,
         # The room is deleted when Mia's session closes (_on_close above), which disconnects the
         # browser too; after a transfer only when the caller or representative hangs up.
-        room_options=room_io.RoomOptions(delete_room_on_close=False),
+        # Background voice cancellation on the caller's audio (noise.py).
+        room_options=room_io.RoomOptions(
+            delete_room_on_close=False,
+            audio_input=room_io.AudioInputOptions(
+                noise_cancellation=noise.noise_filter(noise_profile)
+            ),
+        ),
     )
     await background.start(room=ctx.room, agent_session=session)
 

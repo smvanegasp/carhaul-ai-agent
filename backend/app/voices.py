@@ -11,9 +11,21 @@ from pydantic import BaseModel
 
 router = APIRouter()
 
-DEFAULT = "cartesia-skylar"
+# Deepgram first (2026-11-12): the Cartesia credits are spent, and a caller who keeps the
+# first voice must still hear Mia.
+DEFAULT = "deepgram-thalia"
 # (key, label, description) in dropdown order.
 VOICES = [
+    (
+        "deepgram-thalia",
+        "Deepgram · Thalia",
+        "American, clear and energetic. Deepgram Aura-2, built for phone agents.",
+    ),
+    (
+        "deepgram-athena",
+        "Deepgram · Athena",
+        "American, calm and professional. Deepgram Aura-2.",
+    ),
     (
         "cartesia-skylar",
         "Cartesia · Skylar",
@@ -33,16 +45,6 @@ VOICES = [
         "elevenlabs-jessica",
         "ElevenLabs · Jessica",
         "American, young and expressive. ElevenLabs Flash v2.5.",
-    ),
-    (
-        "deepgram-thalia",
-        "Deepgram · Thalia",
-        "American, clear and energetic. Deepgram Aura-2, built for phone agents.",
-    ),
-    (
-        "deepgram-athena",
-        "Deepgram · Athena",
-        "American, calm and professional. Deepgram Aura-2.",
     ),
 ]
 KEYS = {key for key, _, _ in VOICES}
