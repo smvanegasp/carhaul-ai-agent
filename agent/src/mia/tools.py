@@ -73,6 +73,8 @@ class Services:
     # Voice with a trunk configured (transfer.py): ring the representative into the call.
     # agent.py starts it once Mia's "connecting you" line has been spoken.
     transfer: Callable[[], Any] | None = None
+    # Voice only: a sign the call is noisy (noise.py), e.g. "long_turn".
+    on_noise: Callable[[str], Any] | None = None
     # The call's events (live panel, call record). Text chat and tests get one that only
     # keeps them; the worker's also publishes them to the room.
     events: CallEvents = field(default_factory=CallEvents)

@@ -11,6 +11,11 @@ until Mia's state turns to "speaking". It also checks the live panel's event str
 end. It uses the real APIs, including one CarHauler quote.
 Pass ``--lines "..." "..."`` for another script, and ``--api http://localhost:5190`` to get
 the token from the running app's /api/token (the browser's path) instead of minting one here.
+
+Noisy places (``mia/noise.py``): ``--noise classroom|subway|cafe|<file.wav>`` mixes background
+noise into the caller's microphone for the whole call, also while Mia talks, at ``--snr`` dB
+below the caller's voice; ``--profile baseline|filter|full`` asks the worker for that noise
+handling (minted tokens only). ``evals/noisy_calls.py`` runs the comparison.
 """
 
 from __future__ import annotations
@@ -26,13 +31,13 @@ from datetime import timedelta
 from pathlib import Path
 
 import httpx
+import numpy as np
 from dotenv import load_dotenv
 from livekit import api, rtc
 
 SAMPLE_RATE = 16000
 FRAME_MS = 10
 SAMPLES = SAMPLE_RATE * FRAME_MS // 1000
-SILENCE = rtc.AudioFrame(bytes(SAMPLES * 2), SAMPLE_RATE, 1, SAMPLES)
 CALLER_VOICE = "aura-2-arcas-en"
 
 DEFAULT_LINES = [
@@ -63,7 +68,7 @@ async def synthesize(text: str) -> bytes:
         return r.content
 
 
-def token(room: str, voice: str | None = None) -> str:
+def token(room: str, voice: str | None = None, profile: str | None = None) -> str:
     # Same grants and dispatch as backend/app/livekit_token.py.
     return (
         api.AccessToken()
@@ -74,7 +79,9 @@ def token(room: str, voice: str | None = None) -> str:
                 agents=[
                     api.RoomAgentDispatch(
                         agent_name=os.environ.get("MIA_AGENT_NAME") or "mia-local",
-                        metadata=json.dumps({"voice": voice}) if voice else "",
+                        metadata=json.dumps(
+                            {k: v for k, v in {"voice": voice, "noise": profile}.items() if v}
+                        ),
                     )
                 ]
             )
@@ -92,15 +99,34 @@ async def token_from_api(base: str, voice: str | None = None) -> tuple[str, str,
     return body["server_url"], body["participant_token"], body["room_name"]
 
 
+def mix(speech: bytes, noise: np.ndarray | None, at: int) -> bytes:
+    """``speech`` (16-bit PCM) with the looped ``noise`` track added from sample ``at``."""
+    if noise is None:
+        return speech
+    voice = np.frombuffer(speech, dtype=np.int16).astype(np.float32)
+    idx = (np.arange(len(voice)) + at) % len(noise)
+    return np.clip(voice + noise[idx], -32768, 32767).astype(np.int16).tobytes()
+
+
 async def run(
-    lines: list[str], api_base: str | None = None, voice: str | None = None, wait: float = 25
-) -> int:
+    lines: list[str],
+    api_base: str | None = None,
+    voice: str | None = None,
+    wait: float = 25,
+    *,
+    noise: np.ndarray | None = None,
+    profile: str | None = None,
+    quiet: bool = False,
+) -> dict:
+    """One scripted call. ``noise``: float samples at 16 kHz, already scaled, looped under the
+    caller's microphone the whole call. Returns what happened (``evals/noisy_calls.py``)."""
     clips = await asyncio.gather(*(synthesize(line) for line in lines))
     if api_base:
         url, jwt, room_name = await token_from_api(api_base, voice)
     else:
         room_name = f"smoke-{uuid.uuid4().hex[:8]}"
-        url, jwt = os.environ["LIVEKIT_URL"], token(room_name, voice)
+        url, jwt = os.environ["LIVEKIT_URL"], token(room_name, voice, profile)
+    say = (lambda *_a, **_k: None) if quiet else print
     room = rtc.Room()
     agent_state = {"value": "", "changed": asyncio.Event()}
     disconnected = asyncio.Event()
@@ -119,12 +145,21 @@ async def run(
     def _gone(*_) -> None:
         disconnected.set()
 
+    heard: list[dict] = []  # final transcripts: who ("caller"/"mia"), text, t
+
     async def on_transcript(reader: rtc.TextStreamReader, identity: str) -> None:
         text = await reader.read_all()
         if reader.info.attributes.get("lk.transcription_final") == "true" and text.strip():
             who = "You" if identity == room.local_participant.identity else "Mia"
+            heard.append(
+                {
+                    "who": "caller" if who == "You" else "mia",
+                    "text": text.strip(),
+                    "t": round(time.monotonic() - t0, 1),
+                }
+            )
             color = GREEN if who == "You" else CYAN
-            print(f"{stamp()} {color}{who}:{RESET} {text.strip()}")
+            say(f"{stamp()} {color}{who}:{RESET} {text.strip()}")
 
     room.register_text_stream_handler(
         "lk.transcription", lambda r, i: asyncio.create_task(on_transcript(r, i))
@@ -137,9 +172,9 @@ async def run(
         events.append(event)
         if event["type"] == "tool":
             ok = "ok" if event["ok"] else "ERROR"
-            print(f"{stamp()} {DIM}tool {event['name']} {ok} {event['ms']} ms{RESET}")
+            say(f"{stamp()} {DIM}tool {event['name']} {ok} {event['ms']} ms{RESET}")
         elif event["type"] == "dropped":
-            print(f"{stamp()} {DIM}guardrail dropped {event['tool']}: {event['why']}{RESET}")
+            say(f"{stamp()} {DIM}guardrail dropped {event['tool']}: {event['why']}{RESET}")
 
     room.register_text_stream_handler(
         "mia.events", lambda r, i: asyncio.create_task(on_event(r, i))
@@ -159,34 +194,50 @@ async def run(
         return agent_state["value"]
 
     await room.connect(url, jwt)
-    print(f"{stamp()} joined {room_name}; waiting for Mia")
+    say(f"{stamp()} joined {room_name}; waiting for Mia")
     source = rtc.AudioSource(SAMPLE_RATE, 1, queue_size_ms=50)
     track = rtc.LocalAudioTrack.create_audio_track("mic", source)
     await room.local_participant.publish_track(
         track, rtc.TrackPublishOptions(source=rtc.TrackSource.SOURCE_MICROPHONE)
     )
 
-    # A microphone never stops sending: silence between lines, speech when it's our turn.
+    # A microphone never stops sending: silence (or the room's noise) between lines, speech
+    # (with the noise under it) when it's our turn.
     speech: asyncio.Queue[bytes] = asyncio.Queue()
     spoke_until = {"t": 0.0}
+    cursor = {"at": 0}  # where the looped noise track is
+
+    async def send(pcm: bytes) -> None:
+        pcm = mix(pcm, noise, cursor["at"])
+        cursor["at"] += len(pcm) // 2
+        await source.capture_frame(rtc.AudioFrame(pcm, SAMPLE_RATE, 1, SAMPLES))
 
     async def pump() -> None:
         while True:
             pcm = b"" if speech.empty() else speech.get_nowait()
             if not pcm:
-                await source.capture_frame(SILENCE)
+                await send(bytes(SAMPLES * 2))
                 continue
             for i in range(0, len(pcm), SAMPLES * 2):
-                chunk = pcm[i : i + SAMPLES * 2].ljust(SAMPLES * 2, b"\0")
-                await source.capture_frame(rtc.AudioFrame(chunk, SAMPLE_RATE, 1, SAMPLES))
+                await send(pcm[i : i + SAMPLES * 2].ljust(SAMPLES * 2, bytes(1)))
             spoke_until["t"] = time.monotonic()
 
     pump_task = asyncio.create_task(pump())
-    responses: list[float] = []
+    responses: list[float | None] = []  # per line: seconds until Mia spoke, None: she didn't
+    greeted = True
     try:
-        await wait_state("speaking", timeout=30)  # the greeting
+        try:
+            await wait_state("speaking", timeout=30)  # the greeting
+        except TimeoutError:
+            greeted = False
+            say(f"{stamp()} no greeting")
         for clip in clips:
-            await wait_state("listening", timeout=60)
+            try:
+                await wait_state("listening", timeout=60)
+            except TimeoutError:
+                if disconnected.is_set():
+                    break
+                say(f"{stamp()} Mia never went back to listening; sending the line anyway")
             await asyncio.sleep(0.4)  # a human pause after Mia stops
             spoke_until["t"] = 0.0
             await speech.put(clip)
@@ -198,14 +249,16 @@ async def run(
             except TimeoutError:
                 if disconnected.is_set():
                     break
-                raise
+                responses.append(None)
+                say(f"{stamp()} {DIM}no answer within 20 s{RESET}")
+                continue
             responses.append(time.monotonic() - spoke_until["t"])
-            print(f"{stamp()} {DIM}response {responses[-1] * 1000:.0f} ms{RESET}")
+            say(f"{stamp()} {DIM}response {responses[-1] * 1000:.0f} ms{RESET}")
         try:
             await asyncio.wait_for(disconnected.wait(), wait)
-            print(f"{stamp()} Mia hung up (room closed)")
+            say(f"{stamp()} Mia hung up (room closed)")
         except TimeoutError:
-            print(f"{stamp()} still connected after the last line (Mia didn't hang up)")
+            say(f"{stamp()} still connected after the last line (Mia didn't hang up)")
     finally:
         pump_task.cancel()
         await room.disconnect()
@@ -215,14 +268,23 @@ async def run(
         counts[e["type"]] = counts.get(e["type"], 0) + 1
     seqs = sorted(e["seq"] for e in events)
     gaps = "none missing" if seqs == list(range(len(seqs))) else f"seq gaps in {seqs}"
-    print(f"\nmia.events: {len(events)} received ({gaps}): {counts}")
-    if responses:
-        print(
-            f"\nresponse as heard: p50 {statistics.median(responses) * 1000:.0f} ms, "
-            f"max {max(responses) * 1000:.0f} ms over {len(responses)} turns "
+    say(f"\nmia.events: {len(events)} received ({gaps}): {counts}")
+    timed = [r for r in responses if r is not None]
+    if timed:
+        say(
+            f"\nresponse as heard: p50 {statistics.median(timed) * 1000:.0f} ms, "
+            f"max {max(timed) * 1000:.0f} ms over {len(timed)} turns "
             "(includes VAD silence + turn detector + STT + LLM + TTS + network)"
         )
-    return 0 if disconnected.is_set() else 1
+    return {
+        "room": room_name,
+        "greeted": greeted,
+        "lines": lines,
+        "responses": responses,
+        "hung_up": disconnected.is_set(),
+        "heard": heard,
+        "events": events,
+    }
 
 
 if __name__ == "__main__":
@@ -238,5 +300,16 @@ if __name__ == "__main__":
         help="seconds to stay silent after the last line, waiting for Mia to hang up (a silent "
         "caller: 45 is enough for 'are you still there?' and the goodbye)",
     )
+    parser.add_argument("--noise", help="classroom, subway, cafe, or a .wav file")
+    parser.add_argument("--snr", type=float, default=10, help="caller's voice over the noise, dB")
+    parser.add_argument("--profile", help="noise handling: baseline, filter or full (mia/noise.py)")
     args = parser.parse_args()
-    raise SystemExit(asyncio.run(run(args.lines, args.api, args.voice, args.wait)))
+    track = None
+    if args.noise:
+        from evals import noisy_calls  # run from agent/, like the simulator
+
+        track = asyncio.run(noisy_calls.scaled_noise(args.noise, args.snr, args.lines))
+    result = asyncio.run(
+        run(args.lines, args.api, args.voice, args.wait, noise=track, profile=args.profile)
+    )
+    raise SystemExit(0 if result["hung_up"] else 1)

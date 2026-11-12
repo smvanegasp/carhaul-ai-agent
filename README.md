@@ -21,8 +21,8 @@ calls, latency), and **Stats** tells the story: transfers to a licensed represen
 | Real-time audio | LiveKit Cloud (WebRTC); SIP out through a Twilio trunk to transfer callers to a person |
 | Speech-to-text | Deepgram nova-3 |
 | LLM | Groq, `openai/gpt-oss-20b` |
-| Text-to-speech | The caller picks one of 6 American voices: Cartesia sonic-3 (Skylar, the first choice), ElevenLabs flash v2.5 or Deepgram Aura-2, two each |
-| Turn taking | Silero VAD, LiveKit turn detector, interruptions (caller can talk over Mia) |
+| Text-to-speech | The caller picks one of 6 American voices: Deepgram Aura-2 (Thalia, the first choice), Cartesia sonic-3 or ElevenLabs flash v2.5, two each |
+| Turn taking | LiveKit background voice cancellation (Krisp), Silero VAD, LiveKit turn detector, interruptions (caller can talk over Mia) |
 | Agent | Python 3.12, `livekit-agents` 1.8, uv |
 | API | FastAPI on AWS Lambda (container image), DynamoDB |
 | Web | React, Vite, Tailwind |
@@ -93,7 +93,11 @@ mid-sentence and, once, a 3 s Groq response.
    code scoring every call against its ground truth. It runs after big changes to Mia, and
    **every run's transcripts are kept** in
    [agent/evals/simulations/](agent/evals/simulations/README.md).
-5. Human testing with per-call feedback.
+5. Noisy calls: the scripted caller again, with classroom chatter, subway or cafe noise mixed
+   under its microphone at two levels, with and without each layer of noise handling. Lines
+   Mia answered went from 28% with none to 89% with all three; every run is kept in
+   [agent/evals/noisy_calls/](agent/evals/noisy_calls/README.md).
+6. Human testing with per-call feedback.
 
 ## Run locally
 
