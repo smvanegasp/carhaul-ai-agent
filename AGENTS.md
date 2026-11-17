@@ -192,6 +192,11 @@ docker compose up        # api :8020, web :5190, DynamoDB Local :8030, agent wor
 
 ## 6. Decisions log
 
+- 2026-11-17 (call d9dfdc6763f5): **"That would be accurate." is a yes** (`grounding._YES`
+  grows; a missed yes drops get_quote and repeats the read-back). **The live view shows a Mia
+  turn the transcription missed from its event**: the greeting starts before the page
+  listens to LiveKit's transcription, so it could be absent live while in the record.
+
 - 2026-11-17 (Belinda, second round): **The call page fits the screen** and only the
   transcript scrolls: one-line title, a smaller call card, voices in two columns, and on
   wide screens three columns (card, conversation, Under the hood). **The page used to grow

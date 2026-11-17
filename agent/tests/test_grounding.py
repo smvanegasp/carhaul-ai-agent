@@ -154,6 +154,11 @@ def test_vehicle_count_said(said, count):
         ("aha", True),
         ("That's right", True),
         ("Sure, go ahead", True),
+        ("That would be accurate.", True),  # call d9dfdc6763f5
+        ("Yes, that's accurate", True),
+        ("Sounds right", True),
+        ("Looks good to me", True),
+        ("That's not accurate", False),
         ("No, it's a 2021", False),
         ("Yes but actually it's a 2021", False),
         ("It's a 2019 Toyota Corolla", False),

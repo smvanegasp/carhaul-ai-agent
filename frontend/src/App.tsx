@@ -93,7 +93,7 @@ export function App({ route, go }: { route: Route; go: (r: Route) => void }) {
           <AudioLines className="size-7 shrink-0 text-brand" />
           {!collapsed && (
             <span className="text-3xl font-extrabold">
-              Mia<span className="text-brand">.</span>
+              Mia
             </span>
           )}
         </a>

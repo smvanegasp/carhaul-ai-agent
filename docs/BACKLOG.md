@@ -694,8 +694,19 @@ dashboard) stays out: history and stats are real calls from DynamoDB.
       and 1366x768
 - [x] Root cause of the page growing with the transcript: each bubble's `sr-only` label
       escaped the (unpositioned) scroll box; the box is `relative` now
-- [ ] A real call after the deploy: live sound bars, the picture during the call, a
-      transfer line spoken in full, no page scroll
+- [x] A real call after the deploy (call-d9dfdc6763f5, next section)
+
+## "Accurate" is a yes; the greeting in the live view (branch `yes-and-greeting`, 2026-11-17)
+
+Call d9dfdc6763f5 (Belinda):
+- [x] "That would be accurate." to the read-back wasn't a yes: get_quote was dropped and Mia
+      read the details back again. `grounding._YES` now has "accurate" and a few more ("sounds
+      right", "looks good", "that works", "you got it"...); scenario `accurate_is_yes` (3/3 on
+      Groq; fails without the fix)
+- [x] The greeting was missing from the live view (it was in the record): it starts as the call
+      connects, before the page listens to LiveKit's transcription. A Mia turn the
+      transcription missed is now shown from its event (`lib/conversation.ts`)
+- [x] Sidebar logo: "Mia" (no period)
 
 ## Ideas / later
 

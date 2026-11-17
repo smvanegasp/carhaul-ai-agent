@@ -510,6 +510,17 @@ _YES = (
     "that is right",
     "that s correct",
     "all good",
+    # Call d9dfdc6763f5 (2026-11-17): "That would be accurate." to the read-back wasn't a yes,
+    # so the quote was dropped and the details were read back again.
+    "accurate",
+    "sounds right",
+    "looks right",
+    "looks good",
+    "that works",
+    "you got it",
+    "spot on",
+    "affirmative",
+    "alright",
 )
 _NO = ("no", "nope", "not", "wrong", "actually", "wait", "change", "incorrect")
 
