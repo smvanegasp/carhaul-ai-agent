@@ -5,7 +5,6 @@ import {
   formatSpan,
   funnel,
   kpis,
-  story,
   type CallFacts,
 } from "./stats";
 
@@ -66,19 +65,6 @@ describe("stats", () => {
     ]);
     expect(d.find((x) => x.key === "organic_transfer")?.count).toBe(1);
     expect(d.find((x) => x.key === "hung_up")?.share).toBe(4 / 5);
-  });
-
-  it("tells the story", () => {
-    const rows = ROWS.slice(0, 4);
-    const text = story(kpis(rows), funnel(rows));
-    expect(text).toContain(
-      "Mia handled 4 calls (7 min a person didn't have to spend)",
-    );
-    expect(text).toContain(
-      "1 qualified lead to a licensed representative (25% of calls)",
-    );
-    expect(text).toContain("biggest drop-off");
-    expect(story(kpis([]), funnel([]))).toBe("No calls yet.");
   });
 
   it("formats spans", () => {

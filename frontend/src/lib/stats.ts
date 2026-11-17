@@ -185,28 +185,3 @@ export function formatSpan(seconds: number): string {
 export function pct(value: number | null): string {
   return value == null ? "–" : `${Math.round(value * 100)}%`;
 }
-
-/** One or two sentences that say what the numbers mean. */
-export function story(k: Kpis, steps: FunnelStep[]): string {
-  if (k.calls === 0) return "No calls yet.";
-  const calls = `${k.calls} call${k.calls === 1 ? "" : "s"}`;
-  const leads = `${k.transfers} qualified lead${k.transfers === 1 ? "" : "s"}`;
-  let text =
-    `Mia handled ${calls} (${formatSpan(k.miaSeconds)} a person didn't have to spend) and ` +
-    `passed ${leads} to a licensed representative (${pct(k.transferRate)} of calls).`;
-  // The biggest drop-off between two steps where the earlier one had callers.
-  const drops = steps
-    .slice(1)
-    .map((s, i) => ({ from: steps[i], to: s }))
-    .filter((d) => d.from.count > 0 && d.to.ofPrev != null && d.to.ofPrev < 1);
-  if (drops.length) {
-    const worst = drops.reduce((a, b) =>
-      (b.to.ofPrev ?? 1) < (a.to.ofPrev ?? 1) ? b : a,
-    );
-    const lost = 1 - (worst.to.ofPrev ?? 0);
-    text +=
-      ` The biggest drop-off is from “${worst.from.label.toLowerCase()}” to ` +
-      `“${worst.to.label.toLowerCase()}”: ${pct(lost)} of callers stop there.`;
-  }
-  return text;
-}

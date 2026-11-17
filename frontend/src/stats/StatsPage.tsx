@@ -7,7 +7,6 @@ import {
   funnel,
   kpis,
   pct,
-  story,
   type CallFacts,
   type DispositionCount,
   type FunnelStep,
@@ -80,14 +79,11 @@ export function StatsPage({ active }: { active: boolean }) {
       k,
       steps,
       outcomes: dispositions(load.rows),
-      text: story(k, steps),
     };
   }, [load]);
 
   return (
     <div className="flex flex-col gap-4 pb-2 lg:min-h-0 lg:flex-1 lg:overflow-y-auto lg:overscroll-contain lg:pr-1">
-      <p className="text-sm text-muted">All calls since Mia went live.</p>
-
       {load.kind === "loading" && <Card>Loading the stats…</Card>}
       {load.kind === "error" && (
         <Card>
@@ -98,9 +94,6 @@ export function StatsPage({ active }: { active: boolean }) {
       )}
       {view && (
         <div className="flex flex-col gap-4">
-          <p className="max-w-4xl text-base leading-relaxed text-ink">
-            {view.text}
-          </p>
           <KpiRow k={view.k} />
           <div className="grid gap-4 xl:grid-cols-2">
             <Section

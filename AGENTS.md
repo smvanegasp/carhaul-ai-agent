@@ -192,6 +192,11 @@ docker compose up        # api :8020, web :5190, DynamoDB Local :8030, agent wor
 
 ## 6. Decisions log
 
+- 2026-11-17 (Belinda, Stats and the call card): **No summary sentence on Stats** (it
+  repeated what the KPIs already show; `story()` removed). **The glow and rings around
+  Mia's picture show only while she talks** (`speaking` from `useVoiceAssistant`), and the
+  state badge is smaller.
+
 - 2026-11-17 (Belinda, Past calls): **No test-calls checkbox** in Past calls or Stats
   (scripted `smoke-*` calls are always left out; the API's `include_tests` stays). **Calls
   are grouped by month** under toggles (the newest month and the open call's start open;
