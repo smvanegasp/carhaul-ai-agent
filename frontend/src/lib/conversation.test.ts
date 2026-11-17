@@ -191,11 +191,30 @@ it("shows the greeting once while it is still being transcribed (Belinda, 2026-1
   expect(mia[0].kind === "line" && mia[0].note).toBe("greeting (from code)");
 });
 
-it("doesn't show the greeting before Mia starts saying it", () => {
-  // Live: the transcription has nothing of the greeting yet, and no later line either.
-  const live = buildConversation(
-    [line("x", "you", "Hello?", 100)],
-    [turn(0, "mia", "Hi, I'm Mia.", 200, { kind: "greeting" })],
-  );
-  expect(live.filter((i) => i.kind === "line" && i.who === "mia")).toHaveLength(0);
+it("reveals a greeting with no transcription word by word, live (Belinda, 2026-11-17)", () => {
+  const greeting = "Hi, I'm Mia. Where is the car going?";
+  const events = [turn(0, "mia", greeting, 1000, { kind: "greeting" })];
+  const miaText = (now: number) =>
+    buildConversation([], events, now)
+      .filter((i) => i.kind === "line" && i.who === "mia")
+      .map((i) => (i.kind === "line" ? [i.text, i.final] : []));
+  expect(miaText(1000)).toEqual([]); // not heard yet
+  expect(miaText(1000 + 500 + 360)).toEqual([["Hi, I'm", false]]);
+  expect(miaText(60_000)).toEqual([[greeting, true]]);
+  // A saved call (no clock): whole.
+  expect(buildConversation([], events)[0]).toMatchObject({ text: greeting, final: true });
+});
+
+it("reveals it the same way with other transcription lines, and lets the transcription take over", () => {
+  const greeting = "Hi, I'm Mia. Where is the car going?";
+  const events = [turn(0, "mia", greeting, 1000, { kind: "greeting" })];
+  const caller = line("x", "you", "Hello?", 900);
+  const early = buildConversation([caller], events, 1000 + 500 + 360);
+  expect(early.filter((i) => i.kind === "line" && i.who === "mia")).toMatchObject([
+    { text: "Hi, I'm", final: false },
+  ]);
+  const taken = buildConversation([caller, line("g", "mia", "Hi, I'm Mia.", 1600)], events, 2500);
+  expect(taken.filter((i) => i.kind === "line" && i.who === "mia")).toMatchObject([
+    { id: "g", text: "Hi, I'm Mia.", note: "greeting (from code)" },
+  ]);
 });
