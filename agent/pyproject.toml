@@ -5,7 +5,7 @@ description = "Mia, the F&F car-shipping voice agent (LiveKit worker)."
 readme = "README.md"
 requires-python = ">=3.12,<3.13"
 dependencies = [
-    "boto3>=1.40",
+    "boto3>=1.44.3",
     "googlemaps>=4.10.0",
     "httpx>=0.28.1",
     "livekit-agents[cartesia,deepgram,elevenlabs,groq,silero]>=1.8.11",
@@ -19,11 +19,11 @@ dependencies = [
 dev = [
     "moto[dynamodb]>=5.2.5",
     "pytest>=8",
-    "pytest-asyncio>=1.4.1.post1",
+    "pytest-asyncio>=1.5.0",
     "pytest-rerunfailures>=16.7",
     "pyyaml>=6.0.3",
     "respx>=0.23.1",
-    "ruff>=0.14",
+    "ruff>=0.17.5",
 ]
 # Jupyter kernel for notebooks/ (exploration only; not in the Docker image).
 notebooks = ["ipykernel>=6.29"]
