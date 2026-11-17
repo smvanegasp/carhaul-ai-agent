@@ -150,3 +150,30 @@ it("hides Mia's goodbye to the line in older records (call-fde275e6bce5)", () =>
   const texts = buildConversation([], events).map((i) => (i.kind === "line" ? i.text : ""));
   expect(texts).toEqual(["Please stay on the line."]);
 });
+
+it("shows the greeting from its event when the transcription missed it (call-d9dfdc6763f5)", () => {
+  const greeting = "Hi, thanks for calling F&F. I'm Mia, a virtual assistant.";
+  const items = buildConversation(
+    [line("a", "you", "I have a 2020 Mazda.", 21000), line("b", "mia", "What model is it?", 24000)],
+    [
+      turn(0, "mia", greeting, 200, { kind: "greeting" }),
+      turn(1, "caller", "I have a 2020 Mazda.", 21500),
+      turn(2, "mia", "What model is it?", 24800),
+    ],
+  );
+  const lines = items.filter((i) => i.kind === "line").map((i) => i.kind === "line" && [i.who, i.text]);
+  expect(lines).toEqual([
+    ["mia", greeting],
+    ["you", "I have a 2020 Mazda."],
+    ["mia", "What model is it?"],
+  ]);
+});
+
+it("doesn't repeat the greeting when the transcription has it", () => {
+  const greeting = "Hi, thanks for calling F&F.";
+  const items = buildConversation(
+    [line("g", "mia", greeting, 300), line("a", "you", "Boston to Miami.", 8000)],
+    [turn(0, "mia", greeting, 200, { kind: "greeting" }), turn(1, "caller", "Boston to Miami.", 8500)],
+  );
+  expect(items.filter((i) => i.kind === "line" && i.who === "mia")).toHaveLength(1);
+});

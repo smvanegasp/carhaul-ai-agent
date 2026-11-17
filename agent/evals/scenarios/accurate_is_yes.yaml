@@ -1,0 +1,17 @@
+# Belinda's call, 2026-11-17 (call-d9dfdc6763f5): "That would be accurate." to the read-back
+# wasn't taken as a yes, so get_quote was dropped and Mia read the details back again. (A Honda
+# here: the fake CarHauler catalog has no Mazda.)
+id: accurate_is_yes
+persona: NG_P_NV
+path: SHP
+ground_truth:
+  origin: Boston, Massachusetts
+  destination: San Francisco, California
+  vehicles: [2025 Honda Civic]
+turns:
+  - user: "From Boston, Massachusetts to San Francisco, California. It's a twenty twenty five Honda Civic."
+    expect:
+      on_file: {vehicles: [2025 Honda Civic]}
+  - user: "That would be accurate."
+    expect:
+      tools: [get_quote]

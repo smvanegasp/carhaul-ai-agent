@@ -5,7 +5,10 @@
  * Lines and events carry wall-clock times from the same clock (the worker's), so they sort
  * together. A turn event arrives when its line is done, so it belongs to the latest line of
  * the same speaker that started before it. If there are no transcription lines (they can be
- * missing after a reconnect), the turn events themselves become the lines.
+ * missing after a reconnect), the turn events themselves become the lines. A Mia turn with no
+ * line of its own is shown from its event: the greeting starts as the call connects, before
+ * the page listens to the transcription (call d9dfdc6763f5, 2026-11-17: the greeting was
+ * missing from the live view, but it was in the record).
  */
 
 import type {
@@ -87,6 +90,7 @@ export function buildConversation(
 
   // Attach each turn's metrics to its line.
   const claimed = new Set<string>();
+  const unmatched: TurnEvent[] = [];
   for (const t of turns) {
     const who = t.role === "caller" ? "you" : "mia";
     const at = eventTime(t);
@@ -97,11 +101,34 @@ export function buildConversation(
         continue;
       if (item.at <= Math.max(at, at2) + 1000) match = item; // latest line started before it
     }
-    if (!match) continue;
+    if (!match) {
+      unmatched.push(t);
+      continue;
+    }
     claimed.add(match.id);
     match.metrics = t.metrics;
     match.note = NOTES[t.kind];
     match.interrupted = t.interrupted;
+  }
+
+  // Mia's lines the transcription missed, from their events (never twice: same text = same line).
+  const norm = (text: string) => text.trim().toLowerCase();
+  const said = new Set(
+    items.flatMap((i) => (i.kind === "line" && i.who === "mia" ? [norm(i.text)] : [])),
+  );
+  for (const t of unmatched) {
+    if (t.role !== "mia" || said.has(norm(t.text))) continue;
+    items.push({
+      kind: "line",
+      id: `turn-${t.seq}`,
+      who: "mia",
+      text: t.text,
+      final: true,
+      at: lineStart(t),
+      metrics: t.metrics,
+      note: NOTES[t.kind],
+      interrupted: t.interrupted,
+    });
   }
 
   // A transcription line that is a screening line: dropped (same text, Mia's side).
