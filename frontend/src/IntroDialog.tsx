@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import { BELINDA, CARHAULER, Ext, REPO, SERGIO } from "./credits";
+import { Disclosure } from "./landing/Disclosure";
+import { Button } from "./ui/button";
 
+// The agent's old name in the key, so a session that already saw it doesn't again.
 const SEEN_KEY = "mia.intro.seen";
 export const AUTO_CLOSE_MS = 15_000;
 
@@ -79,7 +81,7 @@ export function IntroDialog({
   if (!open) return null;
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end justify-center bg-[color-mix(in_srgb,var(--ink)_35%,transparent)] p-4 backdrop-blur-[2px] sm:items-center"
+      className="fixed inset-0 z-50 flex items-end justify-center bg-overlay p-4 backdrop-blur-[2px] sm:items-center"
       onClick={onClose}
     >
       <div
@@ -90,22 +92,22 @@ export function IntroDialog({
         onPointerEnter={() => setPaused(true)}
         onPointerLeave={() => setPaused(false)}
         onKeyDown={(e) => e.key !== "Escape" && setPaused(true)}
-        className="relative w-full max-w-lg overflow-hidden rounded-2xl border border-line bg-surface shadow-xl"
+        className="relative w-full max-w-lg overflow-hidden rounded-lg border border-line bg-surface shadow-xl"
       >
         <div className="flex flex-col gap-4 p-6">
           <div>
             <p className="text-xs font-medium tracking-wide text-brand uppercase">
               F&amp;F car shipping
             </p>
-            <h2 id="intro-title" className="font-display text-2xl text-ink">
+            <h2 id="intro-title" className="font-display text-2xl font-semibold text-ink">
               Meet Mia
             </h2>
           </div>
           <p className="text-sm leading-relaxed text-ink">
             Mia is an AI voice assistant that gives{" "}
-            <strong>open car-shipping quotes</strong>. Tell her where your car
-            is going from and to, and its year, make and model, and she'll give
-            you a price in about a minute.
+            <strong>open car-shipping estimates</strong>. Tell Mia where your
+            car is going from and to, and its year, make and model, and you'll
+            get a price in about a minute.
           </p>
           <ul className="flex flex-col gap-2 text-sm text-muted">
             <li>
@@ -114,24 +116,13 @@ export function IntroDialog({
               minutes.
             </li>
             <li>
-              <span className="font-medium text-ink">See how she works.</span>{" "}
+              <span className="font-medium text-ink">See how Mia works.</span>{" "}
               "Show details" reveals every tool call and how long each step
               took; Past calls and Stats show every call.
             </li>
           </ul>
           <div className="flex flex-col gap-2 rounded-xl bg-raised p-3 text-sm text-ink">
-            <p>
-              <span className="font-semibold">Disclosure:</span> Mia is an
-              academic, non-commercial project developed by{" "}
-              <Ext href={SERGIO}>Sergio Vanegas</Ext> and{" "}
-              <Ext href={BELINDA}>Belinda Hu</Ext>. Prices come from the public
-              API of <Ext href={CARHAULER}>CarHauler247</Ext>.
-            </p>
-            <p>
-              If you ask to speak with a licensed representative, Mia transfers
-              your call to Sergio's phone. Calls are saved as transcripts to
-              improve Mia. The code is on <Ext href={REPO}>GitHub</Ext>.
-            </p>
+            <Disclosure />
           </div>
           <div className="flex items-center justify-between gap-3">
             <span className="text-xs text-muted" aria-live="off">
@@ -141,14 +132,14 @@ export function IntroDialog({
                   : `Closes in ${Math.ceil(left / 1000)} s`
                 : ""}
             </span>
-            <button
+            <Button
               ref={button}
               type="button"
               onClick={onClose}
-              className="rounded-full bg-brand px-5 py-2 text-sm font-semibold text-brand-ink transition hover:bg-brand-hover focus-visible:ring-2 focus-visible:ring-accent focus-visible:outline-none"
+              className="rounded-md bg-brand px-5 py-2 text-sm font-semibold text-brand-ink transition hover:bg-brand-hover focus-visible:ring-2 focus-visible:ring-accent focus-visible:outline-none"
             >
               Got it
-            </button>
+            </Button>
           </div>
         </div>
         {auto && (

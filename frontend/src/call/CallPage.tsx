@@ -1,3 +1,4 @@
+import { Headphones, Phone, ShieldCheck } from "lucide-react";
 import {
   RoomAudioRenderer,
   RoomContext,
@@ -33,9 +34,13 @@ import { Conversation } from "./Conversation";
 import { ErrorBoundary } from "./ErrorBoundary";
 import { FeedbackForm } from "./FeedbackForm";
 import { Insights } from "./Insights";
+import { TranscriptPrompt } from "./TranscriptPrompt";
 import { wakeProgress } from "../lib/wake";
 import { useWake, type Wake } from "./useWake";
+import { voiceAvatar, voiceName } from "./voiceAvatars";
 import { useVoiceChoice, VoicePicker } from "./VoicePicker";
+import miaAvatar from "../assets/mia-avatar.jpg";
+import { Button } from "../ui/button";
 
 /** Mia hangs up at 6 minutes (agent/src/mia/main.py); the timer shows it. */
 export const MAX_CALL_SECONDS = 6 * 60;
@@ -75,7 +80,7 @@ export function CallPage() {
     setPhase({ kind: "connecting" });
     let room: Room | undefined;
     try {
-      // She may have gone back to sleep while the page sat open: then wait for her again.
+      // The worker may have gone back to sleep while the page sat open: then wait again.
       if ((await wakeMia()).state !== "ready") {
         setPhase({ kind: "idle" });
         recheck();
@@ -119,6 +124,7 @@ export function CallPage() {
       wake={wake}
       onCall={startCall}
       onRetry={recheck}
+      voiceLabel={voices.options.find((o) => o.key === voices.selected)?.label ?? null}
       voicePicker={
         <VoicePicker
           options={voices.options}
@@ -163,7 +169,10 @@ export function CallPage() {
       }
       footer={
         phase.kind === "ended" ? (
-          <FeedbackForm key={phase.roomName} room={phase.roomName} />
+          <div key={phase.roomName} className="flex flex-col gap-3">
+            <TranscriptPrompt room={phase.roomName} lines={phase.lines} />
+            <FeedbackForm room={phase.roomName} />
+          </div>
         ) : undefined
       }
     />
@@ -171,7 +180,7 @@ export function CallPage() {
 
   const page = (
     <div className="flex flex-col gap-4 lg:min-h-0 lg:flex-1">
-      <div className="flex flex-col gap-4 lg:grid lg:min-h-0 lg:flex-1 lg:grid-cols-[minmax(300px,380px)_1fr] lg:grid-rows-[auto_1fr]">
+      <div className="flex flex-col gap-4 lg:grid lg:min-h-0 lg:flex-1 lg:grid-cols-[minmax(280px,340px)_1fr] lg:grid-rows-[auto_minmax(320px,1fr)]">
         <div className="lg:col-start-1 lg:row-start-1">{callCard}</div>
         <div className="flex flex-col lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:min-h-0">
           <ErrorBoundary
@@ -217,7 +226,9 @@ function CallButtonCard({
   onCall,
   onRetry,
   voicePicker,
+  voiceLabel,
 }: {
+  voiceLabel: string | null;
   phase: Phase;
   wake: Wake;
   onCall: () => void;
@@ -226,14 +237,52 @@ function CallButtonCard({
 }) {
   const ready = wake.kind === "ready";
   return (
-    <section className="flex flex-col items-start gap-3 rounded-2xl border border-line bg-surface p-4">
+    <section
+      data-tour="call-controls"
+      aria-label="Call controls"
+      className="mia-voice-card flex flex-col items-start gap-4 rounded-2xl p-4"
+    >
+      <div className="flex w-full items-center justify-between">
+        <span className="mia-voice-badge eyebrow rounded-full px-2.5 py-1">
+          {ready ? "● Standing by" : "○ Waking up"}
+        </span>
+      </div>
+      <div className="flex w-full justify-center py-2">
+        <div className="mia-orb">
+          <span className="mia-orb-ring" aria-hidden="true" />
+          <span className="mia-orb-ring mia-orb-ring-2" aria-hidden="true" />
+          <img
+            key={voiceLabel ?? "mia"}
+            src={voiceAvatar(voiceLabel)}
+            alt={`Mia speaking as ${voiceName(voiceLabel)}`}
+            width={768}
+            height={768}
+            className="mia-orb-face"
+          />
+        </div>
+      </div>
+      <div className="w-full">
+        <h2 className="font-display text-center text-4xl leading-none font-semibold tracking-tight">
+          Mia
+        </h2>
+        <p className="eyebrow mt-2 text-center">
+          {voiceLabel ? `Voice · ${voiceName(voiceLabel)}` : "AI voice assistant"}
+        </p>
+      </div>
+      <div className="voice-bars w-full" aria-hidden="true">
+        {Array.from({ length: 25 }, (_, i) => (
+          <span key={i} />
+        ))}
+      </div>
       {voicePicker}
-      <button
+      <Button
+        variant="ghost"
         type="button"
         onClick={onCall}
         disabled={phase.kind === "connecting" || !ready}
-        className="w-full rounded-full bg-brand px-8 py-3.5 text-lg font-semibold text-brand-ink shadow-sm transition hover:bg-brand-hover focus-visible:ring-2 focus-visible:ring-accent focus-visible:outline-none disabled:cursor-wait disabled:opacity-60"
+        className="h-12 w-full rounded-full bg-accent px-8 py-3.5 font-mono text-xs font-semibold tracking-wider text-brand uppercase shadow-sm transition hover:bg-accent hover:text-brand hover:opacity-90 focus-visible:ring-2 focus-visible:ring-accent focus-visible:outline-none disabled:cursor-wait disabled:opacity-60"
       >
+        <Phone className="size-4" />
         {phase.kind === "connecting"
           ? "Calling…"
           : !ready
@@ -241,7 +290,15 @@ function CallButtonCard({
             : phase.kind === "ended"
               ? "Call again"
               : "Call Mia"}
-      </button>
+      </Button>
+      <div className="mia-voice-muted flex w-full justify-between gap-2 border-t border-line pt-3 font-mono text-[10px] tracking-wider uppercase">
+        <span className="flex items-center gap-1">
+          <Headphones className="size-3" /> Voice conversation
+        </span>
+        <span className="flex items-center gap-1">
+          <ShieldCheck className="size-3" /> Up to {MAX_CALL_SECONDS / 60} minutes
+        </span>
+      </div>
       <WakeNote wake={wake} onRetry={onRetry} />
       {phase.kind === "error" && (
         <p role="alert" className="text-sm text-danger">
@@ -249,11 +306,11 @@ function CallButtonCard({
         </p>
       )}
       {phase.kind === "ended" && (
-        <p className="text-sm text-muted">
+        <p className="mia-voice-muted text-sm">
           Call ended. Thanks for talking to Mia!{" "}
           <a
             href={`#/calls/${phase.roomName}`}
-            className="font-medium text-brand underline-offset-2 hover:underline"
+            className="font-medium text-accent underline-offset-2 hover:underline"
           >
             See this call in Past calls
           </a>
@@ -263,13 +320,13 @@ function CallButtonCard({
         </p>
       )}
       {phase.kind === "idle" && ready && (
-        <div className="flex flex-col gap-2 text-sm text-muted">
-          <p className="rounded-xl bg-raised px-3 py-2 text-ink">
-            Try: “I need to ship my 2020 Toyota Camry from Boston to Miami.”
+        <div className="mia-voice-muted flex flex-col gap-2 text-sm">
+          <p className="mia-voice-quote rounded-xl px-3 py-2">
+            “I need to ship my 2020 Toyota Camry from Boston to Miami.”
           </p>
           <p>
             Your browser will ask for the microphone; headphones work best.
-            Asking for a person transfers you to Sergio's phone.
+            The transfer demonstration routes to Sergio's phone, not a real agent.
           </p>
         </div>
       )}
@@ -322,9 +379,9 @@ function WakeNote({ wake, onRetry }: { wake: Wake; onRetry: () => void }) {
     return (
       <p role="alert" className="text-sm text-danger">
         {wake.message}{" "}
-        <button type="button" onClick={onRetry} className="underline">
+        <Button variant="ghost" type="button" onClick={onRetry} className="underline">
           Try again
-        </button>
+        </Button>
       </p>
     );
   }
@@ -345,13 +402,14 @@ function InCallFallback({ room }: { room: Room }) {
 
 function HangUp({ room }: { room: Room }) {
   return (
-    <button
+    <Button
+      variant="ghost"
       type="button"
       onClick={() => room.disconnect()}
-      className="rounded-full bg-danger px-5 py-2 font-medium text-surface hover:opacity-90"
+      className="rounded-full bg-danger px-5 py-2 font-medium text-surface hover:bg-danger hover:text-surface hover:opacity-90"
     >
       Hang up
-    </button>
+    </Button>
   );
 }
 
@@ -389,7 +447,25 @@ function InCallControls({
   };
 
   return (
-    <section className="flex flex-col gap-4 rounded-2xl border border-line bg-surface p-4">
+    <section
+      data-tour="call-controls"
+      aria-label="Call controls"
+      className="flex flex-col gap-4 rounded-2xl border border-line bg-surface p-4"
+    >
+      <div className="flex items-center gap-3">
+        <img
+          src={miaAvatar}
+          alt="Mia"
+          width={1024}
+          height={1024}
+          loading="lazy"
+          className="size-16 shrink-0 rounded-full border-2 border-ok-soft object-cover"
+        />
+        <div>
+          <h2 className="text-sm font-semibold">Mia</h2>
+          <p className="mt-1 text-xs text-muted">Your shipping companion</p>
+        </div>
+      </div>
       <div className="flex items-center gap-3">
         <span
           className={`size-3 rounded-full ${
@@ -409,13 +485,14 @@ function InCallControls({
         </span>
       </div>
       <div className="flex gap-3">
-        <button
+        <Button
+          variant="ghost"
           type="button"
           onClick={toggleMute}
           className="rounded-full border border-line px-5 py-2 font-medium hover:bg-raised"
         >
           {muted ? "Unmute" : "Mute"}
-        </button>
+        </Button>
         <HangUp room={room} />
       </div>
       <StartAudio

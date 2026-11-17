@@ -155,7 +155,7 @@ function Section({
   return (
     <section
       aria-label={title}
-      className="flex flex-col gap-4 rounded-2xl border border-line bg-surface p-4"
+      className="flex flex-col gap-5 border-t border-line pt-6"
     >
       <header className="flex flex-wrap items-baseline justify-between gap-2">
         <div>

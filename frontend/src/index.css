@@ -15,6 +15,9 @@
   --color-brand-hover: var(--brand-hover);
   --color-brand-ink: var(--brand-ink);
   --color-accent: var(--accent);
+  --color-action: var(--action);
+  --color-action-hover: var(--action-hover);
+  --color-action-ink: var(--action-ink);
   --color-caller: var(--caller);
   --color-caller-ink: var(--caller-ink);
   --color-ok: var(--ok);
@@ -33,97 +36,152 @@
   --color-viz-grid: var(--viz-grid);
 }
 
-/*
- * Light, consulting-style palette (Sergio, 2026-11-09: "more professional, McKinsey-like colors";
- * the navy dark mode felt too dark): white and cool-grey surfaces, deep blue ink, electric blue
- * for actions, cyan for highlights. Light is the default whatever the OS says; dark mode is
- * opt-in from the toggle in the header (data-theme="dark" on <html>, set in index.html before
- * the first paint and by ThemeToggle.tsx).
- */
+/* Shared automotive workspace theme. */
 :root {
   color-scheme: light;
-  --deep-blue: #051c2c;
-  --electric-blue: #2251ff;
-  --cyan: #00a9f4;
-
-  --page: #f5f7fa;
-  --surface: #ffffff;
-  --raised: #eef2f6;
-  --line: #d8dee6;
-  --ink: var(--deep-blue);
-  --muted: #4f5d6b;
-  --brand: var(--electric-blue);
-  --brand-hover: #1b41d6;
-  --brand-ink: #ffffff;
-  --accent: var(--cyan);
-  --caller: var(--deep-blue);
-  --caller-ink: #ffffff;
-  --ok: #0f7b5a;
-  --ok-soft: #dcf2e8;
-  --warn: #8c5a00;
-  --warn-soft: #fbefd5;
-  --danger: #c4283c;
-  --danger-soft: #fbe3e6;
-  --code: var(--deep-blue);
-  --code-ink: #e6ecf2;
-
-  /* Chart ramp (funnel order: calls -> transfers, the last step the most prominent), from
-     the dataviz reference blue; validated as an ordinal ramp on white (light end 2.11:1) and,
-     brightening instead, on the dark surface (2.16:1). */
-  --viz-1: #86b6ef;
-  --viz-2: #5598e7;
-  --viz-3: #2a78d6;
-  --viz-4: #1c5cab;
-  --viz-5: #104281;
-  --viz-grid: #e8ecf1;
+  --page: oklch(0.985 0.004 85);
+  --surface: oklch(1 0 0);
+  --raised: oklch(0.96 0.005 85);
+  --line: oklch(0.91 0.006 85);
+  --ink: oklch(0.18 0.006 85);
+  --muted: oklch(0.50 0.008 85);
+  --brand: oklch(0.19 0.006 85);
+  --brand-hover: oklch(0.30 0.008 85);
+  --brand-ink: oklch(0.99 0.003 85);
+  --accent: oklch(0.70 0.13 168);
+  --action: oklch(0.78 0.10 168);
+  --action-hover: oklch(0.73 0.10 168);
+  --action-ink: oklch(0.23 0.025 168);
+  --caller: oklch(0.29 0.02 160);
+  --caller-ink: oklch(1 0 0);
+  --ok: oklch(0.45 0.085 160);
+  --ok-soft: oklch(0.95 0.028 160);
+  --warn: oklch(0.55 0.11 65);
+  --warn-soft: oklch(0.96 0.035 75);
+  --danger: oklch(0.53 0.17 25);
+  --danger-soft: oklch(0.96 0.02 25);
+  --code: oklch(0.24 0.015 160);
+  --code-ink: oklch(0.94 0.006 160);
+  --viz-1: oklch(0.85 0.033 165);
+  --viz-2: oklch(0.74 0.053 165);
+  --viz-3: oklch(0.64 0.067 165);
+  --viz-4: oklch(0.51 0.077 165);
+  --viz-5: oklch(0.40 0.063 166);
+  --viz-grid: var(--line);
+  --cover-ink: oklch(1 0 0);
+  --cover-shade: oklch(0.16 0.018 160 / 0.64);
+  --overlay: oklch(0.2 0 0 / 0.36);
+  --shadow-panel: 0 4px 20px oklch(0.2 0.02 160 / 0.035);
 }
-
-:root[data-theme="dark"] {
-  /* Graphite, not navy (Sergio, 2026-11-10: the deep-blue dark mode felt off; he loved the
-     light mode). Neutral greys with a hint of cool, the same electric blue for actions and
-     cyan for highlights as light mode. Contrast checked: ink 14.9:1 and muted 7.2:1 on
-     surface, white on brand 4.6:1. */
+/* The remembered theme only affects the mounted Mia workspace, including its dialogs. */
+:root[data-theme="dark"]:has(.mia-shell) {
   color-scheme: dark;
-  --page: #0d1015;
-  --surface: #151a21;
-  --raised: #1e242d;
-  --line: #2b333e;
-  --ink: #e9edf2;
-  --muted: #9ba7b5;
-  --brand: #3a66ff;
-  --brand-hover: #5279ff;
-  --brand-ink: #ffffff;
-  --accent: var(--cyan);
-  --caller: var(--electric-blue);
-  --caller-ink: #ffffff;
-  --ok: #4fd1a0;
-  --ok-soft: #14352d;
-  --warn: #f3c26b;
-  --warn-soft: #3a3020;
-  --danger: #ef5b65; /* deep enough for the "Hang up" button and alert text */
-  --danger-soft: #3d1f26;
-  --code: #0a0d12;
-  --code-ink: #dfe6ee;
-
-  --viz-1: #184f95;
-  --viz-2: #256abf;
-  --viz-3: #3987e5;
-  --viz-4: #6da7ec;
-  --viz-5: #9ec5f4;
-  --viz-grid: #232a34;
+  --page: oklch(0.15 0.004 85);
+  --surface: oklch(0.19 0.005 85);
+  --raised: oklch(0.24 0.006 85);
+  --line: oklch(0.30 0.007 85);
+  --ink: oklch(0.96 0.004 85);
+  --muted: oklch(0.70 0.008 85);
+  --brand: oklch(0.96 0.004 85);
+  --brand-hover: oklch(0.86 0.006 85);
+  --brand-ink: oklch(0.17 0.005 85);
+  --accent: oklch(0.78 0.13 168);
+  --caller: oklch(0.39 0.048 160);
+  --ok: oklch(0.76 0.1 160);
+  --ok-soft: oklch(0.28 0.035 160);
+  --warn: oklch(0.81 0.09 70);
+  --warn-soft: oklch(0.29 0.025 70);
+  --danger: oklch(0.74 0.12 25);
+  --danger-soft: oklch(0.29 0.035 25);
+  --viz-1: oklch(0.40 0.063 166);
+  --viz-2: oklch(0.51 0.077 165);
+  --viz-3: oklch(0.64 0.067 165);
+  --viz-4: oklch(0.74 0.053 165);
+  --viz-5: oklch(0.85 0.033 165);
 }
-
-body {
-  @apply bg-page text-ink antialiased;
-  font-family:
-    system-ui,
-    -apple-system,
-    "Segoe UI",
-    Roboto,
-    sans-serif;
+@theme inline {
+  --color-background: var(--page);
+  --color-foreground: var(--ink);
+  --color-primary: var(--brand);
+  --color-primary-foreground: var(--brand-ink);
+  --color-secondary: var(--raised);
+  --color-secondary-foreground: var(--ink);
+  --color-muted-foreground: var(--muted);
+  --color-accent-foreground: var(--ink);
+  --color-border: var(--line);
+  --color-input: var(--line);
+  --color-ring: var(--accent);
+  --color-destructive: var(--danger);
+  --color-destructive-foreground: var(--surface);
+  --color-cover-ink: var(--cover-ink);
+  --color-overlay: var(--overlay);
+  --font-mono: "Geist Mono", ui-monospace, monospace;
+  --font-sans: "Geist", system-ui, sans-serif;
+  --font-display: "Geist", system-ui, sans-serif;
 }
-
-/* Headlines in a serif, the consulting-report look. */
-.font-display {
-  font-family: Georgia, "Times New Roman", serif;
+body { margin: 0; background: var(--page); color: var(--ink); font-family: var(--font-sans); -webkit-font-smoothing: antialiased; }
+* { letter-spacing: 0; }
+.font-display { font-family: var(--font-display); letter-spacing: -0.025em; }
+.eyebrow { font-family: "Geist Mono", ui-monospace, monospace; font-size: 11px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+.mia-hero { position: relative; overflow: hidden; background: oklch(0.17 0.006 85); color: oklch(0.97 0.004 85); }
+.mia-hero::before { content: ""; position: absolute; inset: -40%; background: radial-gradient(40% 50% at 78% 50%, oklch(0.70 0.13 168 / 0.45), transparent 70%), radial-gradient(30% 40% at 20% 110%, oklch(0.62 0.12 230 / 0.35), transparent 70%); }
+.mia-hero > * { position: relative; }
+.mia-shell .rounded-2xl, .mia-shell .rounded-xl { border-radius: 8px; }
+.mia-shell section { box-shadow: var(--shadow-panel); }
+/* Keep desktop panels tall enough to use, then scroll the workspace rather than clip them. */
+@media (min-width: 1024px) {
+  .mia-workspace > div:has(> [data-tour="call-controls"]),
+  .mia-workspace > div:has([data-tour="call-controls"]),
+  .mia-workspace > div:has(> section[aria-label="Past calls"]) {
+    flex-shrink: 0;
+    min-height: 640px;
+  }
 }
+.mia-cover::after { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, var(--cover-shade), transparent 80%); }
+.mia-cover img { object-position: center 58%; }
+.voice-bars { display: flex; align-items: center; justify-content: center; gap: 4px; height: 48px; }
+.voice-bars span { width: 3px; border-radius: 2px; background: var(--accent); }
+.voice-bars span:nth-child(4n+1) { height: 12px; opacity: .4; }
+.voice-bars span:nth-child(4n+2) { height: 26px; opacity: .7; }
+.voice-bars span:nth-child(4n+3) { height: 40px; }
+.voice-bars span:nth-child(4n) { height: 20px; opacity: .6; }
+:root .driver-popover { background: var(--surface); color: var(--ink); border-radius: 8px; padding: 24px; box-shadow: var(--shadow-panel); font-family: var(--font-sans); }
+:root .driver-popover-title { font-family: var(--font-sans); font-size: 19px; font-weight: 700; }
+:root .driver-popover-description { font-family: var(--font-sans); color: var(--muted); font-size: 13px; line-height: 1.7; }
+:root .driver-popover-footer button { background: var(--surface); color: var(--ink); border: 1px solid var(--line); border-radius: 5px; text-shadow: none; font-family: var(--font-sans); padding: 7px 12px; }
+:root .driver-popover-footer .driver-popover-next-btn { background: var(--brand); color: var(--brand-ink); border-color: var(--brand); }
+:root .driver-popover-progress-text { color: var(--muted); }
+:root .driver-popover-close-btn { color: var(--muted); }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; } }
+.mia-voice-card { position: relative; overflow: hidden; background: var(--surface); color: var(--ink); border: 1px solid var(--line); }
+.mia-voice-card::before { content: ""; position: absolute; inset: 0; background: radial-gradient(70% 50% at 50% 0%, oklch(0.70 0.13 168 / 0.35), transparent 70%); pointer-events: none; }
+.mia-voice-card > * { position: relative; }
+.mia-voice-tile { background: linear-gradient(180deg, oklch(0.74 0.15 168), oklch(0.86 0.09 190)); }
+.mia-voice-chip { border: 1px solid var(--line); background: var(--surface); color: var(--ink); }
+.mia-voice-chip[aria-pressed="true"] { background: var(--brand); color: var(--brand-ink); border-color: var(--brand); }
+.mia-voice-chip:disabled { opacity: .5; }
+.mia-voice-card .voice-bars span { background: oklch(0.80 0.13 168); }
+.mia-voice-muted { color: var(--muted); }
+.mia-voice-quote { background: var(--raised); }
+.mia-voice-card .border-surface\/10 { border-color: var(--line); }
+.mia-voice-card .text-ink { color: inherit; }
+.mia-voice-card .text-muted { color: var(--muted); }
+.mia-voice-card .bg-raised { background: var(--raised); }
+.mia-voice-card .mia-voice-badge { background: var(--ok-soft); color: var(--ok); }
+.mia-shell .mia-hero { background: var(--raised); color: var(--ink); border: 1px solid var(--line); }
+.mia-shell .mia-hero::before, .mia-voice-card::before { display: none; }
+.mia-orb { position: relative; width: 112px; height: 112px; }
+.mia-orb::before { content: ""; position: absolute; inset: -14px; border-radius: 9999px; background: conic-gradient(from 0deg, oklch(0.80 0.13 168), oklch(0.70 0.14 230), oklch(0.85 0.12 140), oklch(0.80 0.13 168)); filter: blur(14px); opacity: .55; animation: mia-spin 8s linear infinite; }
+.mia-orb-ring { position: absolute; inset: -6px; border-radius: 9999px; border: 1px solid oklch(0.80 0.13 168 / 0.6); animation: mia-pulse 3s ease-out infinite; }
+.mia-orb-ring-2 { animation-delay: 1.5s; }
+.mia-orb-face { position: relative; width: 100%; height: 100%; border-radius: 9999px; object-fit: cover; object-position: center 20%; border: 2px solid oklch(1 0 0 / 0.25); animation: mia-float 4s ease-in-out infinite; }
+@keyframes mia-spin { to { transform: rotate(360deg); } }
+@keyframes mia-pulse { 0% { transform: scale(1); opacity: .8; } 100% { transform: scale(1.45); opacity: 0; } }
+@keyframes mia-float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
+.mia-voice-card .voice-bars span { animation: mia-bar 1.2s ease-in-out infinite; transform-origin: center; }
+.mia-voice-card .voice-bars span:nth-child(3n) { animation-delay: .2s; }
+.mia-voice-card .voice-bars span:nth-child(3n+1) { animation-delay: .45s; }
+@keyframes mia-bar { 0%,100% { transform: scaleY(.55); } 50% { transform: scaleY(1); } }
+@media (prefers-reduced-motion: reduce) { .mia-orb::before, .mia-orb-ring, .mia-orb-face, .mia-voice-card .voice-bars span { animation: none; } }
+.mia-orb-face { animation: mia-float 4s ease-in-out infinite, mia-fade .4s ease-out; }
+@keyframes mia-fade { from { opacity: 0; transform: scale(.92); } }

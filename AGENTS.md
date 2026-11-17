@@ -30,7 +30,10 @@ files rather than reinventing.
 - **Teammate** (non-technical): manual tester. From stage 4 she calls the deployed agent, acts
   out persona cards from `docs/TESTING_GUIDE.md` and leaves feedback per call.
 
-## Status (2026-11-11)
+## Status (2026-11-17)
+
+The frontend has the Lovable redesign (landing page at the bare URL, the app at `#/call`;
+see the decisions log). History and stats are real calls only.
 
 Live on AWS at https://dj7jlcxkdszj1.cloudfront.net (profile `carhaul`, account 816940506502).
 All stages are done and deployed through PR #27: 0-6, 7 (AI-vs-AI simulations), 8 and 9
@@ -115,7 +118,7 @@ Fargate, not Lambda. Everything else follows the fit pattern.
 | --- | --- |
 | `agent/` | uv project `mia-agent`, package `src/mia/` (see below). `evals/scenarios/*.yaml`: reference conversations. `evals/sim/`: the stage 7 simulator (`catalog` personas/cases/paths, `caller` the simulated caller, `run` conversation + scoring + CLI, `report`). `evals/simulations/`: **every simulation run, committed** (README index, per run report + transcripts; public on purpose) |
 | `backend/` | uv project `carhaul-api`: FastAPI for Lambda (`app/`). `POST /api/token` (`livekit_token.py`, rate limited by `ratelimit.py`), `POST /api/calls/{room}/feedback` (`calls.py`), `POST /api/wake` (`worker.py`: starts the on-demand worker), `GET /api/calls` and `GET /api/calls/{room}` (public, rate limited), `GET /api/stats` (`stats.py`: per-call milestones and Mia's time, backfilled once from records), DynamoDB in `db.py` |
-| `frontend/` | React 19 + Vite + Tailwind v4 + LiveKit components. `App.tsx`: the shell (collapsible sidebar on desktop, tabs on a phone; views in the URL hash, `lib/route.ts`; the call view stays mounted so switching views never drops a call). `src/history/PastCalls.tsx`: past calls (list + the same conversation/stats views from the saved record). `src/stats/StatsPage.tsx` + `lib/stats.ts`: KPIs, funnel, trends. `IntroDialog.tsx`: what this is + the disclosure, once a session. `src/call/`: `CallPage.tsx` (layout, call controls, wake), `Conversation.tsx` (chat + inline tool calls and latency behind "Show details", built by `lib/conversation.ts`; **Copy JSON** puts the whole call record on the clipboard for feedback notes, `lib/copy.ts`), `Insights.tsx` (stage, stats, latency, on file), `FeedbackForm.tsx`, `useWake.ts` (+ `lib/wake.ts`: the wake progress bar), `ThemeToggle.tsx`. Colors are theme tokens in `src/index.css` (light by default, dark on request). Later: dashboard |
+| `frontend/` | React 19 + Vite + Tailwind v4 + LiveKit components + lucide icons (Lovable redesign, 2026-11-17). `main.tsx`: the landing page (`src/landing/`) on the bare URL, the app (lazy-loaded) on `#/call`, `#/calls`, `#/stats`. `App.tsx`: the shell (collapsible sidebar on desktop, tabs on a phone; views in the URL hash, `lib/route.ts`; the call view stays mounted so switching views never drops a call; `NavigationTour.tsx`: the first-visit tour). `src/ui/`: shared `Button`, `Dialog`, `cn`. `call/voiceAvatars.ts`: a picture per voice (Thalia, the default, shows Mia's). `call/TranscriptPrompt.tsx`: after a call, download the transcript. `src/history/PastCalls.tsx`: past calls (list + the same conversation/stats views from the saved record). `src/stats/StatsPage.tsx` + `lib/stats.ts`: KPIs, funnel, trends. `IntroDialog.tsx`: what this is + the disclosure, once a session. `src/call/`: `CallPage.tsx` (layout, call controls, wake), `Conversation.tsx` (chat + inline tool calls and latency behind "Show details", built by `lib/conversation.ts`; **Copy JSON** puts the whole call record on the clipboard for feedback notes, `lib/copy.ts`), `Insights.tsx` (stage, stats, latency, on file), `FeedbackForm.tsx`, `useWake.ts` (+ `lib/wake.ts`: the wake progress bar), `ThemeToggle.tsx`. Colors are theme tokens in `src/index.css` (light by default, dark on request). Later: dashboard |
 | `notebooks/` | Exploration only; kernel is `agent/.venv` (`uv sync --group notebooks`) |
 | `docs/` | BACKLOG, CONVERSATION_DESIGN, TESTING_GUIDE (stage 4), `evaluation/Mia_evaluation.xlsx` (29 test calls for the team: result, rating, feedback, call ID; when it comes back filled in, read each call's record from `GET /api/calls/{call ID}` (records never expire) and turn the feedback into fixes) |
 | `infra/` | Terraform (profile `carhaul`, everything `carhaul-*`): DynamoDB, Lambda + HTTP API, S3 + CloudFront (custom domain optional), on-demand ECS Fargate worker task (`agent.tf`), GitHub OIDC deploy role, alarms. `bootstrap/`: the state bucket |
@@ -188,6 +191,16 @@ docker compose up        # api :8020, web :5190, DynamoDB Local :8030, agent wor
   token-endpoint rate limit, the daily call cap and the max call length.
 
 ## 6. Decisions log
+
+- 2026-11-17: **The Lovable redesign is integrated** (a friend of the team made it). Lovable's
+  copy was TanStack Start + Supabase with a proxy to our API and sample calls; only the UI
+  was ported: history and stats come from our DynamoDB only (no simulated or synthetic
+  data), the browser calls `/api` on the same origin. The landing page is a hash route
+  (`#/`; the app at `#/call`) because CloudFront has no SPA fallback, and the app is
+  lazy-loaded so the landing page neither downloads LiveKit nor wakes the worker. After a
+  call the transcript is a download (emailing it is out of scope for the demo). Every voice
+  has a picture; Lovable drew Cartesia Morgan as a man, but Cartesia's catalog lists her as
+  female ("Polished American female"), so the voice stays with a new female picture. A rename to Sky was tried and dropped: the agent stays Mia.
 
 - 2026-11-12 (Belinda's classroom demo): **Noisy places** (`noise.py`). Mia didn't talk in a
   classroom: other voices kept the caller's turn open and cut her off. Now: LiveKit's

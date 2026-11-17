@@ -4,22 +4,19 @@ import { parseRoute, routeHash } from "./route";
 
 describe("routes", () => {
   it("reads the hash", () => {
-    expect(parseRoute("")).toEqual({ view: "call" });
-    expect(parseRoute("#/")).toEqual({ view: "call" });
+    expect(parseRoute("")).toEqual({ view: "home" });
+    expect(parseRoute("#/")).toEqual({ view: "home" });
+    expect(parseRoute("#/call")).toEqual({ view: "call" });
     expect(parseRoute("#/calls")).toEqual({ view: "calls", room: null });
     expect(parseRoute("#/calls/call-0123456789ab")).toEqual({
       view: "calls",
       room: "call-0123456789ab",
     });
+    expect(parseRoute("#/nope")).toEqual({ view: "home" });
   });
 
   it("round-trips", () => {
-    for (const hash of [
-      "#/",
-      "#/calls",
-      "#/calls/call-0123456789ab",
-      "#/stats",
-    ]) {
+    for (const hash of ["#/", "#/call", "#/calls", "#/calls/call-0123456789ab", "#/stats"]) {
       expect(routeHash(parseRoute(hash))).toBe(hash);
     }
   });
