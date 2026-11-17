@@ -228,6 +228,7 @@ function VoiceCard({
   showVoice,
   badge,
   bars,
+  speaking = false,
   children,
 }: {
   voiceLabel: string | null;
@@ -235,6 +236,8 @@ function VoiceCard({
   showVoice: boolean;
   badge: ReactNode;
   bars: ReactNode;
+  /** Mia is talking: the glow and the rings around her picture show only then. */
+  speaking?: boolean;
   children: ReactNode;
 }) {
   return (
@@ -244,14 +247,18 @@ function VoiceCard({
       className="mia-voice-card flex flex-col items-start gap-3 rounded-2xl p-4"
     >
       <div className="flex w-full items-center justify-between">
-        <span className="mia-voice-badge eyebrow rounded-full px-2.5 py-1" aria-live="polite">
+        <span className="mia-voice-badge eyebrow rounded-full" aria-live="polite">
           {badge}
         </span>
       </div>
       <div className="flex w-full justify-center py-1">
-        <div className="mia-orb">
-          <span className="mia-orb-ring" aria-hidden="true" />
-          <span className="mia-orb-ring mia-orb-ring-2" aria-hidden="true" />
+        <div className={`mia-orb ${speaking ? "mia-orb-speaking" : ""}`}>
+          {speaking && (
+            <>
+              <span className="mia-orb-ring" aria-hidden="true" />
+              <span className="mia-orb-ring mia-orb-ring-2" aria-hidden="true" />
+            </>
+          )}
           <img
             key={voiceLabel ?? "mia"}
             src={voiceAvatar(voiceLabel)}
@@ -507,6 +514,7 @@ function InCallControls({
       showVoice
       badge={`● ${STATE_LABEL[state] ?? state}`}
       bars={<LiveBars />}
+      speaking={state === "speaking"}
     >
       <div className="flex w-full items-center justify-center font-mono text-sm text-muted tabular-nums">
         {formatClock((now - startedAt) / 1000)} / {formatClock(MAX_CALL_SECONDS)}

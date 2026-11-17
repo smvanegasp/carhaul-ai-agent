@@ -716,6 +716,13 @@ Call d9dfdc6763f5 (Belinda):
 - [x] Past calls grouped by month under toggles (latest 100)
 - [ ] Check on the deployed site with a real call
 
+## Stats and the call card (branch `stats-and-orb`, 2026-11-17)
+
+- [x] No summary sentence on Stats (it repeated the KPIs)
+- [x] Smaller state badge (Standing by, Listening, Talking)
+- [x] Glow and rings around the picture only while Mia talks
+- [ ] Check on the deployed site with a real call
+
 ## Ideas / later
 
 
