@@ -1,4 +1,4 @@
-import { Headphones, Phone, ShieldCheck } from "lucide-react";
+import { Phone } from "lucide-react";
 import {
   RoomAudioRenderer,
   RoomContext,
@@ -33,7 +33,6 @@ import {
 import { CallId } from "./CallId";
 import { Conversation } from "./Conversation";
 import { ErrorBoundary } from "./ErrorBoundary";
-import { FeedbackForm } from "./FeedbackForm";
 import { Insights } from "./Insights";
 import { wakeProgress } from "../lib/wake";
 import { useWake, type Wake } from "./useWake";
@@ -62,11 +61,13 @@ function micErrorMessage(err: unknown): string {
 }
 
 /**
- * Layout (Belinda, 2026-11-17: the page grew as the transcript filled, and "Under the hood"
- * scrolled inside itself). The side column (call card, then Under the hood) is shown in full;
- * the conversation has a fixed height, scrolls inside, and on desktop stays in view (sticky)
- * while the page scrolls. So a growing transcript never changes the page's height. On a phone
- * the order is call card, conversation, Under the hood.
+ * Layout (Belinda, 2026-11-17): ideally nobody scrolls the page, only the transcript. On wide
+ * screens (xl) three columns fit the screen: the call card, the conversation, Under the hood;
+ * the card and Under the hood are shown in full (never scrolling inside themselves) and the
+ * conversation's height is the screen's, so it alone scrolls and a growing transcript never
+ * changes the page. On narrower desktops Under the hood goes under the card and the
+ * conversation stays in view (sticky) while the page scrolls. On a phone: card, conversation,
+ * Under the hood.
  */
 export function CallPage() {
   const [phase, setPhase] = useState<Phase>({ kind: "idle" });
@@ -174,27 +175,24 @@ export function CallPage() {
             }
           : undefined
       }
-      footer={
-        phase.kind === "ended" ? (
-          <FeedbackForm key={phase.roomName} room={phase.roomName} />
-        ) : undefined
-      }
+      startAtEnd={phase.kind === "ended"}
     />
   );
 
   const page = (
-    <div className="grid grid-cols-[minmax(0,1fr)] gap-4 lg:grid-cols-[minmax(280px,340px)_minmax(0,1fr)] lg:grid-rows-[auto_1fr]">
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-4 lg:grid-cols-[minmax(280px,320px)_minmax(0,1fr)] lg:grid-rows-[auto_1fr] xl:min-h-0 xl:flex-1 xl:grid-cols-[300px_minmax(0,1fr)_minmax(280px,320px)] xl:grid-rows-[minmax(0,1fr)]">
       <div className="lg:col-start-1 lg:row-start-1">{callCard}</div>
-      {/* Fixed height: the transcript scrolls inside, the page doesn't grow. The desktop
-          height is the screen minus the header, the title and the padding around them. */}
-      <div className="flex h-[70dvh] min-h-[420px] flex-col lg:sticky lg:top-0 lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:h-[calc(100dvh-13.5rem)] lg:self-start">
+      {/* Fixed height: the transcript scrolls inside, the page doesn't grow. On wide screens
+          the grid fills the height left under the title and this column stretches to it; on
+          narrower desktops it's the screen minus the header, title and padding (App.tsx). */}
+      <div className="flex h-[70dvh] min-h-[420px] flex-col lg:sticky lg:top-0 lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:h-[calc(100dvh-10rem)] lg:self-start xl:static xl:row-span-1 xl:h-auto xl:min-h-[320px] xl:self-stretch">
         <ErrorBoundary
           fallback={<Notice>The conversation view hit a display error.</Notice>}
         >
           {conversation}
         </ErrorBoundary>
       </div>
-      <div className="lg:col-start-1 lg:row-start-2 lg:self-start">
+      <div className="lg:col-start-1 lg:row-start-2 lg:self-start xl:col-start-3 xl:row-start-1">
         <ErrorBoundary fallback={<Notice>The stats hit a display error.</Notice>}>
           <Insights events={events} />
         </ErrorBoundary>
@@ -227,11 +225,14 @@ function Notice({ children }: { children: ReactNode }) {
  */
 function VoiceCard({
   voiceLabel,
+  showVoice,
   badge,
   bars,
   children,
 }: {
   voiceLabel: string | null;
+  /** The voice's name under the title: during a call, when the picker is hidden. */
+  showVoice: boolean;
   badge: ReactNode;
   bars: ReactNode;
   children: ReactNode;
@@ -240,14 +241,14 @@ function VoiceCard({
     <section
       data-tour="call-controls"
       aria-label="Call controls"
-      className="mia-voice-card flex flex-col items-start gap-4 rounded-2xl p-4"
+      className="mia-voice-card flex flex-col items-start gap-3 rounded-2xl p-4"
     >
       <div className="flex w-full items-center justify-between">
         <span className="mia-voice-badge eyebrow rounded-full px-2.5 py-1" aria-live="polite">
           {badge}
         </span>
       </div>
-      <div className="flex w-full justify-center py-2">
+      <div className="flex w-full justify-center py-1">
         <div className="mia-orb">
           <span className="mia-orb-ring" aria-hidden="true" />
           <span className="mia-orb-ring mia-orb-ring-2" aria-hidden="true" />
@@ -262,14 +263,14 @@ function VoiceCard({
         </div>
       </div>
       <div className="w-full text-center">
-        <h2 className="font-display text-4xl leading-none font-semibold tracking-tight">
+        <h2 className="font-display text-3xl leading-none font-semibold tracking-tight">
           Mia
         </h2>
-        <p className="mia-voice-muted mt-2 text-sm">
+        <p className="mia-voice-muted mt-1.5 text-xs">
           Tell Mia your route and vehicle for an open-transport estimate.
         </p>
-        {voiceLabel && (
-          <p className="eyebrow mt-2">Voice · {voiceName(voiceLabel)}</p>
+        {showVoice && voiceLabel && (
+          <p className="eyebrow mt-1.5">Voice · {voiceName(voiceLabel)}</p>
         )}
       </div>
       {bars}
@@ -303,7 +304,7 @@ function LiveBars() {
   return (
     <div className="voice-bars voice-bars-live w-full" aria-hidden="true">
       {bars.map((v, i) => (
-        <span key={i} style={{ height: `${4 + Math.min(1, v * 1.6) * 44}px` }} />
+        <span key={i} style={{ height: `${4 + Math.min(1, v * 1.6) * 32}px` }} />
       ))}
     </div>
   );
@@ -328,6 +329,7 @@ function CallButtonCard({
   return (
     <VoiceCard
       voiceLabel={voiceLabel}
+      showVoice={false}
       badge={ready ? "● Standing by" : "○ Waking up"}
       bars={<IdleBars />}
     >
@@ -337,7 +339,7 @@ function CallButtonCard({
         type="button"
         onClick={onCall}
         disabled={phase.kind === "connecting" || !ready}
-        className="h-12 w-full rounded-full bg-accent px-8 py-3.5 font-mono text-xs font-semibold tracking-wider text-brand uppercase shadow-sm transition hover:bg-accent hover:text-brand hover:opacity-90 focus-visible:ring-2 focus-visible:ring-accent focus-visible:outline-none disabled:cursor-wait disabled:opacity-60"
+        className="h-11 w-full rounded-full bg-accent px-8 py-3 font-mono text-xs font-semibold tracking-wider text-brand uppercase shadow-sm transition hover:bg-accent hover:text-brand hover:opacity-90 focus-visible:ring-2 focus-visible:ring-accent focus-visible:outline-none disabled:cursor-wait disabled:opacity-60"
       >
         <Phone className="size-4" />
         {phase.kind === "connecting"
@@ -348,14 +350,6 @@ function CallButtonCard({
               ? "Call again"
               : "Call Mia"}
       </Button>
-      <div className="mia-voice-muted flex w-full justify-between gap-2 border-t border-line pt-3 font-mono text-[10px] tracking-wider uppercase">
-        <span className="flex items-center gap-1">
-          <Headphones className="size-3" /> Voice conversation
-        </span>
-        <span className="flex items-center gap-1">
-          <ShieldCheck className="size-3" /> Up to {MAX_CALL_SECONDS / 60} minutes
-        </span>
-      </div>
       <WakeNote wake={wake} onRetry={onRetry} />
       {phase.kind === "error" && (
         <p role="alert" className="text-sm text-danger">
@@ -363,7 +357,7 @@ function CallButtonCard({
         </p>
       )}
       {phase.kind === "ended" && (
-        <p className="mia-voice-muted text-sm">
+        <p className="mia-voice-muted text-xs">
           Call ended. Thanks for talking to Mia!{" "}
           <a
             href={`#/calls/${phase.roomName}`}
@@ -377,7 +371,7 @@ function CallButtonCard({
         </p>
       )}
       {phase.kind === "idle" && ready && (
-        <div className="mia-voice-muted flex flex-col gap-2 text-sm">
+        <div className="mia-voice-muted flex flex-col gap-1.5 text-xs">
           <p className="mia-voice-quote rounded-xl px-3 py-2">
             “I need to ship my 2020 Toyota Camry from Boston to Miami.”
           </p>
@@ -510,6 +504,7 @@ function InCallControls({
   return (
     <VoiceCard
       voiceLabel={voiceLabel}
+      showVoice
       badge={`● ${STATE_LABEL[state] ?? state}`}
       bars={<LiveBars />}
     >

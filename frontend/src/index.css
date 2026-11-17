@@ -169,7 +169,7 @@ body { margin: 0; background: var(--page); color: var(--ink); font-family: var(-
 .mia-voice-card .mia-voice-badge { background: var(--ok-soft); color: var(--ok); }
 .mia-shell .mia-hero { background: var(--raised); color: var(--ink); border: 1px solid var(--line); }
 .mia-shell .mia-hero::before, .mia-voice-card::before { display: none; }
-.mia-orb { position: relative; width: 112px; height: 112px; }
+.mia-orb { position: relative; width: 84px; height: 84px; }
 .mia-orb::before { content: ""; position: absolute; inset: -14px; border-radius: 9999px; background: conic-gradient(from 0deg, oklch(0.80 0.13 168), oklch(0.70 0.14 230), oklch(0.85 0.12 140), oklch(0.80 0.13 168)); filter: blur(14px); opacity: .55; animation: mia-spin 8s linear infinite; }
 .mia-orb-ring { position: absolute; inset: -6px; border-radius: 9999px; border: 1px solid oklch(0.80 0.13 168 / 0.6); animation: mia-pulse 3s ease-out infinite; }
 .mia-orb-ring-2 { animation-delay: 1.5s; }
@@ -180,6 +180,8 @@ body { margin: 0; background: var(--page); color: var(--ink); font-family: var(-
 .mia-voice-card .voice-bars span { animation: mia-bar 1.2s ease-in-out infinite; transform-origin: center; }
 .mia-voice-card .voice-bars span:nth-child(3n) { animation-delay: .2s; }
 .mia-voice-card .voice-bars span:nth-child(3n+1) { animation-delay: .45s; }
+/* Shorter in the call card, so the page fits the screen. */
+.mia-voice-card .voice-bars { height: 40px; }
 /* During a call the bars follow Mia's voice (heights set inline by CallPage's LiveBars). */
 .mia-voice-card .voice-bars.voice-bars-live span { animation: none; opacity: 1; transition: height 90ms linear; }
 @keyframes mia-bar { 0%,100% { transform: scaleY(.55); } 50% { transform: scaleY(1); } }

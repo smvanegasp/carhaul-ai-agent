@@ -681,8 +681,21 @@ dashboard) stays out: history and stats are real calls from DynamoDB.
       for an open-transport estimate." The sidebar logo reads "Mia."
 - [x] Call 003a8fbda074: the greeting and the transfer line can't be interrupted
       (agent.py; tests in test_llm_node.py)
+- [x] A real call after the deploy (Belinda's second round, next section)
+
+## The call page fits the screen (branch `call-page-fit`, 2026-11-17)
+
+- [x] Favicon in the new palette (dark tile, green sound bars)
+- [x] Voices in two columns: picture, name, and provider underneath
+- [x] No feedback form on the call page (results go in the evaluation workbook)
+- [x] Only the transcript scrolls: one-line title, a smaller card (84 px picture), the
+      scrollbar at the window's edge, and on wide screens three columns (card,
+      conversation, Under the hood). Measured with no page scroll at 1767x1013, 1440x900
+      and 1366x768
+- [x] Root cause of the page growing with the transcript: each bubble's `sr-only` label
+      escaped the (unpositioned) scroll box; the box is `relative` now
 - [ ] A real call after the deploy: live sound bars, the picture during the call, a
-      transfer line spoken in full
+      transfer line spoken in full, no page scroll
 
 ## Ideas / later
 

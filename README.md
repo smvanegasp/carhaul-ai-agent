@@ -69,9 +69,8 @@ each turn with its latency (end of turn, speech to text, LLM first token, voice 
 total), each tool call with its arguments, the JSON the LLM got back and its duration, every
 call the guardrail dropped, and what's on file. The call page shows one conversation (the
 live transcript, with the tool calls and latency inline behind "Show details") next to the
-call's stats, keeps it afterwards, and ends with a feedback form. When the call ends the worker saves the whole
-record (state, transcript, events, latency, talk time, interruptions) to DynamoDB; feedback is
-saved next to it. The dashboard (stage 6) reads those records.
+call's stats and keeps it afterwards. When the call ends the worker saves the whole record
+(state, transcript, events, latency, talk time, interruptions) to DynamoDB. The dashboard (stage 6) reads those records.
 
 **Latency** (6 scripted voice calls, 2026-11-09, `python -m mia.smoke`): per call, the median
 time from the caller's last word to Mia starting to answer was 0.95-1.6 s on the server (end of
