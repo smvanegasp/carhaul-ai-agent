@@ -164,7 +164,11 @@ can help you with?"
 
 ## On a voice call (stage 3)
 
-- Mia speaks the greeting first, as soon as she joins (no LLM wait).
+- Mia speaks the greeting first, as soon as she joins (no LLM wait). The greeting can't be
+  interrupted, and what the caller says over it is ignored (a "Hey." over it was once looked
+  up as a city).
+- The transfer line ("Sure, I'll connect you with a licensed representative now. Please stay
+  on the line.") can't be interrupted either, so the caller always hears to stay on the line.
 - While the quote is computed she says: "Give me one second while I calculate your quote."
 - When the caller is done, Mia calls `end_call`, says a short goodbye and then hangs up (the
   call ends in the browser too).

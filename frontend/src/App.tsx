@@ -10,7 +10,6 @@ import {
   Phone,
 } from "lucide-react";
 
-import coastalDrive from "./assets/coastal-drive.jpg";
 import { CallPage, MAX_CALL_SECONDS } from "./call/CallPage";
 import { ThemeToggle } from "./call/ThemeToggle";
 import { BELINDA, CARHAULER, Ext, REPO, SERGIO } from "./credits";
@@ -94,7 +93,7 @@ export function App({ route, go }: { route: Route; go: (r: Route) => void }) {
           <AudioLines className="size-7 shrink-0 text-brand" />
           {!collapsed && (
             <span className="text-3xl font-extrabold">
-              mia<span className="text-brand">.</span>
+              Mia<span className="text-brand">.</span>
             </span>
           )}
         </a>
@@ -190,27 +189,6 @@ export function App({ route, go }: { route: Route; go: (r: Route) => void }) {
             </div>
             <p className="eyebrow hidden md:block">{heading.note}</p>
           </div>
-          {view === "call" && (
-            <div className="mia-hero flex shrink-0 items-center justify-between gap-6 rounded-lg px-6 py-8 md:px-10">
-              <div>
-                <p className="eyebrow mb-3 text-ok">Voice AI agent · F&amp;F car shipping</p>
-                <h2 className="font-display max-w-xl text-3xl font-semibold md:text-4xl">
-                  Car-shipping estimates, in one natural conversation.
-                </h2>
-                <p className="mt-3 max-w-md text-sm opacity-75">
-                  Tell Mia your route and vehicle for an open-transport estimate. Transfers are
-                  demonstrations, not a real agent service.
-                </p>
-              </div>
-              <img
-                src={coastalDrive}
-                alt="A silver sedan and green SUV on a coastal drive"
-                width={1536}
-                height={864}
-                className="hidden h-28 w-48 rounded-md object-cover opacity-90 md:block"
-              />
-            </div>
-          )}
           <div className={view === "call" ? "contents" : "hidden"}>
             <CallPage />
           </div>

@@ -8,8 +8,8 @@ import { formatMs, type DroppedEvent, type ToolEvent, type TurnMetrics } from ".
 
 /**
  * The call as one conversation: chat bubbles, and with "Show details" on, Mia's tool calls
- * (with their JSON), guardrail drops and each turn's latency in between. On desktop this is
- * the page's only scrolling area; on a phone the page scrolls as a whole.
+ * (with their JSON), guardrail drops and each turn's latency in between. When the page caps
+ * its height (the call page does), only this box scrolls, so the page never grows with it.
  */
 export function Conversation({
   items,
@@ -33,8 +33,7 @@ export function Conversation({
   const shown = details ? items : items.filter((i) => i.kind === "line");
 
   // Follow new lines by scrolling this box only (scrollIntoView would also move the page),
-  // and only while the caller is at the bottom, so scrolling up to inspect isn't undone. On a
-  // phone the box doesn't scroll (the page does), so nothing moves under the caller's thumb.
+  // and only while the caller is at the bottom, so scrolling up to inspect isn't undone.
   useEffect(() => {
     const el = box.current;
     if (live && el && stuck.current && el.scrollHeight > el.clientHeight) {
@@ -55,9 +54,9 @@ export function Conversation({
     <section
       data-tour="conversation"
       aria-label="Conversation"
-      className="flex flex-col rounded-2xl border border-line bg-surface lg:min-h-0 lg:flex-1"
+      className="flex min-h-0 flex-1 flex-col rounded-2xl border border-line bg-surface"
     >
-      <header className="flex items-center gap-3 border-b border-line px-5 py-4">
+      <header className="flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-line px-5 py-4">
         <MessageSquare className="size-4 text-muted" /><h2 className="text-sm font-semibold">Conversation</h2>
         {live && (
           <span className="flex items-center gap-1.5 text-xs text-ok">
@@ -66,7 +65,7 @@ export function Conversation({
         )}
         <span className="ml-auto" />
         {onCopy && <CopyButton getData={onCopy} />}
-        <label className="flex cursor-pointer items-center gap-2 text-sm text-muted">
+        <label className="flex cursor-pointer items-center gap-2 text-sm whitespace-nowrap text-muted">
           Show details
           <input
             type="checkbox"
@@ -88,7 +87,7 @@ export function Conversation({
           const el = e.currentTarget;
           stuck.current = el.scrollHeight - el.scrollTop - el.clientHeight < 80;
         }}
-        className="flex flex-col gap-4 p-5 lg:min-h-0 lg:flex-1 lg:overflow-y-auto lg:overscroll-contain"
+        className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto overscroll-contain p-5"
       >
         {shown.length === 0 ? (
           <div className="flex min-h-44 flex-1 flex-col items-center justify-center gap-3 py-8 text-center"><span className="flex size-12 items-center justify-center rounded-full bg-raised text-brand"><AudioLines className="size-5" /></span><p className="text-sm font-medium">{live ? "Mia is joining…" : "Ready for a conversation"}</p><p className="max-w-60 text-xs leading-relaxed text-muted">{live ? "Connecting your voice assistant." : "No conversation yet."}</p></div>

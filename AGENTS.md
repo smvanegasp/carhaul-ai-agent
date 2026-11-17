@@ -118,7 +118,7 @@ Fargate, not Lambda. Everything else follows the fit pattern.
 | --- | --- |
 | `agent/` | uv project `mia-agent`, package `src/mia/` (see below). `evals/scenarios/*.yaml`: reference conversations. `evals/sim/`: the stage 7 simulator (`catalog` personas/cases/paths, `caller` the simulated caller, `run` conversation + scoring + CLI, `report`). `evals/simulations/`: **every simulation run, committed** (README index, per run report + transcripts; public on purpose) |
 | `backend/` | uv project `carhaul-api`: FastAPI for Lambda (`app/`). `POST /api/token` (`livekit_token.py`, rate limited by `ratelimit.py`), `POST /api/calls/{room}/feedback` (`calls.py`), `POST /api/wake` (`worker.py`: starts the on-demand worker), `GET /api/calls` and `GET /api/calls/{room}` (public, rate limited), `GET /api/stats` (`stats.py`: per-call milestones and Mia's time, backfilled once from records), DynamoDB in `db.py` |
-| `frontend/` | React 19 + Vite + Tailwind v4 + LiveKit components + lucide icons (Lovable redesign, 2026-11-17). `main.tsx`: the landing page (`src/landing/`) on the bare URL, the app (lazy-loaded) on `#/call`, `#/calls`, `#/stats`. `App.tsx`: the shell (collapsible sidebar on desktop, tabs on a phone; views in the URL hash, `lib/route.ts`; the call view stays mounted so switching views never drops a call; `NavigationTour.tsx`: the first-visit tour). `src/ui/`: shared `Button`, `Dialog`, `cn`. `call/voiceAvatars.ts`: a picture per voice (Thalia, the default, shows Mia's). `call/TranscriptPrompt.tsx`: after a call, download the transcript. `src/history/PastCalls.tsx`: past calls (list + the same conversation/stats views from the saved record). `src/stats/StatsPage.tsx` + `lib/stats.ts`: KPIs, funnel, trends. `IntroDialog.tsx`: what this is + the disclosure, once a session. `src/call/`: `CallPage.tsx` (layout, call controls, wake), `Conversation.tsx` (chat + inline tool calls and latency behind "Show details", built by `lib/conversation.ts`; **Copy JSON** puts the whole call record on the clipboard for feedback notes, `lib/copy.ts`), `Insights.tsx` (stage, stats, latency, on file), `FeedbackForm.tsx`, `useWake.ts` (+ `lib/wake.ts`: the wake progress bar), `ThemeToggle.tsx`. Colors are theme tokens in `src/index.css` (light by default, dark on request). Later: dashboard |
+| `frontend/` | React 19 + Vite + Tailwind v4 + LiveKit components + lucide icons (Lovable redesign, 2026-11-17). `main.tsx`: the landing page (`src/landing/`) on the bare URL, the app (lazy-loaded) on `#/call`, `#/calls`, `#/stats`. `App.tsx`: the shell (collapsible sidebar on desktop, tabs on a phone; views in the URL hash, `lib/route.ts`; the call view stays mounted so switching views never drops a call; `NavigationTour.tsx`: the first-visit tour). `src/ui/`: shared `Button`, `cn`. `call/voiceAvatars.ts`: a picture per voice (Thalia, the default, shows Mia's). `src/history/PastCalls.tsx`: past calls (list + the same conversation/stats views from the saved record). `src/stats/StatsPage.tsx` + `lib/stats.ts`: KPIs, funnel, trends. `IntroDialog.tsx`: what this is + the disclosure, once a session. `src/call/`: `CallPage.tsx` (layout: the side column shown in full, the conversation a fixed height that scrolls inside; one call card before, during and after a call, with the voice's picture and, during a call, sound bars that follow Mia's voice; wake), `Conversation.tsx` (chat + inline tool calls and latency behind "Show details", built by `lib/conversation.ts`; **Copy JSON** puts the whole call record on the clipboard for feedback notes, `lib/copy.ts`), `Insights.tsx` (stage, stats, latency, on file), `FeedbackForm.tsx`, `useWake.ts` (+ `lib/wake.ts`: the wake progress bar), `ThemeToggle.tsx`. Colors are theme tokens in `src/index.css` (light by default, dark on request). Later: dashboard |
 | `notebooks/` | Exploration only; kernel is `agent/.venv` (`uv sync --group notebooks`) |
 | `docs/` | BACKLOG, CONVERSATION_DESIGN, TESTING_GUIDE (stage 4), `evaluation/Mia_evaluation.xlsx` (29 test calls for the team: result, rating, feedback, call ID; when it comes back filled in, read each call's record from `GET /api/calls/{call ID}` (records never expire) and turn the feedback into fixes) |
 | `infra/` | Terraform (profile `carhaul`, everything `carhaul-*`): DynamoDB, Lambda + HTTP API, S3 + CloudFront (custom domain optional), on-demand ECS Fargate worker task (`agent.tf`), GitHub OIDC deploy role, alarms. `bootstrap/`: the state bucket |
@@ -192,13 +192,24 @@ docker compose up        # api :8020, web :5190, DynamoDB Local :8030, agent wor
 
 ## 6. Decisions log
 
+- 2026-11-17 (Belinda, after the redesign went live): **The greeting and the transfer line
+  can't be interrupted.** Call 003a8fbda074: her "Hey." over the greeting was looked up as
+  a city, and talking over "Sure, I'll connect you with a licensed representative now.
+  Please stay on the line." cut it mid-sentence. The greeting is said with
+  `allow_interruptions=False` (what the caller says meanwhile is discarded:
+  `discard_audio_if_uninterruptible`), and `request_human` calls
+  `context.disallow_interruptions()` when it starts a transfer (the reply after a tool
+  shares its speech handle). The call page: no transcript popup (not useful for a demo),
+  no hero panel, one call card in every phase (the chosen voice's picture during the call
+  too, live sound bars), "Under the hood" never scrolls inside itself, and the
+  conversation has a fixed height so the page doesn't grow with the transcript.
+
 - 2026-11-17: **The Lovable redesign is integrated** (a friend of the team made it). Lovable's
   copy was TanStack Start + Supabase with a proxy to our API and sample calls; only the UI
   was ported: history and stats come from our DynamoDB only (no simulated or synthetic
   data), the browser calls `/api` on the same origin. The landing page is a hash route
   (`#/`; the app at `#/call`) because CloudFront has no SPA fallback, and the app is
-  lazy-loaded so the landing page neither downloads LiveKit nor wakes the worker. After a
-  call the transcript is a download (emailing it is out of scope for the demo). Every voice
+  lazy-loaded so the landing page neither downloads LiveKit nor wakes the worker. Every voice
   has a picture; Lovable drew Cartesia Morgan as a man, but Cartesia's catalog lists her as
   female ("Polished American female"), so the voice stays with a new female picture. A rename to Sky was tried and dropped: the agent stays Mia.
 

@@ -567,7 +567,10 @@ class Mia(Agent):
 
     async def on_enter(self) -> None:
         if self._speak_greeting:  # voice: say it without waiting for the LLM
-            self.session.say(self.greeting, add_to_chat_ctx=False)
+            # Not interruptible (call 003a8fbda074, 2026-11-17: the caller's "Hey." over the
+            # greeting was looked up as a city). What the caller says meanwhile is discarded
+            # (AgentSession's discard_audio_if_uninterruptible, on by default).
+            self.session.say(self.greeting, allow_interruptions=False, add_to_chat_ctx=False)
             self.services.events.turn("assistant", self.greeting, kind="greeting")
 
     @function_tool
@@ -770,6 +773,10 @@ class Mia(Agent):
         )
         start = self.services.transfer
         if start and state.transfer == "pending" and not was_pending:
+            # "Connecting you... please stay on the line" is said in full (call 003a8fbda074,
+            # 2026-11-17: the caller talked over it and it stopped mid-sentence). The reply
+            # after this tool uses the same speech handle, so this covers it.
+            context.disallow_interruptions()
             # Dial once "connecting you" has been spoken (same pattern as end_call).
             context.speech_handle.add_done_callback(lambda _: start())
         return result

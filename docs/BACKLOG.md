@@ -664,11 +664,25 @@ dashboard) stays out: history and stats are real calls from DynamoDB.
 - [x] Call card: the voice's picture in an animated orb, voice chips instead of a dropdown;
       every voice has a picture (Thalia, the default, shows Mia's)
 - [x] First-visit tour (driver.js) after the intro; the "?" button replays it
-- [x] After a call, an offer to download the transcript (no email: out of scope)
 - [x] Morgan's picture: Lovable drew her as a man, but Cartesia lists the voice as female;
       a new female picture in the same style replaces it
-- [ ] A real call on the deployed site after this deploy (voice chips, transcript download,
-      tour on a phone)
+- [x] A real call on the deployed site (Belinda's feedback, next section)
+
+## Call page feedback (branch `call-page-feedback`, 2026-11-17)
+
+- [x] No transcript popup after a call (not useful for a demo)
+- [x] "Under the hood" shows in full (no inner scroll); the conversation has a fixed
+      height (the screen's, sticky on desktop) and scrolls inside, so the page doesn't
+      grow as the transcript fills
+- [x] One call card before, during and after a call: the chosen voice's picture stays
+      during the call (it switched to Mia's), the voice picker hides, and the sound bars
+      follow Mia's voice (`useMultibandTrackVolume` on her audio track)
+- [x] No "Car-shipping estimates" hero; the card says "Tell Mia your route and vehicle
+      for an open-transport estimate." The sidebar logo reads "Mia."
+- [x] Call 003a8fbda074: the greeting and the transfer line can't be interrupted
+      (agent.py; tests in test_llm_node.py)
+- [ ] A real call after the deploy: live sound bars, the picture during the call, a
+      transfer line spoken in full
 
 ## Ideas / later
 
