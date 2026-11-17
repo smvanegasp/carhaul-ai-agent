@@ -1,5 +1,5 @@
 import { Button } from "../ui/button";
-import { MessageSquare } from "lucide-react";
+import { ChevronRight, MessageSquare } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { CallId } from "../call/CallId";
@@ -14,6 +14,7 @@ import {
   type CallSummary,
 } from "../lib/api";
 import { buildConversation } from "../lib/conversation";
+import { groupByMonth, monthKey } from "../lib/months";
 import type { MiaEvent, TurnEvent } from "../lib/events";
 import {
   formatDuration,
@@ -50,9 +51,9 @@ export function PastCalls({
   active: boolean;
 }) {
   const [list, setList] = useState<Load<CallSummary[]>>({ kind: "loading" });
-  const [showTests, setShowTests] = useState(false);
+  // Scripted test calls (smoke-*) are never shown, like in the stats.
   const shown: Load<CallSummary[]> =
-    list.kind === "ok" && !showTests
+    list.kind === "ok"
       ? {
           kind: "ok",
           data: list.data.filter((c) => !c.room.startsWith("smoke-")),
@@ -74,25 +75,16 @@ export function PastCalls({
   }, [active]);
 
   return (
-    <div className="flex flex-col gap-4 lg:grid lg:min-h-0 lg:flex-1 lg:grid-cols-[minmax(260px,320px)_1fr]">
+    <div className="flex flex-col gap-4 lg:grid lg:min-h-0 lg:flex-1 lg:grid-cols-[minmax(260px,320px)_minmax(0,1fr)] lg:grid-rows-[minmax(0,1fr)]">
       <section
         aria-label="Past calls"
         className={`flex flex-col rounded-2xl border border-line bg-surface lg:min-h-0 ${room ? "hidden lg:flex" : ""}`}
       >
         <header className="border-b border-line px-4 py-3">
           <h2 className="font-semibold">Past calls</h2>
-          <div className="flex items-center justify-between gap-2 text-xs text-muted">
-            <span>The latest 50, newest first.</span>
-            <label className="flex cursor-pointer items-center gap-1.5">
-              <input
-                type="checkbox"
-                checked={showTests}
-                onChange={(e) => setShowTests(e.target.checked)}
-                className="size-3.5 accent-[var(--brand)]"
-              />
-              Test calls
-            </label>
-          </div>
+          <p className="text-xs text-muted">
+            The latest 100 by month, newest first.
+          </p>
         </header>
         <div className="lg:min-h-0 lg:flex-1 lg:overflow-y-auto lg:overscroll-contain">
           <CallList list={shown} selected={room} onOpen={onOpen} />
@@ -100,7 +92,7 @@ export function PastCalls({
       </section>
 
       <div
-        className={`flex flex-col lg:min-h-0 ${room ? "" : "hidden lg:flex"}`}
+        className={`flex flex-col lg:min-h-0 lg:overflow-y-auto lg:overscroll-contain ${room ? "" : "hidden lg:flex"}`}
       >
         {room ? (
           <ErrorBoundary
@@ -110,7 +102,11 @@ export function PastCalls({
             <CallDetail room={room} onBack={() => onOpen(null)} />
           </ErrorBoundary>
         ) : (
-          <div className="flex flex-1 flex-col items-center justify-center gap-3 py-20"><MessageSquare className="size-8 text-muted" /><h2 className="text-lg font-semibold">Your call archive</h2><p className="text-sm text-muted">No call selected.</p></div>
+          <div className="flex flex-1 flex-col items-center justify-center gap-3 py-20">
+            <MessageSquare className="size-8 text-muted" />
+            <h2 className="text-lg font-semibold">Your call archive</h2>
+            <p className="text-sm text-muted">No call selected.</p>
+          </div>
         )}
       </div>
     </div>
@@ -142,13 +138,95 @@ function CallList({
       </p>
     );
   }
+  return <MonthList calls={list.data} selected={selected} onOpen={onOpen} />;
+}
+
+/**
+ * The calls under one toggle per month. The newest month starts open, and so does the month
+ * of the call being shown; the others start closed.
+ */
+function MonthList({
+  calls,
+  selected,
+  onOpen,
+}: {
+  calls: CallSummary[];
+  selected: string | null;
+  onOpen: (room: string) => void;
+}) {
+  const groups = groupByMonth(calls);
+  const picked = calls.find((c) => c.room === selected);
+  const [open, setOpen] = useState<Set<string>>(
+    () =>
+      new Set(
+        [groups[0]?.key, picked && monthKey(picked.started_at)].filter(
+          (k): k is string => !!k,
+        ),
+      ),
+  );
+  const toggle = (key: string) =>
+    setOpen((was) => {
+      const next = new Set(was);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+
   return (
-    <ul className="flex flex-col p-2">
-      {list.data.map((c) => {
+    <div className="flex flex-col p-2">
+      {groups.map((g) => {
+        const isOpen = open.has(g.key);
+        return (
+          <div key={g.key} className="flex flex-col">
+            <button
+              type="button"
+              onClick={() => toggle(g.key)}
+              aria-expanded={isOpen}
+              aria-controls={`month-${g.key}`}
+              className="flex items-center gap-2 rounded-lg px-2 py-2 text-left text-sm font-semibold text-ink transition hover:bg-raised/60 focus-visible:ring-2 focus-visible:ring-accent focus-visible:outline-none"
+            >
+              <ChevronRight
+                className={`size-4 text-muted transition-transform ${isOpen ? "rotate-90" : ""}`}
+              />
+              <span>{g.label}</span>
+              <span className="ml-auto font-mono text-xs font-normal text-muted tabular-nums">
+                {g.calls.length} {g.calls.length === 1 ? "call" : "calls"}
+              </span>
+            </button>
+            {isOpen && (
+              <CallRows
+                id={`month-${g.key}`}
+                calls={g.calls}
+                selected={selected}
+                onOpen={onOpen}
+              />
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function CallRows({
+  id,
+  calls,
+  selected,
+  onOpen,
+}: {
+  id: string;
+  calls: CallSummary[];
+  selected: string | null;
+  onOpen: (room: string) => void;
+}) {
+  return (
+    <ul id={id} className="flex flex-col pb-2">
+      {calls.map((c) => {
         const on = c.room === selected;
         return (
           <li key={c.room}>
-            <Button variant="ghost"
+            <Button
+              variant="ghost"
               type="button"
               onClick={() => onOpen(c.room)}
               aria-current={on ? "true" : undefined}
@@ -223,7 +301,8 @@ function CallDetail({ room, onBack }: { room: string; onBack: () => void }) {
   }, [room]);
 
   const back = (
-    <Button variant="ghost"
+    <Button
+      variant="ghost"
       type="button"
       onClick={onBack}
       className="self-start text-sm text-brand underline-offset-2 hover:underline lg:hidden"
@@ -271,8 +350,10 @@ function CallDetail({ room, onBack }: { room: string; onBack: () => void }) {
           </span>
         )}
       </header>
-      <div className="flex flex-col gap-4 xl:grid xl:min-h-0 xl:flex-1 xl:grid-cols-[1fr_320px]">
-        <div className="flex flex-col lg:min-h-0 lg:flex-1 xl:flex-none">
+      {/* The conversation has a set height (the rest of the screen on wide screens) and
+          scrolls inside, so "Show details" never makes the panel grow. */}
+      <div className="flex flex-col gap-4 xl:grid xl:min-h-0 xl:flex-1 xl:grid-cols-[minmax(0,1fr)_320px] xl:grid-rows-[minmax(0,1fr)]">
+        <div className="flex h-[70dvh] min-h-[420px] flex-col xl:h-auto xl:min-h-0">
           <Conversation
             items={buildConversation([], events)}
             live={false}

@@ -183,7 +183,7 @@ async function getJson<T>(url: string, fetchFn: typeof fetch): Promise<T> {
 export function fetchCalls(
   fetchFn: typeof fetch = fetch,
 ): Promise<CallSummary[]> {
-  return getJson("/api/calls?limit=50", fetchFn);
+  return getJson("/api/calls?limit=100", fetchFn);
 }
 
 export function fetchCall(
