@@ -4,8 +4,8 @@ An academic, non-commercial project by [Sergio Vanegas](https://www.linkedin.com
 and [Belinda Hu](https://www.linkedin.com/in/belinda-hu/). Prices come from the public API of
 [CarHauler247](https://carhauler247.com/).
 
-Call Mia from your browser, tell her where your car is going and what it is, and she gives you
-an open car-shipping quote from the [CarHauler247](https://carhauler247.com/) API. While you
+The site opens on a landing page; **Talk to Mia** opens the app. Call Mia from your browser,
+tell her where your car is going and what it is, and she gives you an open car-shipping quote from the [CarHauler247](https://carhauler247.com/) API. While you
 talk, a live panel shows the transcript, every tool call (with its JSON) and how long each part
 of the pipeline took. **Past calls** shows every saved call the same way (conversation, tool
 calls, latency), and **Stats** tells the story: transfers to a licensed representative
@@ -25,7 +25,7 @@ calls, latency), and **Stats** tells the story: transfers to a licensed represen
 | Turn taking | LiveKit background voice cancellation (Krisp), Silero VAD, LiveKit turn detector, interruptions (caller can talk over Mia) |
 | Agent | Python 3.12, `livekit-agents` 1.8, uv |
 | API | FastAPI on AWS Lambda (container image), DynamoDB |
-| Web | React, Vite, Tailwind |
+| Web | React, Vite, Tailwind, lucide icons, driver.js (first-visit tour); design made in Lovable and ported |
 | Infra | Docker, Terraform, ECS Fargate (agent worker), CloudFront, GitHub Actions with OIDC |
 
 ## Guardrails

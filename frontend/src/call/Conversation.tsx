@@ -1,3 +1,5 @@
+import { Button } from "../ui/button";
+import { MessageSquare, AudioLines, Copy } from "lucide-react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 
 import type { ConversationItem } from "../lib/conversation";
@@ -51,11 +53,12 @@ export function Conversation({
 
   return (
     <section
+      data-tour="conversation"
       aria-label="Conversation"
       className="flex flex-col rounded-2xl border border-line bg-surface lg:min-h-0 lg:flex-1"
     >
-      <header className="flex items-center gap-3 border-b border-line px-4 py-3">
-        <h2 className="font-semibold">Conversation</h2>
+      <header className="flex items-center gap-3 border-b border-line px-5 py-4">
+        <MessageSquare className="size-4 text-muted" /><h2 className="text-sm font-semibold">Conversation</h2>
         {live && (
           <span className="flex items-center gap-1.5 text-xs text-ok">
             <span className="size-2 animate-pulse rounded-full bg-ok" /> live
@@ -85,14 +88,10 @@ export function Conversation({
           const el = e.currentTarget;
           stuck.current = el.scrollHeight - el.scrollTop - el.clientHeight < 80;
         }}
-        className="flex flex-col gap-3 p-4 lg:min-h-0 lg:flex-1 lg:overflow-y-auto lg:overscroll-contain"
+        className="flex flex-col gap-4 p-5 lg:min-h-0 lg:flex-1 lg:overflow-y-auto lg:overscroll-contain"
       >
         {shown.length === 0 ? (
-          <p className="text-sm text-muted">
-            {live
-              ? "Mia is joining…"
-              : "Your conversation with Mia shows here. Turn on details to see every tool call she makes and how long each step takes."}
-          </p>
+          <div className="flex min-h-44 flex-1 flex-col items-center justify-center gap-3 py-8 text-center"><span className="flex size-12 items-center justify-center rounded-full bg-raised text-brand"><AudioLines className="size-5" /></span><p className="text-sm font-medium">{live ? "Mia is joining…" : "Ready for a conversation"}</p><p className="max-w-60 text-xs leading-relaxed text-muted">{live ? "Connecting your voice assistant." : "No conversation yet."}</p></div>
         ) : (
           shown.map((item) =>
             item.kind === "line" ? (
@@ -125,7 +124,7 @@ function CopyButton({ getData }: { getData: () => Promise<unknown> }) {
     failed: "Couldn't copy",
   }[state];
   return (
-    <button
+    <Button variant="ghost"
       type="button"
       title="Copy the whole call (transcript, tool calls and their JSON, latency) to the clipboard"
       disabled={state === "busy"}
@@ -141,8 +140,8 @@ function CopyButton({ getData }: { getData: () => Promise<unknown> }) {
         state === "copied" ? "text-ok" : state === "failed" ? "text-warn" : "text-muted"
       }`}
     >
-      <span aria-live="polite">{label}</span>
-    </button>
+      <Copy className="size-3" /><span aria-live="polite">{label}</span>
+    </Button>
   );
 }
 
@@ -151,8 +150,9 @@ function Line({ item, details }: { item: ConversationItem & { kind: "line" }; de
   const chips = details ? latencyChips(item.who, item.metrics) : [];
   return (
     <div className={`flex max-w-[85%] flex-col gap-1 ${you ? "self-end items-end" : "self-start"}`}>
+      <span className="mb-1 text-[10px] font-semibold text-muted">{you ? "You" : "Mia"}</span>
       <p
-        className={`rounded-2xl px-4 py-2 ${
+        className={`rounded-lg px-4 py-2 ${
           you ? "rounded-br-sm bg-caller text-caller-ink" : "rounded-bl-sm bg-raised text-ink"
         } ${you && !item.final ? "opacity-60" : ""}`}
       >

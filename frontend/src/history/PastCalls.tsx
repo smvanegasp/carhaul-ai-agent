@@ -1,3 +1,5 @@
+import { Button } from "../ui/button";
+import { MessageSquare } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { CallId } from "../call/CallId";
@@ -108,9 +110,7 @@ export function PastCalls({
             <CallDetail room={room} onBack={() => onOpen(null)} />
           </ErrorBoundary>
         ) : (
-          <Note>
-            Pick a call to see its conversation, tool calls and latency.
-          </Note>
+          <div className="flex flex-1 flex-col items-center justify-center gap-3 py-20"><MessageSquare className="size-8 text-muted" /><h2 className="text-lg font-semibold">Your call archive</h2><p className="text-sm text-muted">No call selected.</p></div>
         )}
       </div>
     </div>
@@ -148,12 +148,12 @@ function CallList({
         const on = c.room === selected;
         return (
           <li key={c.room}>
-            <button
+            <Button variant="ghost"
               type="button"
               onClick={() => onOpen(c.room)}
               aria-current={on ? "true" : undefined}
-              className={`flex w-full flex-col gap-0.5 rounded-xl px-3 py-2.5 text-left transition focus-visible:ring-2 focus-visible:ring-accent focus-visible:outline-none ${
-                on ? "bg-raised" : "hover:bg-raised/60"
+              className={`h-auto items-stretch whitespace-normal flex w-full flex-col gap-2 rounded-xl px-3 py-4 text-left transition focus-visible:ring-2 focus-visible:ring-accent focus-visible:outline-none ${
+                on ? "bg-ok-soft hover:bg-ok-soft" : "hover:bg-raised/60"
               }`}
             >
               <span className="flex items-baseline justify-between gap-2 text-sm">
@@ -172,7 +172,7 @@ function CallList({
                   </span>
                 )}
               </span>
-            </button>
+            </Button>
           </li>
         );
       })}
@@ -223,13 +223,13 @@ function CallDetail({ room, onBack }: { room: string; onBack: () => void }) {
   }, [room]);
 
   const back = (
-    <button
+    <Button variant="ghost"
       type="button"
       onClick={onBack}
       className="self-start text-sm text-brand underline-offset-2 hover:underline lg:hidden"
     >
       ← All calls
-    </button>
+    </Button>
   );
   if (record.kind !== "ok") {
     return (

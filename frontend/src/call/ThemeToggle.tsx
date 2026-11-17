@@ -1,3 +1,5 @@
+import { Button } from "../ui/button";
+import { Sun, Moon } from "lucide-react";
 import { useState } from "react";
 
 const STORAGE_KEY = "mia.theme";
@@ -23,13 +25,15 @@ export function ThemeToggle() {
   };
 
   return (
-    <button
+    <Button variant="ghost" size="icon"
       type="button"
       onClick={toggle}
       aria-pressed={dark}
+      aria-label={dark ? "Light mode" : "Dark mode"}
+      title={dark ? "Light mode" : "Dark mode"}
       className="shrink-0 rounded-full border border-line bg-surface px-3 py-1 text-xs text-muted transition hover:text-ink focus-visible:ring-2 focus-visible:ring-accent focus-visible:outline-none"
     >
-      {dark ? "Light mode" : "Dark mode"}
-    </button>
+      {dark ? <Sun /> : <Moon />}
+    </Button>
   );
 }

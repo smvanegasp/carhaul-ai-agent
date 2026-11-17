@@ -47,7 +47,7 @@ export function Insights({ events }: { events: MiaEvent[] }) {
             </ul>
           ) : (
             <p className="text-sm text-muted">
-              Stats appear here once the call starts.
+              Awaiting call activity.
             </p>
           )}
         </header>
@@ -80,7 +80,7 @@ function Stats({ panel }: { panel: Panel }) {
   return (
     <dl className="grid grid-cols-2 gap-2">
       {items.map((i) => (
-        <div key={i.label} className="rounded-xl bg-raised px-3 py-2">
+        <div key={i.label} className="border-b border-line px-1 py-2">
           <dt className="text-xs text-muted">{i.label}</dt>
           <dd className="font-medium tabular-nums">{i.value}</dd>
         </div>

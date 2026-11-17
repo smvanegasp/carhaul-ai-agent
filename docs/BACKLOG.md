@@ -649,6 +649,27 @@ Still open:
 - The greeting can be cut off by chatter before the filter has settled
 - Retry LiveKit's adaptive interruption (`MIA_INTERRUPTION=adaptive`) on the Linux worker
 
+## Lovable redesign (branch `lovable-redesign`, 2026-11-17)
+
+A friend of the team redesigned the frontend in Lovable (a TanStack Start + Supabase copy of
+`frontend/src` with a proxy to our API and sample data). Ported into our Vite app; the
+Lovable plumbing (TanStack Start, Supabase, the proxy, sample calls and the simulated-calls
+dashboard) stays out: history and stats are real calls from DynamoDB.
+
+- [x] New look: Geist fonts, warm neutral palette with a green accent (dark mode only inside
+      the app), lucide icons, the shared `ui/button.tsx`
+- [x] Landing page on the bare URL (`src/landing/`); the app moves to `#/call` (old
+      `#/calls/<id>` links still work). A hash route: CloudFront has no SPA fallback. The
+      app is lazy-loaded, so the landing page neither downloads LiveKit nor wakes the worker
+- [x] Call card: the voice's picture in an animated orb, voice chips instead of a dropdown;
+      every voice has a picture (Thalia, the default, shows Mia's)
+- [x] First-visit tour (driver.js) after the intro; the "?" button replays it
+- [x] After a call, an offer to download the transcript (no email: out of scope)
+- [x] Morgan's picture: Lovable drew her as a man, but Cartesia lists the voice as female;
+      a new female picture in the same style replaces it
+- [ ] A real call on the deployed site after this deploy (voice chips, transcript download,
+      tour on a phone)
+
 ## Ideas / later
 
 

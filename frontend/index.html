@@ -3,11 +3,21 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <title>Call Mia · F&amp;F car shipping quotes</title>
+    <title>F&amp;F Car Shipping · Talk to Mia for a car-shipping quote</title>
+    <meta
+      name="description"
+      content="Mia is an academic AI voice assistant that gives open car-shipping estimates for US routes."
+    />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap"
+    />
     <script>
       // Light by default; dark only if the caller chose it (ThemeToggle.tsx). Before the first
-      // paint, so there's no flash.
+      // paint, so there's no flash. The key keeps its old name so saved choices still apply.
       try {
         if (localStorage.getItem("mia.theme") === "dark") {
           document.documentElement.dataset.theme = "dark";
