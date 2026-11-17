@@ -723,6 +723,13 @@ Call d9dfdc6763f5 (Belinda):
 - [x] Glow and rings around the picture only while Mia talks
 - [ ] Check on the deployed site with a real call
 
+## Stats charts share one shape (branch `stats-shapes`, 2026-11-17)
+
+- [x] "How calls ended" and "Funnel" are cards with padding, like the KPI tiles (they had
+      only a top border, so the text touched the box's edge)
+- [x] Both use the same row: label, bar (same height), numbers right-aligned (the funnel's
+      "of prev." under its numbers)
+
 ## Ideas / later
 
 

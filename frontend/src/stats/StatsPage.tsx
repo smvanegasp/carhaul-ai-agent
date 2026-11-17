@@ -137,7 +137,7 @@ function Section({
   return (
     <section
       aria-label={title}
-      className="flex flex-col gap-5 border-t border-line pt-6"
+      className="flex flex-col gap-5 rounded-2xl border border-line bg-surface p-5"
     >
       <header className="flex flex-wrap items-baseline justify-between gap-2">
         <div>
@@ -217,13 +217,23 @@ function Tile({
   );
 }
 
+// --- bar rows (funnel and dispositions share one shape) ---------------------------------
+
+/** Label, bar, numbers; on a phone the bar gets its own row under the label and numbers. */
+const ROW =
+  "grid min-h-11 grid-cols-[1fr_auto] items-center gap-x-4 gap-y-1 sm:grid-cols-[minmax(8rem,12rem)_1fr_6.5rem]";
+const BAR_CELL = "order-last col-span-2 h-4 sm:order-none sm:col-span-1";
+const BAR = "block h-4 rounded-r-[4px]";
+const VALUE =
+  "flex flex-col items-end text-right text-sm whitespace-nowrap text-ink";
+
 // --- funnel -------------------------------------------------------------------------------
 
 function Funnel({ steps }: { steps: FunnelStep[] }) {
   const [hover, setHover] = useState<number | null>(null);
   return (
     <ol
-      className="flex flex-col gap-2.5"
+      className="flex flex-col gap-3"
       aria-label="Funnel from call to transfer"
     >
       {steps.map((s, i) => (
@@ -237,13 +247,13 @@ function Funnel({ steps }: { steps: FunnelStep[] }) {
           aria-label={`${s.label}: ${s.count} calls, ${pct(s.ofCalls)} of calls${
             s.ofPrev != null ? `, ${pct(s.ofPrev)} of the step before` : ""
           }`}
-          className="grid grid-cols-[1fr_auto] items-center gap-x-3 gap-y-1 rounded-lg py-1 outline-none focus-visible:ring-2 focus-visible:ring-accent sm:grid-cols-[minmax(7rem,13rem)_1fr_6rem_5rem]"
+          className={`${ROW} rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-accent`}
         >
           <span className="text-sm text-ink">{s.label}</span>
           {/* On a phone the bar gets its own full-width row, under the label and numbers. */}
-          <span className="relative order-last col-span-2 h-4 sm:order-none sm:col-span-1">
+          <span className={`relative ${BAR_CELL}`}>
             <span
-              className="block h-4 rounded-r-[4px] transition-[width,filter] duration-500"
+              className={`${BAR} transition-[width,filter] duration-500`}
               style={{
                 width: `${Math.max((s.ofCalls ?? 0) * 100, s.count ? 1.5 : 0)}%`,
                 background: STEP_COLOR[i],
@@ -261,23 +271,16 @@ function Funnel({ steps }: { steps: FunnelStep[] }) {
               </span>
             )}
           </span>
-          <span className="text-right text-sm whitespace-nowrap text-ink sm:text-left">
-            <span className="font-semibold">{s.count}</span>{" "}
-            <span className="text-muted">· {pct(s.ofCalls)}</span>
+          <span className={VALUE}>
+            <span>
+              <span className="font-semibold">{s.count}</span>{" "}
+              <span className="text-muted">· {pct(s.ofCalls)}</span>
+            </span>
             {s.ofPrev != null && (
-              <span className="text-xs text-muted sm:hidden">
-                {" "}
-                · {pct(s.ofPrev)} of prev.
+              <span className="text-xs text-muted">
+                {pct(s.ofPrev)} of prev.
               </span>
             )}
-          </span>
-          <span className="hidden text-right text-xs text-muted sm:block">
-            {s.ofPrev != null ? (
-              <>
-                <span className="font-medium text-ink">{pct(s.ofPrev)}</span> of
-                prev.
-              </>
-            ) : null}
           </span>
         </li>
       ))}
@@ -308,20 +311,16 @@ function Dispositions({ outcomes }: { outcomes: DispositionCount[] }) {
               {g.rows.reduce((n, r) => n + r.count, 0)}
             </span>
           </h3>
-          <ul className="flex flex-col gap-2">
+          <ul className="flex flex-col gap-3">
             {g.rows.map((o) => (
-              <li
-                key={o.key}
-                title={o.help}
-                className="grid grid-cols-[1fr_auto] items-center gap-x-3 gap-y-1 sm:grid-cols-[minmax(8rem,11rem)_1fr_6rem]"
-              >
+              <li key={o.key} title={o.help} className={ROW}>
                 <span className="flex flex-col">
                   <span className="text-sm text-ink">{o.label}</span>
                   <span className="text-xs text-muted">{o.help}</span>
                 </span>
-                <span className="order-last col-span-2 h-3 sm:order-none sm:col-span-1">
+                <span className={BAR_CELL}>
                   <span
-                    className="block h-3 rounded-r-[4px] transition-[width] duration-500"
+                    className={`${BAR} transition-[width] duration-500`}
                     style={{
                       width: `${Math.max((o.share ?? 0) * 100, o.count ? 1.5 : 0)}%`,
                       background: o.lead ? "var(--viz-4)" : "var(--muted)",
@@ -329,9 +328,11 @@ function Dispositions({ outcomes }: { outcomes: DispositionCount[] }) {
                     }}
                   />
                 </span>
-                <span className="text-right text-sm whitespace-nowrap text-ink">
-                  <span className="font-semibold">{o.count}</span>{" "}
-                  <span className="text-muted">· {pct(o.share)}</span>
+                <span className={VALUE}>
+                  <span>
+                    <span className="font-semibold">{o.count}</span>{" "}
+                    <span className="text-muted">· {pct(o.share)}</span>
+                  </span>
                 </span>
               </li>
             ))}
