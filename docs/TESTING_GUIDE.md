@@ -10,7 +10,6 @@ takes about 2 minutes.
 - Use **headphones** if you can. With speakers, Mia can hear herself and get confused.
 - The link opens on a home page: press **Talk to Mia**, wait until Mia is awake, then press
   **Call Mia** and allow the microphone. Find a quiet place first.
-- After each call the feedback form is under the conversation.
 - Calls end on their own after 6 minutes. After about 20 calls in an hour the page asks you to
   wait a bit: that's a limit Sergio set on purpose.
 
@@ -28,13 +27,14 @@ time with him first (10 transfers a day at most).
 1. Pick a **persona card** (below) and read it once. You don't need to follow it word for word;
    just play that kind of person.
 2. Call Mia and talk to her as that person until she gives you a price or you're done.
-3. When the call ends, fill in the form on the page:
+3. When the call ends, note in the evaluation workbook (or a message to Sergio) the call ID
+   (the **Copy** button next to it, under the call button) and:
    - **How did the call go?** Your overall feeling.
    - **What worked, what didn't?** Anything odd, e.g. "she cut me off when I paused", "she
      got my car wrong", "long silence after I said Boston", "she asked the same thing twice".
    - **Persona card**: the card's number and name, e.g. `3 Chatty & complete`.
 
-The right half of the page shows what Mia is doing under the hood. You don't need to read it,
+The right side of the page shows what Mia is doing under the hood. You don't need to read it,
 but if something looks wrong there, mention it in your comment.
 
 **Copy JSON** (top of the conversation, also in Past calls) copies the whole call, with

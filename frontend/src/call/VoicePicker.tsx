@@ -50,18 +50,44 @@ export function VoicePicker({
 }) {
   if (options.length === 0) return null;
   const description = options.find((o) => o.key === selected)?.description;
+  // Two columns (Belinda, 2026-11-17): each chip has the voice's picture, its name and its
+  // provider underneath, so six voices fit in three short rows.
   return (
     <div className="flex w-full flex-col items-center gap-2 text-center">
       <span className="eyebrow mia-voice-muted">Choose a voice</span>
-      <div role="group" aria-label="Mia's voice" className="flex w-full flex-wrap justify-center gap-1.5">
-        {options.map((o) => (
-          <Button variant="ghost" key={o.key} type="button" aria-pressed={o.key === selected} disabled={disabled}
-            onClick={() => onChoose(o.key)}
-            className="mia-voice-chip flex h-auto items-center gap-1.5 rounded-full py-1 pr-3 pl-1 font-mono text-[11px] uppercase tracking-wider transition focus-visible:ring-2 focus-visible:ring-accent focus-visible:outline-none">
-            <img src={voiceAvatar(o.label)} alt="" width={20} height={20} loading="lazy" className="size-5 rounded-full object-cover" />
-            {o.label}
-          </Button>
-        ))}
+      <div role="group" aria-label="Mia's voice" className="grid w-full grid-cols-2 gap-1.5">
+        {options.map((o) => {
+          const [provider, name] = o.label.split("·").map((part) => part.trim());
+          return (
+            <Button
+              variant="ghost"
+              key={o.key}
+              type="button"
+              aria-pressed={o.key === selected}
+              aria-label={o.label}
+              disabled={disabled}
+              onClick={() => onChoose(o.key)}
+              className="mia-voice-chip flex h-auto min-w-0 items-center justify-start gap-2 rounded-lg py-1 pr-2 pl-1 text-left transition focus-visible:ring-2 focus-visible:ring-accent focus-visible:outline-none"
+            >
+              <img
+                src={voiceAvatar(o.label)}
+                alt=""
+                width={24}
+                height={24}
+                loading="lazy"
+                className="size-6 shrink-0 rounded-full object-cover"
+              />
+              <span className="flex min-w-0 flex-col leading-tight">
+                <span className="truncate text-xs font-semibold">{name ?? o.label}</span>
+                {name && (
+                  <span className="truncate font-mono text-[9px] tracking-wider uppercase opacity-70">
+                    {provider}
+                  </span>
+                )}
+              </span>
+            </Button>
+          );
+        })}
       </div>
       {description && <span className="text-xs leading-snug mia-voice-muted">{description}</span>}
     </div>

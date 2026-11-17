@@ -181,26 +181,31 @@ export function App({ route, go }: { route: Route; go: (r: Route) => void }) {
             </Button>
           ))}
         </div>
-        <div className="mia-workspace mx-auto flex w-full max-w-[1600px] flex-1 flex-col gap-5 px-5 py-6 lg:min-h-0 lg:overflow-y-auto lg:overscroll-contain lg:px-8">
-          <div className="flex shrink-0 items-end justify-between gap-4">
-            <div>
-              <p className="eyebrow mb-2">{heading.eyebrow}</p>
-              <h1 className="font-display text-4xl font-semibold">{heading.title}</h1>
+        {/* The scrolling area spans the full width, so its scrollbar sits at the window's
+            right edge; the content inside is centered. */}
+        <div className="flex flex-1 flex-col lg:min-h-0 lg:overflow-y-auto lg:overscroll-contain">
+          <div className="mia-workspace mx-auto flex w-full max-w-[1600px] flex-1 flex-col gap-4 px-5 py-4 lg:min-h-0 lg:px-8">
+            {/* One line (Belinda, 2026-11-17): every pixel of height goes to the panels. */}
+            <div className="flex shrink-0 flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+              <div className="flex items-baseline gap-3">
+                <h1 className="font-display text-2xl font-semibold">{heading.title}</h1>
+                <p className="eyebrow hidden sm:block">{heading.eyebrow}</p>
+              </div>
+              <p className="eyebrow hidden md:block">{heading.note}</p>
             </div>
-            <p className="eyebrow hidden md:block">{heading.note}</p>
-          </div>
-          <div className={view === "call" ? "contents" : "hidden"}>
-            <CallPage />
-          </div>
-          <div className={view === "calls" ? "contents" : "hidden"}>
-            <PastCalls
-              active={view === "calls"}
-              room={route.view === "calls" ? route.room : null}
-              onOpen={(room) => go({ view: "calls", room })}
-            />
-          </div>
-          <div className={view === "stats" ? "contents" : "hidden"}>
-            <StatsPage active={view === "stats"} />
+            <div className={view === "call" ? "contents" : "hidden"}>
+              <CallPage />
+            </div>
+            <div className={view === "calls" ? "contents" : "hidden"}>
+              <PastCalls
+                active={view === "calls"}
+                room={route.view === "calls" ? route.room : null}
+                onOpen={(room) => go({ view: "calls", room })}
+              />
+            </div>
+            <div className={view === "stats" ? "contents" : "hidden"}>
+              <StatsPage active={view === "stats"} />
+            </div>
           </div>
         </div>
       </main>

@@ -1,6 +1,6 @@
 import { Button } from "../ui/button";
 import { MessageSquare, AudioLines, Copy } from "lucide-react";
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import type { ConversationItem } from "../lib/conversation";
 import { copyText, toJson } from "../lib/copy";
@@ -16,7 +16,7 @@ export function Conversation({
   live,
   details,
   onDetails,
-  footer,
+  startAtEnd = false,
   onCopy,
 }: {
   items: ConversationItem[];
@@ -24,7 +24,8 @@ export function Conversation({
   /** Kept by the page, so the choice survives the call ending. */
   details: boolean;
   onDetails: (on: boolean) => void;
-  footer?: ReactNode;
+  /** Show the end of the conversation first (the call that just ended). */
+  startAtEnd?: boolean;
   /** What "Copy JSON" puts on the clipboard (the call record, or a live snapshot). */
   onCopy?: () => Promise<unknown>;
 }) {
@@ -44,11 +45,10 @@ export function Conversation({
   // When a call ends, the live box is replaced by this one, which would start at the top: the
   // end of the call and the feedback form jumped out of view (Belinda, 2026-11-11). Start at
   // the bottom instead, where the caller was. Only this box moves, never the page.
-  const ended = !live && footer != null;
   useEffect(() => {
     const el = box.current;
-    if (ended && el && el.scrollHeight > el.clientHeight) el.scrollTop = el.scrollHeight;
-  }, [ended]);
+    if (startAtEnd && el && el.scrollHeight > el.clientHeight) el.scrollTop = el.scrollHeight;
+  }, [startAtEnd]);
 
   return (
     <section
@@ -87,7 +87,7 @@ export function Conversation({
           const el = e.currentTarget;
           stuck.current = el.scrollHeight - el.scrollTop - el.clientHeight < 80;
         }}
-        className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto overscroll-contain p-5"
+        className="relative flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto overscroll-contain p-5"
       >
         {shown.length === 0 ? (
           <div className="flex min-h-44 flex-1 flex-col items-center justify-center gap-3 py-8 text-center"><span className="flex size-12 items-center justify-center rounded-full bg-raised text-brand"><AudioLines className="size-5" /></span><p className="text-sm font-medium">{live ? "Mia is joining…" : "Ready for a conversation"}</p><p className="max-w-60 text-xs leading-relaxed text-muted">{live ? "Connecting your voice assistant." : "No conversation yet."}</p></div>
@@ -102,7 +102,6 @@ export function Conversation({
             ),
           )
         )}
-        {footer}
       </div>
     </section>
   );
