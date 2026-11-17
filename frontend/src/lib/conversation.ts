@@ -8,7 +8,11 @@
  * missing after a reconnect), the turn events themselves become the lines. A Mia turn with no
  * line of its own is shown from its event: the greeting starts as the call connects, before
  * the page listens to the transcription (call d9dfdc6763f5, 2026-11-17: the greeting was
- * missing from the live view, but it was in the record).
+ * missing from the live view, but it was in the record). Lines spoken from code (the greeting,
+ * fillers) are logged as they start, with their whole text, while the transcription is still
+ * spelling them out word by word: such an event belongs to the line its text starts with, and
+ * is only shown on its own once the transcription has moved past it without it (Belinda,
+ * 2026-11-17: the whole greeting showed before Mia said it, then again as she spoke).
  */
 
 import type {
@@ -52,6 +56,14 @@ const NOTES: Record<string, string> = {
  */
 export function isScreening(t: TurnEvent): boolean {
   return t.kind === "handoff" && /press 1 to take the call|let you two talk now/i.test(t.text);
+}
+
+/** For comparing texts: lower case, no punctuation, single spaces. */
+function norm(text: string): string {
+  return text
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}]+/gu, " ")
+    .trim();
 }
 
 function eventTime(e: MiaEvent): number {
@@ -111,13 +123,30 @@ export function buildConversation(
     match.interrupted = t.interrupted;
   }
 
-  // Mia's lines the transcription missed, from their events (never twice: same text = same line).
-  const norm = (text: string) => text.trim().toLowerCase();
-  const said = new Set(
-    items.flatMap((i) => (i.kind === "line" && i.who === "mia" ? [norm(i.text)] : [])),
+  // Mia's lines the transcription missed, from their events. A line whose text starts the
+  // event's (or the other way round) is the same speech, still being transcribed.
+  const miaLines = items.filter(
+    (i): i is ConversationItem & { kind: "line" } => i.kind === "line" && i.who === "mia",
   );
+  const lastLineAt = Math.max(-Infinity, ...lines.map((l) => l.at));
   for (const t of unmatched) {
-    if (t.role !== "mia" || said.has(norm(t.text))) continue;
+    if (t.role !== "mia") continue;
+    const said = norm(t.text);
+    const same = miaLines.find((l) => {
+      const text = norm(l.text);
+      return text.length > 0 && (said.startsWith(text) || text.startsWith(said));
+    });
+    if (same) {
+      if (!claimed.has(same.id)) {
+        claimed.add(same.id);
+        same.metrics = t.metrics;
+        same.note = NOTES[t.kind];
+        same.interrupted = t.interrupted;
+      }
+      continue;
+    }
+    // Live, wait until the transcription has a later line: until then it may still come.
+    if (lines.length > 0 && lastLineAt <= eventTime(t)) continue;
     items.push({
       kind: "line",
       id: `turn-${t.seq}`,

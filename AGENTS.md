@@ -192,6 +192,12 @@ docker compose up        # api :8020, web :5190, DynamoDB Local :8030, agent wor
 
 ## 6. Decisions log
 
+- 2026-11-17 (Belinda): **The greeting showed twice live**: whole as the call started, then
+  again as Mia spoke. Lines from code are logged as they start, with their whole text, while
+  the transcription spells them out; the live view now matches such an event to the line its
+  text starts with, and shows it alone only once the transcription has a later line
+  (`lib/conversation.ts`).
+
 - 2026-11-17 (Belinda, Stats and the call card): **No summary sentence on Stats** (it
   repeated what the KPIs already show; `story()` removed). **The glow and rings around
   Mia's picture show only while she talks** (`speaking` from `useVoiceAssistant`), and the

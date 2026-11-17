@@ -177,3 +177,25 @@ it("doesn't repeat the greeting when the transcription has it", () => {
   );
   expect(items.filter((i) => i.kind === "line" && i.who === "mia")).toHaveLength(1);
 });
+
+it("shows the greeting once while it is still being transcribed (Belinda, 2026-11-17)", () => {
+  const greeting =
+    "Hi, and thanks for calling F&F. I'm Mia, a virtual assistant. Where are you shipping from and to?";
+  // The event (whole text) comes as Mia starts; the transcription is halfway through it.
+  const items = buildConversation(
+    [line("g", "mia", "Hi, and thanks for calling F&F. I'm Mia,", 900)],
+    [turn(0, "mia", greeting, 200, { kind: "greeting" })],
+  );
+  const mia = items.filter((i) => i.kind === "line" && i.who === "mia");
+  expect(mia).toHaveLength(1);
+  expect(mia[0].kind === "line" && mia[0].note).toBe("greeting (from code)");
+});
+
+it("doesn't show the greeting before Mia starts saying it", () => {
+  // Live: the transcription has nothing of the greeting yet, and no later line either.
+  const live = buildConversation(
+    [line("x", "you", "Hello?", 100)],
+    [turn(0, "mia", "Hi, I'm Mia.", 200, { kind: "greeting" })],
+  );
+  expect(live.filter((i) => i.kind === "line" && i.who === "mia")).toHaveLength(0);
+});

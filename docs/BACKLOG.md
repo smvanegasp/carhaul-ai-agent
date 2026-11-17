@@ -730,6 +730,12 @@ Call d9dfdc6763f5 (Belinda):
 - [x] Both use the same row: label, bar (same height), numbers right-aligned (the funnel's
       "of prev." under its numbers)
 
+## The greeting once in the live view (branch `greeting-once`, 2026-11-17)
+
+- [x] The greeting (and other lines from code) shows once, as Mia says it; still shown from
+      its event if the transcription missed it
+- [ ] Check with a real call after the deploy
+
 ## Ideas / later
 
 
