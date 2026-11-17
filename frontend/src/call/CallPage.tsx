@@ -18,7 +18,7 @@ import {
 
 import { CallError, fetchCall, fetchCallToken, wakeMia } from "../lib/api";
 import { liveSnapshot } from "../lib/copy";
-import { buildConversation } from "../lib/conversation";
+import { buildConversation, spokenSoFar } from "../lib/conversation";
 import {
   addEvent,
   EVENTS_TOPIC,
@@ -559,9 +559,19 @@ function LiveConversation({
   useEffect(() => {
     onLines(lines);
   }, [lines, onLines]);
+  // Lines spoken from code (the greeting) are revealed word by word: tick while one is.
+  const [now, setNow] = useState(() => Date.now());
+  const revealing = events.some(
+    (e) => e.type === "turn" && !spokenSoFar(e, now)?.final,
+  );
+  useEffect(() => {
+    if (!revealing) return;
+    const id = setInterval(() => setNow(Date.now()), 120);
+    return () => clearInterval(id);
+  }, [revealing]);
   return (
     <Conversation
-      items={buildConversation(lines, events)}
+      items={buildConversation(lines, events, now)}
       live
       details={details}
       onDetails={onDetails}

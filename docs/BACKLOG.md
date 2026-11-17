@@ -736,6 +736,12 @@ Call d9dfdc6763f5 (Belinda):
       its event if the transcription missed it
 - [ ] Check with a real call after the deploy
 
+## The greeting appears as it's said (branch `greeting-live`, 2026-11-17)
+
+- [x] Live, the greeting (and other lines from code) with no transcription is revealed word
+      by word at the voice's pace, instead of popping in whole
+- [ ] Check with a real call after the deploy
+
 ## Ideas / later
 
 

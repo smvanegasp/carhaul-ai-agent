@@ -196,7 +196,10 @@ docker compose up        # api :8020, web :5190, DynamoDB Local :8030, agent wor
   again as Mia spoke. Lines from code are logged as they start, with their whole text, while
   the transcription spells them out; the live view now matches such an event to the line its
   text starts with, and shows it alone only once the transcription has a later line
-  (`lib/conversation.ts`).
+  (`lib/conversation.ts`). Then it popped in whole (the transcription usually misses the
+  greeting, which starts before the page listens), so live, a line from code with no
+  transcription is revealed word by word at about the voice's pace (`spokenSoFar`, ~360 ms a
+  word after 0.5 s); the transcription takes over if it arrives.
 
 - 2026-11-17 (Belinda, Stats and the call card): **No summary sentence on Stats** (it
   repeated what the KPIs already show; `story()` removed). **The glow and rings around

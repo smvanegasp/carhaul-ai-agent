@@ -10,9 +10,10 @@
  * the page listens to the transcription (call d9dfdc6763f5, 2026-11-17: the greeting was
  * missing from the live view, but it was in the record). Lines spoken from code (the greeting,
  * fillers) are logged as they start, with their whole text, while the transcription is still
- * spelling them out word by word: such an event belongs to the line its text starts with, and
- * is only shown on its own once the transcription has moved past it without it (Belinda,
- * 2026-11-17: the whole greeting showed before Mia said it, then again as she spoke).
+ * spelling them out word by word: such an event belongs to the line its text starts with
+ * (Belinda, 2026-11-17: the whole greeting showed before Mia said it, then again as she
+ * spoke). With no transcription of it, the event's text is revealed word by word at the
+ * voice's pace (`spokenSoFar`).
  */
 
 import type {
@@ -81,9 +82,38 @@ function lineStart(t: TurnEvent): number {
   return eventTime(t) - spoke - waited;
 }
 
+/** Roughly how fast the voices speak, and how long before the first word is heard. */
+const MS_PER_WORD = 360;
+const FIRST_WORD_MS = 500;
+
+/**
+ * Live, a line spoken from code (logged as it starts, with its whole text) is shown word by
+ * word at about the voice's pace, like the transcription would: the greeting often has no
+ * transcription because it starts before the page listens (Belinda, 2026-11-17: it popped in
+ * whole). Lines from the LLM are logged when done, so they are shown whole. ``null``: nothing
+ * heard yet.
+ */
+export function spokenSoFar(
+  t: TurnEvent,
+  now: number | undefined,
+): { text: string; final: boolean } | null {
+  if (now === undefined || t.role !== "mia" || t.kind === "said")
+    return { text: t.text, final: true };
+  const words = t.text.split(/\s+/).filter(Boolean);
+  const heard = Math.floor((now - eventTime(t) - FIRST_WORD_MS) / MS_PER_WORD) + 1;
+  if (heard <= 0) return null;
+  if (heard >= words.length) return { text: t.text, final: true };
+  return { text: words.slice(0, heard).join(" "), final: false };
+}
+
+/**
+ * ``now`` (live calls only): the time on the worker's clock, so lines spoken from code are
+ * revealed as they are said. Without it (saved calls) every line is whole.
+ */
 export function buildConversation(
   lines: TranscriptLine[],
   events: MiaEvent[],
+  now?: number,
 ): ConversationItem[] {
   const allTurns = events.filter((e): e is TurnEvent => e.type === "turn");
   const turns = allTurns.filter((t) => !isScreening(t));
@@ -91,14 +121,20 @@ export function buildConversation(
   const items: ConversationItem[] =
     lines.length > 0
       ? lines.map((l) => ({ kind: "line" as const, ...l }))
-      : turns.map((t) => ({
-          kind: "line" as const,
-          id: `turn-${t.seq}`,
-          who: t.role === "caller" ? ("you" as const) : ("mia" as const),
-          text: t.text,
-          final: true,
-          at: lineStart(t),
-        }));
+      : turns.flatMap((t) => {
+          const spoken = spokenSoFar(t, now);
+          if (!spoken) return [];
+          return [
+            {
+              kind: "line" as const,
+              id: `turn-${t.seq}`,
+              who: t.role === "caller" ? ("you" as const) : ("mia" as const),
+              text: spoken.text,
+              final: spoken.final,
+              at: lineStart(t),
+            },
+          ];
+        });
 
   // Attach each turn's metrics to its line.
   const claimed = new Set<string>();
@@ -145,14 +181,16 @@ export function buildConversation(
       }
       continue;
     }
-    // Live, wait until the transcription has a later line: until then it may still come.
-    if (lines.length > 0 && lastLineAt <= eventTime(t)) continue;
+    // A line from the LLM with no transcription yet: wait for a later line (it may still come).
+    if (lines.length > 0 && t.kind === "said" && lastLineAt <= eventTime(t)) continue;
+    const spoken = spokenSoFar(t, now);
+    if (!spoken) continue;
     items.push({
       kind: "line",
       id: `turn-${t.seq}`,
       who: "mia",
-      text: t.text,
-      final: true,
+      text: spoken.text,
+      final: spoken.final,
       at: lineStart(t),
       metrics: t.metrics,
       note: NOTES[t.kind],
