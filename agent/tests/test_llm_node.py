@@ -4,6 +4,7 @@ model's whole step."""
 from __future__ import annotations
 
 from fake_geo import fake_city_to_zip
+from livekit.agents import AgentSession, RunContext
 from livekit.agents.llm import ChatMessage
 from scripted_llm import ScriptedLLM, Step
 
@@ -462,3 +463,44 @@ async def test_a_pending_change_is_finished_from_the_callers_words(client, resol
         assert asked[-1] == "What model is the 2024 Ford?"
         await session.run(user_input="It's an F-150.")
     assert [v.label for v in state.vehicles] == ["2024 Ford F-150", "2020 Toyota 4Runner"]
+
+
+async def test_the_greeting_cannot_be_interrupted(client, resolver, monkeypatch):
+    # Call 003a8fbda074, 2026-11-17: the caller's "Hey." over the greeting became a city lookup.
+    said = []
+    monkeypatch.setattr(AgentSession, "say", lambda self, text, **kw: said.append((text, kw)))
+    services = Services(carhauler=client, resolver=resolver, geocode=fake_city_to_zip)
+    async with new_session(QuoteSession(), llm=ScriptedLLM([])) as session:
+        await session.start(Mia(services, greeting=GREETINGS[0], speak_greeting=True))
+    assert said == [(GREETINGS[0], {"allow_interruptions": False, "add_to_chat_ctx": False})]
+
+
+async def test_the_transfer_line_cannot_be_interrupted(client, resolver, monkeypatch):
+    # Call 003a8fbda074: the caller talked over "Sure, I'll connect you with a licensed
+    # representative now. Please stay on the line." and it stopped mid-sentence.
+    disallowed = []
+    original = RunContext.disallow_interruptions
+
+    def spy(self):
+        disallowed.append(self.function_call.name)
+        original(self)
+
+    monkeypatch.setattr(RunContext, "disallow_interruptions", spy)
+    rang = []
+    services = Services(
+        carhauler=client,
+        resolver=resolver,
+        geocode=fake_city_to_zip,
+        transfer=lambda: rang.append(True),
+    )
+    state = QuoteSession(origin=BOS, destination=SF)
+    steps = [
+        Step(calls=[("request_human", '{"reason": "asked for a person"}')]),
+        Step(text="Sure, I'll connect you with a licensed representative now."),
+    ]
+    async with new_session(state, llm=ScriptedLLM(steps)) as session:
+        await session.start(Mia(services, greeting=GREETINGS[0]))
+        await session.run(user_input="Can I talk to a real person, please?")
+    assert state.transfer == "pending"
+    assert disallowed == ["request_human"]
+    assert rang == [True]  # dialed after the line was spoken

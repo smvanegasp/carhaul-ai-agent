@@ -128,10 +128,9 @@ body { margin: 0; background: var(--page); color: var(--ink); font-family: var(-
 .mia-hero > * { position: relative; }
 .mia-shell .rounded-2xl, .mia-shell .rounded-xl { border-radius: 8px; }
 .mia-shell section { box-shadow: var(--shadow-panel); }
-/* Keep desktop panels tall enough to use, then scroll the workspace rather than clip them. */
+/* Keep the Past calls panels tall enough to use, then scroll the workspace rather than clip
+   them. (The call page sizes its own panels: CallPage.tsx.) */
 @media (min-width: 1024px) {
-  .mia-workspace > div:has(> [data-tour="call-controls"]),
-  .mia-workspace > div:has([data-tour="call-controls"]),
   .mia-workspace > div:has(> section[aria-label="Past calls"]) {
     flex-shrink: 0;
     min-height: 640px;
@@ -181,6 +180,8 @@ body { margin: 0; background: var(--page); color: var(--ink); font-family: var(-
 .mia-voice-card .voice-bars span { animation: mia-bar 1.2s ease-in-out infinite; transform-origin: center; }
 .mia-voice-card .voice-bars span:nth-child(3n) { animation-delay: .2s; }
 .mia-voice-card .voice-bars span:nth-child(3n+1) { animation-delay: .45s; }
+/* During a call the bars follow Mia's voice (heights set inline by CallPage's LiveBars). */
+.mia-voice-card .voice-bars.voice-bars-live span { animation: none; opacity: 1; transition: height 90ms linear; }
 @keyframes mia-bar { 0%,100% { transform: scaleY(.55); } 50% { transform: scaleY(1); } }
 @media (prefers-reduced-motion: reduce) { .mia-orb::before, .mia-orb-ring, .mia-orb-face, .mia-voice-card .voice-bars span { animation: none; } }
 .mia-orb-face { animation: mia-float 4s ease-in-out infinite, mia-fade .4s ease-out; }

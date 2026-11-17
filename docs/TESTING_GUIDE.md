@@ -10,8 +10,7 @@ takes about 2 minutes.
 - Use **headphones** if you can. With speakers, Mia can hear herself and get confused.
 - The link opens on a home page: press **Talk to Mia**, wait until Mia is awake, then press
   **Call Mia** and allow the microphone. Find a quiet place first.
-- After each call the page offers a copy of the transcript; "No, thanks" closes it and the
-  feedback form is right below.
+- After each call the feedback form is under the conversation.
 - Calls end on their own after 6 minutes. After about 20 calls in an hour the page asks you to
   wait a bit: that's a limit Sergio set on purpose.
 

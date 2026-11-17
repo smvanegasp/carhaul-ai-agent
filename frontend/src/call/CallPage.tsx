@@ -3,6 +3,7 @@ import {
   RoomAudioRenderer,
   RoomContext,
   StartAudio,
+  useMultibandTrackVolume,
   useTranscriptions,
   useVoiceAssistant,
 } from "@livekit/components-react";
@@ -34,12 +35,10 @@ import { Conversation } from "./Conversation";
 import { ErrorBoundary } from "./ErrorBoundary";
 import { FeedbackForm } from "./FeedbackForm";
 import { Insights } from "./Insights";
-import { TranscriptPrompt } from "./TranscriptPrompt";
 import { wakeProgress } from "../lib/wake";
 import { useWake, type Wake } from "./useWake";
 import { voiceAvatar, voiceName } from "./voiceAvatars";
 import { useVoiceChoice, VoicePicker } from "./VoicePicker";
-import miaAvatar from "../assets/mia-avatar.jpg";
 import { Button } from "../ui/button";
 
 /** Mia hangs up at 6 minutes (agent/src/mia/main.py); the timer shows it. */
@@ -63,9 +62,11 @@ function micErrorMessage(err: unknown): string {
 }
 
 /**
- * Layout: on desktop the page fits the screen; the side column holds the call controls and
- * the stats, and the conversation is the only part that scrolls. On a phone everything flows
- * in one column (controls, conversation, stats) and the page scrolls as a whole.
+ * Layout (Belinda, 2026-11-17: the page grew as the transcript filled, and "Under the hood"
+ * scrolled inside itself). The side column (call card, then Under the hood) is shown in full;
+ * the conversation has a fixed height, scrolls inside, and on desktop stays in view (sticky)
+ * while the page scrolls. So a growing transcript never changes the page's height. On a phone
+ * the order is call card, conversation, Under the hood.
  */
 export function CallPage() {
   const [phase, setPhase] = useState<Phase>({ kind: "idle" });
@@ -75,6 +76,8 @@ export function CallPage() {
   const { wake, recheck } = useWake();
   const [details, setDetails] = useState(false);
   const voices = useVoiceChoice();
+  const voiceLabel =
+    voices.options.find((o) => o.key === voices.selected)?.label ?? null;
 
   const startCall = useCallback(async () => {
     setPhase({ kind: "connecting" });
@@ -116,7 +119,11 @@ export function CallPage() {
   const inCall = phase.kind === "in-call";
   const callCard = inCall ? (
     <ErrorBoundary fallback={<InCallFallback room={phase.room} />}>
-      <InCallControls room={phase.room} startedAt={phase.startedAt} />
+      <InCallControls
+        room={phase.room}
+        startedAt={phase.startedAt}
+        voiceLabel={voiceLabel}
+      />
     </ErrorBoundary>
   ) : (
     <CallButtonCard
@@ -124,7 +131,7 @@ export function CallPage() {
       wake={wake}
       onCall={startCall}
       onRetry={recheck}
-      voiceLabel={voices.options.find((o) => o.key === voices.selected)?.label ?? null}
+      voiceLabel={voiceLabel}
       voicePicker={
         <VoicePicker
           options={voices.options}
@@ -169,35 +176,28 @@ export function CallPage() {
       }
       footer={
         phase.kind === "ended" ? (
-          <div key={phase.roomName} className="flex flex-col gap-3">
-            <TranscriptPrompt room={phase.roomName} lines={phase.lines} />
-            <FeedbackForm room={phase.roomName} />
-          </div>
+          <FeedbackForm key={phase.roomName} room={phase.roomName} />
         ) : undefined
       }
     />
   );
 
   const page = (
-    <div className="flex flex-col gap-4 lg:min-h-0 lg:flex-1">
-      <div className="flex flex-col gap-4 lg:grid lg:min-h-0 lg:flex-1 lg:grid-cols-[minmax(280px,340px)_1fr] lg:grid-rows-[auto_minmax(320px,1fr)]">
-        <div className="lg:col-start-1 lg:row-start-1">{callCard}</div>
-        <div className="flex flex-col lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:min-h-0">
-          <ErrorBoundary
-            fallback={
-              <Notice>The conversation view hit a display error.</Notice>
-            }
-          >
-            {conversation}
-          </ErrorBoundary>
-        </div>
-        <div className="flex flex-col lg:col-start-1 lg:row-start-2 lg:min-h-0">
-          <ErrorBoundary
-            fallback={<Notice>The stats hit a display error.</Notice>}
-          >
-            <Insights events={events} />
-          </ErrorBoundary>
-        </div>
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-4 lg:grid-cols-[minmax(280px,340px)_minmax(0,1fr)] lg:grid-rows-[auto_1fr]">
+      <div className="lg:col-start-1 lg:row-start-1">{callCard}</div>
+      {/* Fixed height: the transcript scrolls inside, the page doesn't grow. The desktop
+          height is the screen minus the header, the title and the padding around them. */}
+      <div className="flex h-[70dvh] min-h-[420px] flex-col lg:sticky lg:top-0 lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:h-[calc(100dvh-13.5rem)] lg:self-start">
+        <ErrorBoundary
+          fallback={<Notice>The conversation view hit a display error.</Notice>}
+        >
+          {conversation}
+        </ErrorBoundary>
+      </div>
+      <div className="lg:col-start-1 lg:row-start-2 lg:self-start">
+        <ErrorBoundary fallback={<Notice>The stats hit a display error.</Notice>}>
+          <Insights events={events} />
+        </ErrorBoundary>
       </div>
     </div>
   );
@@ -220,6 +220,95 @@ function Notice({ children }: { children: ReactNode }) {
   );
 }
 
+/**
+ * Mia's card, the same before, during and after a call: the chosen voice's picture in the
+ * animated orb, her name, and sound bars (looping when idle, Mia's real voice during a call).
+ * ``children`` are the controls for the phase.
+ */
+function VoiceCard({
+  voiceLabel,
+  badge,
+  bars,
+  children,
+}: {
+  voiceLabel: string | null;
+  badge: ReactNode;
+  bars: ReactNode;
+  children: ReactNode;
+}) {
+  return (
+    <section
+      data-tour="call-controls"
+      aria-label="Call controls"
+      className="mia-voice-card flex flex-col items-start gap-4 rounded-2xl p-4"
+    >
+      <div className="flex w-full items-center justify-between">
+        <span className="mia-voice-badge eyebrow rounded-full px-2.5 py-1" aria-live="polite">
+          {badge}
+        </span>
+      </div>
+      <div className="flex w-full justify-center py-2">
+        <div className="mia-orb">
+          <span className="mia-orb-ring" aria-hidden="true" />
+          <span className="mia-orb-ring mia-orb-ring-2" aria-hidden="true" />
+          <img
+            key={voiceLabel ?? "mia"}
+            src={voiceAvatar(voiceLabel)}
+            alt={`Mia speaking as ${voiceName(voiceLabel)}`}
+            width={768}
+            height={768}
+            className="mia-orb-face"
+          />
+        </div>
+      </div>
+      <div className="w-full text-center">
+        <h2 className="font-display text-4xl leading-none font-semibold tracking-tight">
+          Mia
+        </h2>
+        <p className="mia-voice-muted mt-2 text-sm">
+          Tell Mia your route and vehicle for an open-transport estimate.
+        </p>
+        {voiceLabel && (
+          <p className="eyebrow mt-2">Voice · {voiceName(voiceLabel)}</p>
+        )}
+      </div>
+      {bars}
+      {children}
+    </section>
+  );
+}
+
+/** The looping sound bars of the idle card. */
+function IdleBars() {
+  return (
+    <div className="voice-bars w-full" aria-hidden="true">
+      {Array.from({ length: 25 }, (_, i) => (
+        <span key={i} />
+      ))}
+    </div>
+  );
+}
+
+/** Sound bars that follow Mia's voice during a call: 13 frequency bands, mirrored around
+ * the middle bar, so they're still when she's quiet and move when she talks. */
+function LiveBars() {
+  const { audioTrack } = useVoiceAssistant();
+  const bands = useMultibandTrackVolume(audioTrack, {
+    bands: 13,
+    loPass: 100,
+    hiPass: 200,
+  });
+  const half = bands.length ? bands : Array.from({ length: 13 }, () => 0);
+  const bars = [...half.slice(1).reverse(), ...half];
+  return (
+    <div className="voice-bars voice-bars-live w-full" aria-hidden="true">
+      {bars.map((v, i) => (
+        <span key={i} style={{ height: `${4 + Math.min(1, v * 1.6) * 44}px` }} />
+      ))}
+    </div>
+  );
+}
+
 function CallButtonCard({
   phase,
   wake,
@@ -237,43 +326,11 @@ function CallButtonCard({
 }) {
   const ready = wake.kind === "ready";
   return (
-    <section
-      data-tour="call-controls"
-      aria-label="Call controls"
-      className="mia-voice-card flex flex-col items-start gap-4 rounded-2xl p-4"
+    <VoiceCard
+      voiceLabel={voiceLabel}
+      badge={ready ? "● Standing by" : "○ Waking up"}
+      bars={<IdleBars />}
     >
-      <div className="flex w-full items-center justify-between">
-        <span className="mia-voice-badge eyebrow rounded-full px-2.5 py-1">
-          {ready ? "● Standing by" : "○ Waking up"}
-        </span>
-      </div>
-      <div className="flex w-full justify-center py-2">
-        <div className="mia-orb">
-          <span className="mia-orb-ring" aria-hidden="true" />
-          <span className="mia-orb-ring mia-orb-ring-2" aria-hidden="true" />
-          <img
-            key={voiceLabel ?? "mia"}
-            src={voiceAvatar(voiceLabel)}
-            alt={`Mia speaking as ${voiceName(voiceLabel)}`}
-            width={768}
-            height={768}
-            className="mia-orb-face"
-          />
-        </div>
-      </div>
-      <div className="w-full">
-        <h2 className="font-display text-center text-4xl leading-none font-semibold tracking-tight">
-          Mia
-        </h2>
-        <p className="eyebrow mt-2 text-center">
-          {voiceLabel ? `Voice · ${voiceName(voiceLabel)}` : "AI voice assistant"}
-        </p>
-      </div>
-      <div className="voice-bars w-full" aria-hidden="true">
-        {Array.from({ length: 25 }, (_, i) => (
-          <span key={i} />
-        ))}
-      </div>
       {voicePicker}
       <Button
         variant="ghost"
@@ -330,7 +387,7 @@ function CallButtonCard({
           </p>
         </div>
       )}
-    </section>
+    </VoiceCard>
   );
 }
 
@@ -346,7 +403,7 @@ function WakeNote({ wake, onRetry }: { wake: Wake; onRetry: () => void }) {
     const elapsed = now - wake.since;
     const { percent, label } = wakeProgress(elapsed, wake.step);
     return (
-      <div className="flex flex-col gap-2 text-sm">
+      <div className="flex w-full flex-col gap-2 text-sm">
         <div className="flex items-baseline justify-between gap-2">
           <span className="font-medium text-ink" aria-live="polite">
             {label}…
@@ -406,7 +463,7 @@ function HangUp({ room }: { room: Room }) {
       variant="ghost"
       type="button"
       onClick={() => room.disconnect()}
-      className="rounded-full bg-danger px-5 py-2 font-medium text-surface hover:bg-danger hover:text-surface hover:opacity-90"
+      className="flex-1 rounded-full bg-danger px-5 py-2 font-medium text-surface hover:bg-danger hover:text-surface hover:opacity-90"
     >
       Hang up
     </Button>
@@ -425,12 +482,16 @@ const STATE_LABEL: Record<string, string> = {
   disconnected: "Disconnected",
 };
 
+/** The card during a call: the same picture and animations, Mia's live sound bars, and the
+ * call controls instead of the voice picker (the voice can't change mid-call). */
 function InCallControls({
   room,
   startedAt,
+  voiceLabel,
 }: {
   room: Room;
   startedAt: number;
+  voiceLabel: string | null;
 }) {
   const { state } = useVoiceAssistant();
   const [now, setNow] = useState(Date.now());
@@ -447,49 +508,20 @@ function InCallControls({
   };
 
   return (
-    <section
-      data-tour="call-controls"
-      aria-label="Call controls"
-      className="flex flex-col gap-4 rounded-2xl border border-line bg-surface p-4"
+    <VoiceCard
+      voiceLabel={voiceLabel}
+      badge={`● ${STATE_LABEL[state] ?? state}`}
+      bars={<LiveBars />}
     >
-      <div className="flex items-center gap-3">
-        <img
-          src={miaAvatar}
-          alt="Mia"
-          width={1024}
-          height={1024}
-          loading="lazy"
-          className="size-16 shrink-0 rounded-full border-2 border-ok-soft object-cover"
-        />
-        <div>
-          <h2 className="text-sm font-semibold">Mia</h2>
-          <p className="mt-1 text-xs text-muted">Your shipping companion</p>
-        </div>
+      <div className="flex w-full items-center justify-center font-mono text-sm text-muted tabular-nums">
+        {formatClock((now - startedAt) / 1000)} / {formatClock(MAX_CALL_SECONDS)}
       </div>
-      <div className="flex items-center gap-3">
-        <span
-          className={`size-3 rounded-full ${
-            state === "speaking"
-              ? "animate-pulse bg-ok"
-              : state === "listening"
-                ? "bg-accent"
-                : "bg-line"
-          }`}
-        />
-        <span className="font-medium" aria-live="polite">
-          {STATE_LABEL[state] ?? state}
-        </span>
-        <span className="ml-auto font-mono text-sm text-muted tabular-nums">
-          {formatClock((now - startedAt) / 1000)} /{" "}
-          {formatClock(MAX_CALL_SECONDS)}
-        </span>
-      </div>
-      <div className="flex gap-3">
+      <div className="flex w-full gap-3">
         <Button
           variant="ghost"
           type="button"
           onClick={toggleMute}
-          className="rounded-full border border-line px-5 py-2 font-medium hover:bg-raised"
+          className="flex-1 rounded-full border border-line px-5 py-2 font-medium hover:bg-raised"
         >
           {muted ? "Unmute" : "Mute"}
         </Button>
@@ -497,9 +529,9 @@ function InCallControls({
       </div>
       <StartAudio
         label="Tap to hear Mia"
-        className="rounded-full bg-warn px-5 py-2 font-medium text-surface"
+        className="w-full rounded-full bg-warn px-5 py-2 font-medium text-surface"
       />
-    </section>
+    </VoiceCard>
   );
 }
 

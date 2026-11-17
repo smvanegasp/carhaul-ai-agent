@@ -16,18 +16,17 @@ const STAGE_LABEL: Record<string, string> = {
 };
 
 /**
- * The call at a glance: pipeline, stage, tool calls, latency and what's on file. On desktop the
- * card fills its column and only its contents scroll, so a few extra pixels never leave a
- * scrollbar over empty space (Sergio, 2026-11-09: the panel scrolled into nothing after a call).
+ * The call at a glance: pipeline, stage, tool calls, latency and what's on file. Always shown
+ * in full, never scrolling inside itself (Belinda, 2026-11-17); the page around it scrolls.
  */
 export function Insights({ events }: { events: MiaEvent[] }) {
   const panel = toPanel(events);
   return (
     <section
       aria-label="Under the hood"
-      className="flex flex-col overflow-hidden rounded-2xl border border-line bg-surface lg:min-h-0 lg:flex-1"
+      className="flex flex-col rounded-2xl border border-line bg-surface"
     >
-      <div className="flex flex-col gap-3 p-4 lg:min-h-0 lg:flex-1 lg:overflow-y-auto lg:overscroll-contain">
+      <div className="flex flex-col gap-3 p-4">
         <header className="flex flex-col gap-2">
           <h2 className="font-semibold">Under the hood</h2>
           {panel.config ? (
