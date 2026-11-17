@@ -27,10 +27,11 @@ type Load =
   | { kind: "error"; message: string }
   | { kind: "ok"; rows: CallFacts[] };
 
-async function fetchStats(includeTests: boolean): Promise<CallFacts[]> {
+/** Scripted test calls (smoke-*) are left out by the API. */
+async function fetchStats(): Promise<CallFacts[]> {
   let res: Response;
   try {
-    res = await fetch(`/api/stats${includeTests ? "?include_tests=true" : ""}`);
+    res = await fetch("/api/stats");
   } catch {
     throw new CallError(
       "Can't reach the server. Check your connection and try again.",
@@ -48,13 +49,12 @@ async function fetchStats(includeTests: boolean): Promise<CallFacts[]> {
  * transfer.
  */
 export function StatsPage({ active }: { active: boolean }) {
-  const [includeTests, setIncludeTests] = useState(false);
   const [load, setLoad] = useState<Load>({ kind: "loading" });
 
   useEffect(() => {
     if (!active) return;
     let cancelled = false;
-    fetchStats(includeTests)
+    fetchStats()
       .then((rows) => !cancelled && setLoad({ kind: "ok", rows }))
       .catch(
         (err) =>
@@ -70,7 +70,7 @@ export function StatsPage({ active }: { active: boolean }) {
     return () => {
       cancelled = true;
     };
-  }, [active, includeTests]);
+  }, [active]);
 
   const view = useMemo(() => {
     if (load.kind !== "ok") return null;
@@ -86,18 +86,7 @@ export function StatsPage({ active }: { active: boolean }) {
 
   return (
     <div className="flex flex-col gap-4 pb-2 lg:min-h-0 lg:flex-1 lg:overflow-y-auto lg:overscroll-contain lg:pr-1">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <p className="text-sm text-muted">All calls since Mia went live.</p>
-        <label className="flex cursor-pointer items-center gap-2 text-sm text-muted">
-          <input
-            type="checkbox"
-            checked={includeTests}
-            onChange={(e) => setIncludeTests(e.target.checked)}
-            className="size-4 accent-[var(--brand)]"
-          />
-          Include scripted test calls
-        </label>
-      </div>
+      <p className="text-sm text-muted">All calls since Mia went live.</p>
 
       {load.kind === "loading" && <Card>Loading the stats…</Card>}
       {load.kind === "error" && (

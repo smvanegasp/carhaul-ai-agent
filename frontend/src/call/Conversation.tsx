@@ -87,7 +87,7 @@ export function Conversation({
           const el = e.currentTarget;
           stuck.current = el.scrollHeight - el.scrollTop - el.clientHeight < 80;
         }}
-        className="relative flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto overscroll-contain p-5"
+        className="relative flex min-h-0 flex-1 flex-col gap-4 overflow-x-hidden overflow-y-auto overscroll-contain p-5"
       >
         {shown.length === 0 ? (
           <div className="flex min-h-44 flex-1 flex-col items-center justify-center gap-3 py-8 text-center"><span className="flex size-12 items-center justify-center rounded-full bg-raised text-brand"><AudioLines className="size-5" /></span><p className="text-sm font-medium">{live ? "Mia is joining…" : "Ready for a conversation"}</p><p className="max-w-60 text-xs leading-relaxed text-muted">{live ? "Connecting your voice assistant." : "No conversation yet."}</p></div>
@@ -224,7 +224,7 @@ function Dropped({ e }: { e: DroppedEvent }) {
   return (
     <p className="self-stretch rounded-lg bg-warn-soft px-3 py-1.5 text-xs text-warn">
       <span className="font-semibold">Guardrail dropped</span>{" "}
-      <span className="font-mono">
+      <span className="font-mono [overflow-wrap:anywhere]">
         {e.tool}({e.args})
       </span>
       : {e.why}

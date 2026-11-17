@@ -708,6 +708,14 @@ Call d9dfdc6763f5 (Belinda):
       transcription missed is now shown from its event (`lib/conversation.ts`)
 - [x] Sidebar logo: "Mia" (no period)
 
+## Past calls by month (branch `past-calls-months`, 2026-11-17)
+
+- [x] No test-calls checkbox in Past calls or Stats (scripted calls always hidden)
+- [x] "Show details" doesn't grow the conversation panel (set height, scrolls inside;
+      long guardrail JSON wraps)
+- [x] Past calls grouped by month under toggles (latest 100)
+- [ ] Check on the deployed site with a real call
+
 ## Ideas / later
 
 
