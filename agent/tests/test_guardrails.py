@@ -281,3 +281,41 @@ def test_an_answer_before_the_read_back_is_kept():
     s.add_vehicle(year=2025, make="Honda", model="Civic", trim_id=1)
     told = "We only quote open car shipping. " + read_back(s)
     assert guardrails.honest_read_back(told, s) == told
+
+
+def _off_topic_now() -> QuoteSession:
+    s = QuoteSession(caller_turns=2)
+    s.off_topic, s.off_topic_turns = 1, [2]
+    return s
+
+
+def test_an_off_topic_joke_is_declined_and_steers_back():
+    # CI, 2026-11-17: the joke's own question fooled keep_going; she never steered back.
+    spoken = "Sure, here's a quick one: Why don't cats play poker in the jungle?"
+    assert guardrails.off_topic_reply(spoken, _off_topic_now()) == (
+        "I'm afraid I can only help with car shipping. "
+        "Where are you shipping the car from, and where is it going?"
+    )
+
+
+def test_a_brief_off_topic_answer_stays_and_the_model_steer_back_is_replaced():
+    spoken = "Paris. Now, could you tell me where your car is shipping from?"
+    assert guardrails.off_topic_reply(spoken, _off_topic_now()) == (
+        "Paris. Where are you shipping the car from, and where is it going?"
+    )
+
+
+def test_a_long_off_topic_answer_is_declined():
+    spoken = "Well, toppings are a matter of taste, and I would say mushrooms and olives are great."
+    assert guardrails.off_topic_reply(spoken, _off_topic_now()).startswith(
+        guardrails.OFF_TOPIC_DECLINE
+    )
+
+
+def test_off_topic_reply_only_on_an_off_topic_turn():
+    s = QuoteSession(caller_turns=3)
+    s.off_topic_turns = [2]  # an earlier turn
+    assert guardrails.off_topic_reply("Got it.", s) == "Got it."
+    ending = _off_topic_now()
+    ending.ended = True  # the third strike: the goodbye stays
+    assert guardrails.off_topic_reply("Goodbye!", ending) == "Goodbye!"

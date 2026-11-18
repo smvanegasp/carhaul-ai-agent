@@ -192,6 +192,13 @@ docker compose up        # api :8020, web :5190, DynamoDB Local :8030, agent wor
 
 ## 6. Decisions log
 
+- 2026-11-17 (CI scenarios red on main, 3 of 3 tries): **after an off-topic question Mia
+  says one short sentence, then the next question, in code** (`guardrails.off_topic_reply`).
+  "Tell me a joke about cats" -> "Sure, here's a quick one: Why don't cats play poker in the
+  jungle?": the joke's own question fooled `keep_going`, so she never steered back. A brief
+  statement ("Paris.") stays; a question or a long answer becomes "I'm afraid I can only help
+  with car shipping." `off_topic_three_strikes` 5/5 after; full suite 33/33.
+
 - 2026-11-17 (Belinda): **The greeting showed twice live**: whole as the call started, then
   again as Mia spoke. Lines from code are logged as they start, with their whole text, while
   the transcription spells them out; the live view now matches such an event to the line its

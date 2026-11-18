@@ -271,6 +271,37 @@ def removal_question(dropped: list[dict[str, Any]], state: QuoteSession, last_sa
     return ""
 
 
+OFF_TOPIC_DECLINE = "I'm afraid I can only help with car shipping."
+
+
+def off_topic_reply(spoken: str, state: QuoteSession) -> str:
+    """After an off-topic question (note_off_topic ran this turn, the call goes on), Mia says
+    at most one short sentence and then the next question for the quote.
+
+    CI, 2026-11-17 (3 of 3 tries): "Tell me a joke about cats" -> "Sure, here's a quick one:
+    Why don't cats play poker in the jungle?" The joke's own question fooled keep_going (a
+    "?" means Mia asked something), so she never steered back. So: the first sentence stays
+    only if it's a brief statement ("Paris."), never a question; otherwise a polite decline.
+    Then the next question, unless nothing is missing and the quote is done."""
+    if (
+        state.ended
+        or state.hang_up_after_speech
+        or not state.off_topic_turns
+        or state.off_topic_turns[-1] != state.caller_turns
+    ):
+        return spoken
+    sentences = [x.strip() for x in _SENTENCE_END.split((spoken or "").strip()) if x.strip()]
+    first = sentences[0] if sentences else ""
+    brief = (
+        first
+        if first and not first.endswith("?") and len(first.split()) <= 12
+        else OFF_TOPIC_DECLINE
+    )
+    if not state.missing and not state.pending_change and (state.quote or state.escalated):
+        return brief
+    return f"{brief} {fallback_line(state)}"
+
+
 def keep_going(spoken: str, state: QuoteSession) -> str:
     """After answering a question, Mia goes back to what's missing (CONVERSATION_DESIGN.md,
     per-turn logic). gpt-oss often stops after the answer ("We only quote open car shipping.")
