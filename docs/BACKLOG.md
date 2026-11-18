@@ -742,6 +742,12 @@ Call d9dfdc6763f5 (Belinda):
       by word at the voice's pace, instead of popping in whole
 - [ ] Check with a real call after the deploy
 
+## Off-topic answers steer back in code (branch `off-topic-steer-back`, 2026-11-17)
+
+- [x] CI's `off_topic_three_strikes` failed 3/3: Mia told a cat joke and never steered back.
+      `guardrails.off_topic_reply`: one brief statement (never a question), then the next
+      question. 5/5 locally, full suite 33/33
+
 ## Ideas / later
 
 

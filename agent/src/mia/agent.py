@@ -443,6 +443,7 @@ class Mia(Agent):
             spoken = guardrails.honest_read_back(spoken, state)
             spoken = faq.ensure_answer(spoken, last_said) if spoken else spoken
             spoken = guardrails.no_model_again(spoken, state)
+            spoken = guardrails.off_topic_reply(spoken, state)
             spoken = guardrails.keep_going(spoken, state)
             spoken = noise.with_noisy_line(spoken, state)
             if spoken and guardrails.is_goodbye(spoken) and not state.ended:
