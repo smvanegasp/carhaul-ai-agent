@@ -18,11 +18,11 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "driver.js": "^1.14.0",
-    "livekit-client": "^2.24.1",
+    "livekit-client": "^2.25.0",
     "lucide-react": "^0.575.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "tailwind-merge": "^3.7.0",
+    "tailwind-merge": "^3.7.1",
     "tslib": "^2.9.1"
   },
   "devDependencies": {
@@ -33,6 +33,6 @@
     "tailwindcss": "^4.3.3",
     "typescript": "~7.0.2",
     "vite": "^8.3.8",
-    "vitest": "^5.0.5"
+    "vitest": "^5.1.1"
   }
 }
